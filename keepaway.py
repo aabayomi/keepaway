@@ -32,6 +32,7 @@ def launch_player(player_type, index, options):
     # Build up the options for the player process.
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
+        i = '1',
         e = int(getattr(options, player_type + '_learn')),
         j = options.taker_count,
         k = options.keeper_count,
@@ -79,7 +80,7 @@ def launch_player(player_type, index, options):
     # TODO Always assume keepaway_player is here?
     command = [relative('./player/keepaway_player')] + player_options
     #print command
-    #print " ".join(command)
+    print " ".join(command)
     popen = Popen(command)
     return popen.pid
 

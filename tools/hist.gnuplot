@@ -14,7 +14,7 @@ set output "./hist.eps"
 set title ""
 
 # Appearance
-set data style steps
+#set data style steps
 #set nokey
 set border 3
 set xtics nomirror
@@ -22,12 +22,12 @@ set ytics nomirror
 set multiplot
 
 # Axes
-set xrange [-0.5:30]
+set xrange [0:]
 set xlabel "Episode Duration (seconds)"
 
-set yrange [0:5500]
+set yrange [0:]
 set ylabel "Occurences"
 
 # Plot Data
-plot "./1.hist" title 'Learned'
+plot "./1.hist" title 'Learned' w steps
 
