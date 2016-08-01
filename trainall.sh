@@ -20,6 +20,7 @@
 set -o nounset                              # Treat unset variables as an error
 
 ./train.sh &
+sleep 2
 ./train-hive.sh &
 
 wait

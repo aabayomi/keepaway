@@ -108,7 +108,7 @@ def launch_server(options):
     from time import strftime
 
     # Some helpful vars.
-    log_name = '%s-%s' % (strftime('%Y%m%d%H%M'), gethostname())
+    log_name = '%s-%s' % (strftime('%Y%m%d%H%M%S'), gethostname())
     if options.label:
         log_name += "." + options.label
 

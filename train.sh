@@ -38,8 +38,5 @@ make clean
 make
 cd $DIR
 
-./tools/killserver
-killall rcssmonitor
-
 ./keepaway.py --keeper-learn --keeper-policy=learn --keeper-output=$FILE --keeper-input=$FILE $HIVE $SYNC $MONITOR $FILEPERPLAYER $LOG $PORT
 
