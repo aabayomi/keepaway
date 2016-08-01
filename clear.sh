@@ -1,9 +1,9 @@
 #!/bin/bash - 
 #===============================================================================
 #
-#          FILE: winsum.sh
+#          FILE: clear.sh
 # 
-#         USAGE: ./winsum.sh 
+#         USAGE: ./clear.sh 
 # 
 #   DESCRIPTION: 
 # 
@@ -13,14 +13,12 @@
 #         NOTES: ---
 #        AUTHOR: YOUR NAME (), 
 #  ORGANIZATION: 
-#       CREATED: 07/30/2016 22:54
+#       CREATED: 08/01/2016 14:44
 #      REVISION:  ---
 #===============================================================================
 
 set -o nounset                              # Treat unset variables as an error
 
-cat $1 | ./winsum 100 0.01 > 1.out
-gnuplot graph.gnuplot
-evince graph.eps
-
+rm -fr Q hive-Q logs *.lock
+mkdir logs
 

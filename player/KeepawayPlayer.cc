@@ -363,11 +363,10 @@ SoccerCommand KeepawayPlayer::keeperWithBall()
     }
     else if ( WM->getTimeLastAction() == WM->getCurrentCycle() - 1 &&
               WM->getLastAction() > 0 ) {   // if we were in the middle of a pass last cycle
-      Log.log( 101, "KeepawayPlayer::keeperWithBall Passing...: %d", WM->getLastAction());
-      action = WM->getLastAction();         // then we follow through with it
+      Log.log(101, "KeepawayPlayer::keeperWithBall Passing...: %d", WM->getLastAction());
+      action = WM->getLastAction();         // then we follow through with it: keepon
     }
-      // Call step() on all but first SMDP step
-    else {
+    else { // Call step() on all but first SMDP step
       action = SA->step( WM->keeperReward(), state );
     }
     WM->setLastAction( action );

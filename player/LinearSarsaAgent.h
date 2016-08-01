@@ -1,12 +1,37 @@
 #ifndef LINEAR_SARSA_AGENT
 #define LINEAR_SARSA_AGENT
 
+#include <iostream>
+#include <sstream>
 #include "SMDPAgent.h"
 #include "tiles2.h"
 
 #define RL_MEMORY_SIZE 1048576
 #define RL_MAX_NONZERO_TRACES 100000
 #define RL_MAX_NUM_TILINGS 6000
+
+class FileLock
+{
+private:
+  int lock;
+  std::string lockName;
+
+public:
+  FileLock(const std::string name, const int ms) {
+    lockName = name + ".lock";
+    timespec sleepTime = {0, ms * 1000 * 1000};
+    while (true) {
+      lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
+      if (lock >= 0) break;
+      nanosleep(&sleepTime, NULL);
+    }
+  }
+
+  ~FileLock() {
+    // std::cerr << "unlink " << lockName << std::endl;
+    unlink(lockName.c_str());
+  }
+};
 
 class LinearSarsaAgent:public SMDPAgent
 {
@@ -18,7 +43,7 @@ class LinearSarsaAgent:public SMDPAgent
   /// Hive mind indicator and file descriptor.
   bool hiveMind;
   int hiveFile;
-  
+
   int epochNum;
   int lastAction;
 

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sudo cgdb -- ./player/keepaway_player `ps -o pid= -C keepaway_player`

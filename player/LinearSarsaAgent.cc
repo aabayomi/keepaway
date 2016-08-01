@@ -35,7 +35,7 @@ struct CollisionTableHeader {
  */
 long* loadColTabHeader(collision_table* colTab, double* weights) {
   CollisionTableHeader* colTabHeader =
-    reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
+      reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
   // Do each field individually, since they don't all line up exactly for an
   // easy copy.
   colTab->calls = colTabHeader->calls;
@@ -45,22 +45,25 @@ long* loadColTabHeader(collision_table* colTab, double* weights) {
   colTab->safe = colTabHeader->safe;
   if (VERBOSE_HIVE_MIND) {
     cout << "Loaded colTabHeader:" << endl
-      << " calls: " << colTab->calls << endl
-      << " clearhits: " << colTab->clearhits << endl
-      << " collisions: " << colTab->collisions << endl
-      << " m: " << colTab->m << endl
-      << " safe: " << colTab->safe << endl;
+         << " calls: " << colTab->calls << endl
+         << " clearhits: " << colTab->clearhits << endl
+         << " collisions: " << colTab->collisions << endl
+         << " m: " << colTab->m << endl
+         << " safe: " << colTab->safe << endl;
   }
   return reinterpret_cast<long*>(colTabHeader + 1);
 }
 
 extern Logger Log;
+
+#if USE_DRAW_LOG
 extern LoggerDraw LogDraw;
+#endif
 
 LinearSarsaAgent::LinearSarsaAgent( int numFeatures, int numActions, bool bLearn,
                                     double widths[],
                                     char *loadWeightsFile, char *saveWeightsFile, bool hiveMind ):
-  SMDPAgent( numFeatures, numActions ), hiveFile(-1)
+    SMDPAgent( numFeatures, numActions ), hiveFile(-1)
 {
   bLearning = bLearn;
 
@@ -82,10 +85,10 @@ LinearSarsaAgent::LinearSarsaAgent( int numFeatures, int numActions, bool bLearn
     bSaveWeights = false;
   }
 
-  alpha = 0.125;
+  alpha = 0.05;
   gamma = 1.0;
-  lambda = 0;
-  epsilon = 0.01;
+  lambda = 0.5;
+  epsilon = 0.05;
   minimumTrace = 0.01;
 
   epochNum = 0;
@@ -123,6 +126,8 @@ void LinearSarsaAgent::setEpsilon(double epsilon) {
 
 int LinearSarsaAgent::startEpisode( double state[] )
 {
+  Log.log( 101, "LinearSarsaAgent::startEpisode");
+
   if (hiveMind) loadColTabHeader(colTab, weights);
   epochNum++;
   decayTraces( 0 );
@@ -131,13 +136,15 @@ int LinearSarsaAgent::startEpisode( double state[] )
     Q[ a ] = computeQ( a );
   }
 
-  lastAction = selectAction();
+  lastAction = selectAction(); // share Q[lastAction] in hive mind mode
 
+#if USE_DRAW_LOG
   char buffer[128];
   sprintf( buffer, "Q[%d] = %.2f", lastAction, Q[lastAction] );
   LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
                    buffer,
                    1, COLOR_BROWN );
+#endif
 
   for ( int j = 0; j < numTilings; j++ )
     setTrace( tiles[ lastAction ][ j ], 1.0 );
@@ -147,35 +154,41 @@ int LinearSarsaAgent::startEpisode( double state[] )
 
 int LinearSarsaAgent::step( double reward, double state[] )
 {
+  Log.log( 101, "LinearSarsaAgent::step reward: %f", reward);
+
   if (hiveMind) loadColTabHeader(colTab, weights);
-  double delta = reward - Q[ lastAction ];
-  loadTiles( state );
+  double delta = reward - Q[ lastAction ]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
+  loadTiles( state ); //s_t
   for ( int a = 0; a < getNumActions(); a++ ) {
-    Q[ a ] = computeQ( a );
+    Q[ a ] = computeQ( a ); //Q_{t-1}[s_t, *]
   }
 
-  lastAction = selectAction();
+  lastAction = selectAction(); //a_t
 
+#if USE_DRAW_LOG
   char buffer[128];
   sprintf( buffer, "Q[%d] = %.2f", lastAction, Q[lastAction] );
   LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
                    buffer,
                    1, COLOR_BROWN );
+#endif
 
   if ( !bLearning )
     return lastAction;
+
+#if USE_DRAW_LOG
 
   //char buffer[128];
   sprintf( buffer, "reward: %.2f", reward );
   LogDraw.logText( "reward", VecPosition( 25, 30 ),
                    buffer,
                    1, COLOR_NAVY );
+#endif
 
-  Log.log( 101, "LinearSarsaAgent::step reward: %f", reward);
-
-  delta += Q[ lastAction ];
-  updateWeights( delta );
-  Q[ lastAction ] = computeQ( lastAction ); // need to redo because weights changed
+  delta += Q[ lastAction ]; //delta += Q_{t-1}[s_t, a_t]
+  updateWeights( delta ); //Q_t <- Q_{t-1}
+  Q[ lastAction ] = computeQ( lastAction ); //need to redo because weights changed: Q_t[s_t, a_t]
+  // share Q[lastAction] in hive mind mode
   decayTraces( gamma * lambda );
 
   for ( int a = 0; a < getNumActions(); a++ ) {  //clear other than F[a]
@@ -193,13 +206,18 @@ int LinearSarsaAgent::step( double reward, double state[] )
 
 void LinearSarsaAgent::endEpisode( double reward )
 {
+  Log.log( 101, "LinearSarsaAgent::endEpisode reward: %f", reward);
+
   if (hiveMind) loadColTabHeader(colTab, weights);
   if ( bLearning && lastAction != -1 ) { /* otherwise we never ran on this episode */
+
+#if USE_DRAW_LOG
     char buffer[128];
     sprintf( buffer, "reward: %.2f", reward );
     LogDraw.logText( "reward", VecPosition( 25, 30 ),
                      buffer,
                      1, COLOR_NAVY );
+#endif
 
     /* finishing up the last episode */
     /* assuming gamma = 1  -- if not,error*/
@@ -229,9 +247,9 @@ void LinearSarsaAgent::shutDown()
   // Also shut down the hive mind if needed.
   if (hiveMind) {
     size_t mapLength =
-      RL_MEMORY_SIZE * sizeof(double) +
-      sizeof(CollisionTableHeader) +
-      colTab->m * sizeof(long);
+        RL_MEMORY_SIZE * sizeof(double) +
+        sizeof(CollisionTableHeader) +
+        colTab->m * sizeof(long);
     munmap(weights, mapLength);
     close(hiveFile);
     hiveFile = -1;
@@ -264,25 +282,16 @@ bool LinearSarsaAgent::loadWeights( char *filename )
       // First, check the lock file, so we have only one initializer.
       // Later interaction should be approximately synchronized by having only
       // one active player at a time per team, but we can't assume that here.
-      stringstream lockNameBuffer;
-      lockNameBuffer << filename << ".lock";
-      const char* lockName = lockNameBuffer.str().c_str();
-      int lock;
-      // 10ms delay (times a million to convert from nanos).
-      timespec sleepTime = {0, 10 * 1000 * 1000};
-      while (true) {
-        lock = open(lockName, O_CREAT | O_EXCL, 0664);
-        if (lock >= 0) break;
-        nanosleep(&sleepTime, NULL);
-      }
+      FileLock lock(filename, 10);
+
       // First, see if the file is already there.
       bool fileFound = !access(filename, F_OK);
       // TODO Extract constant for permissions (0664)?
       hiveFile = open(filename, O_RDWR | O_CREAT, 0664);
       size_t mapLength =
-        RL_MEMORY_SIZE * sizeof(double) +
-        sizeof(CollisionTableHeader) +
-        colTab->m * sizeof(long);
+          RL_MEMORY_SIZE * sizeof(double) +
+          sizeof(CollisionTableHeader) +
+          colTab->m * sizeof(long);
       if (!fileFound) {
         // Make the file the right size.
         cout << "Initializing new hive file." << endl;
@@ -295,13 +304,13 @@ bool LinearSarsaAgent::loadWeights( char *filename )
       }
       if (hiveFile < 0) throw "failed to open hive file";
       void* hiveMap =
-        mmap(NULL, mapLength, PROT_READ | PROT_WRITE, MAP_SHARED, hiveFile, 0);
+          mmap(NULL, mapLength, PROT_READ | PROT_WRITE, MAP_SHARED, hiveFile, 0);
       if (hiveMap == MAP_FAILED) throw "failed to map hive file";
       // First the weights.
       weights = reinterpret_cast<double*>(hiveMap);
       // Now the collision table header.
       CollisionTableHeader* colTabHeader =
-        reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
+          reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
       if (fileFound) {
         loadColTabHeader(colTab, weights);
       }
@@ -318,8 +327,6 @@ bool LinearSarsaAgent::loadWeights( char *filename )
         // Make sure the header goes out to the file.
         saveWeights(weightsFile);
       }
-      // TODO Separate file lock type with destructor?
-      unlink(lockName);
     }
   } else {
     int file = open( filename, O_RDONLY );
@@ -334,10 +341,11 @@ bool LinearSarsaAgent::loadWeights( char *filename )
 bool LinearSarsaAgent::saveWeights( char *filename )
 {
   if (hiveMind) {
+    FileLock(string(filename) + "colTabHeader", 1);
     // The big arrays should be saved out automatically, but we still need to
     // handle the collision table header.
     CollisionTableHeader* colTabHeader =
-      reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
+        reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
     // Do each field individually, since they don't all line up exactly for an
     // easy copy.
     colTabHeader->calls = colTab->calls;
@@ -345,15 +353,17 @@ bool LinearSarsaAgent::saveWeights( char *filename )
     colTabHeader->collisions = colTab->collisions;
     colTabHeader->m = colTab->m;
     colTabHeader->safe = colTab->safe;
+
     if (VERBOSE_HIVE_MIND) {
       cout << "Saved colTabHeader:" << endl
-        << " calls: " << colTab->calls << endl
-        << " clearhits: " << colTab->clearhits << endl
-        << " collisions: " << colTab->collisions << endl
-        << " m: " << colTab->m << endl
-        << " safe: " << colTab->safe << endl;
+           << " calls: " << colTab->calls << endl
+           << " clearhits: " << colTab->clearhits << endl
+           << " collisions: " << colTab->collisions << endl
+           << " m: " << colTab->m << endl
+           << " safe: " << colTab->safe << endl;
     }
   } else {
+    FileLock(filename, 1);
     int file = open( filename, O_CREAT | O_WRONLY, 0664 );
     write( file, (char *) weights, RL_MEMORY_SIZE * sizeof(double) );
     colTab->save( file );
@@ -399,6 +409,8 @@ int LinearSarsaAgent::argmaxQ()
 
 void LinearSarsaAgent::updateWeights( double delta )
 {
+  FileLock(string(weightsFile) + "weights", 1);
+
   double tmp = delta * alpha / numTilings;
   for ( int i = 0; i < numNonzeroTraces; i++ ) {
     int f = nonzeroTraces[ i ];

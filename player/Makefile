@@ -22,8 +22,8 @@ CFLAGS_LIBS     = ${CLIBS_linux}
 #OSFLAGS        = $(OSFLAGS_SunOS_5)
 #CFLAGS_LIBS    = ${CLIBS_SunOS_5}
 
-CFLAGS_DEBUG	= -g
-CFLAGS_OPT     	= #-O3 #-static
+CFLAGS_DEBUG	= -g3
+CFLAGS_OPT     	= -O3
 CFLAGS_WARN     = -Wall
 
 OSFLAGS_SunOS_5 = -DSolaris 
@@ -2461,15 +2461,15 @@ LinearSarsaAgent.o: LinearSarsaAgent.cc /usr/include/stdc-predef.h \
  /usr/include/c++/5/bits/locale_facets.tcc \
  /usr/include/c++/5/bits/basic_ios.tcc /usr/include/c++/5/ostream \
  /usr/include/c++/5/bits/ostream.tcc /usr/include/c++/5/bits/istream.tcc \
- /usr/include/c++/5/bits/sstream.tcc LinearSarsaAgent.h SMDPAgent.h \
- tiles2.h /usr/include/libio.h /usr/include/_G_config.h \
- /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+ /usr/include/c++/5/bits/sstream.tcc LinearSarsaAgent.h \
+ /usr/include/c++/5/iostream SMDPAgent.h tiles2.h /usr/include/libio.h \
+ /usr/include/_G_config.h /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/sys_errlist.h /usr/include/unistd.h \
  /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
  /usr/include/x86_64-linux-gnu/bits/environments.h \
  /usr/include/x86_64-linux-gnu/bits/confname.h /usr/include/getopt.h \
- Logger.h /usr/include/c++/5/iostream /usr/include/c++/5/fstream \
- /usr/include/c++/5/bits/codecvt.h /usr/include/c++/5/cstdio \
+ Logger.h /usr/include/c++/5/fstream /usr/include/c++/5/bits/codecvt.h \
+ /usr/include/c++/5/cstdio \
  /usr/include/x86_64-linux-gnu/c++/5/bits/basic_file.h \
  /usr/include/x86_64-linux-gnu/c++/5/bits/c++io.h \
  /usr/include/c++/5/bits/fstream.tcc /usr/include/c++/5/iomanip \
@@ -2610,7 +2610,8 @@ main.o: main.cc /usr/include/stdc-predef.h SenseHandler.h Connection.h \
  /usr/include/stdlib.h /usr/include/x86_64-linux-gnu/bits/waitflags.h \
  /usr/include/x86_64-linux-gnu/bits/waitstatus.h /usr/include/alloca.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h LinearSarsaAgent.h \
- tiles2.h /usr/include/fcntl.h /usr/include/x86_64-linux-gnu/bits/fcntl.h \
+ /usr/include/c++/5/sstream /usr/include/c++/5/bits/sstream.tcc tiles2.h \
+ /usr/include/fcntl.h /usr/include/x86_64-linux-gnu/bits/fcntl.h \
  /usr/include/x86_64-linux-gnu/bits/fcntl-linux.h \
  /usr/include/x86_64-linux-gnu/bits/stat.h /usr/include/unistd.h \
  /usr/include/x86_64-linux-gnu/bits/posix_opt.h \

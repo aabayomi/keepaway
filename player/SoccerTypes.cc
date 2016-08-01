@@ -55,9 +55,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>       // needed for outputsteam in showcerr
 #include <stdio.h>        // needed for sprintf
 #ifdef Solaris
-  #include <strings.h>    // needed for strncmp
+#include <strings.h>    // needed for strncmp
 #else
-  #include <string.h>     // needed for strncmp
+#include <string.h>     // needed for strncmp
 #endif
 
 #include "SoccerTypes.h"
@@ -502,7 +502,7 @@ SoccerCommand::SoccerCommand( CommandT com, char *msg )
     \param d1 meaning depends on the specified command type (see above)
     \param d2 meaning depends on the specified command type (see above)
     \param d3 meaning depends on the specified command type (see above) */
-void SoccerCommand::makeCommand( CommandT com, double d1, 
+void SoccerCommand::makeCommand( CommandT com, double d1,
                                  double d2, double d3 )
 {
   // set the variables that have a meaning for the specified command type
@@ -516,7 +516,7 @@ void SoccerCommand::makeCommand( CommandT com, double d1,
       break;
     case CMD_DASH:
     case CMD_TACKLE:
-      dPower = d1; 
+      dPower = d1;
       break;
     case CMD_KICK:
       dPower = d1;
@@ -563,7 +563,7 @@ void SoccerCommand::makeCommand( CommandT com, char* msg )
 {
   commandType = com;
   if( com == CMD_SAY )
-     strcpy( str, msg );
+    strcpy( str, msg );
 }
 
 /*! This method prints the current command to the specified output stream.
@@ -605,7 +605,7 @@ void SoccerCommand::show( ostream& os )
     case CMD_ATTENTIONTO:
       os << "attentionto " << (int)dX << " " << (int)dY << "\n";
       break;
-    case CMD_TACKLE: 
+    case CMD_TACKLE:
       os << "tackle " << (int)dPower << "\n";
       break;
     case CMD_POINTTO:
@@ -615,7 +615,7 @@ void SoccerCommand::show( ostream& os )
       os << "unknown" << "\n";
       break;
   }
-return;
+  return;
 
 }
 
@@ -680,7 +680,7 @@ bool SoccerCommand::makeCatchCommand( char *str  )
   else
   {
     fprintf(stderr,
-     "(SoccerCommand::makeCatchCommand) angle %f out of bounds\n",dAngle);
+            "(SoccerCommand::makeCatchCommand) angle %f out of bounds\n",dAngle);
     return false;
   }
   return true;
@@ -696,13 +696,13 @@ bool SoccerCommand::makeChangeViewCommand( char *str  )
 {
   if( va != VA_ILLEGAL && vq != VQ_ILLEGAL )
     sprintf( str,"(change_view %s %s)", SoccerTypes::getViewAngleStr  ( va ),
-                                        SoccerTypes::getViewQualityStr( vq ) );
+             SoccerTypes::getViewQualityStr( vq ) );
   else
   {
     fprintf( stderr,
-       "(SoccerCommand::makeChangeViewCommand) wrong arguments %s %s\n",
-                             SoccerTypes::getViewAngleStr  ( va ),
-                             SoccerTypes::getViewQualityStr( vq )  );
+             "(SoccerCommand::makeChangeViewCommand) wrong arguments %s %s\n",
+             SoccerTypes::getViewAngleStr  ( va ),
+             SoccerTypes::getViewQualityStr( vq )  );
     return false;
   }
   return true;
@@ -721,8 +721,8 @@ bool SoccerCommand::makeDashCommand( char *str  )
   else
   {
     fprintf( stderr,
-        "(SoccerCommand::makeDashCommand) power %d out of bounds (%d,%d)\n",
-        (int)dPower, SS->getMinPower(), SS->getMaxPower() );
+             "(SoccerCommand::makeDashCommand) power %d out of bounds (%d,%d)\n",
+             (int)dPower, SS->getMinPower(), SS->getMaxPower() );
     dPower = 0.0;
     sprintf( str, "(dash 0)" );
     return false;
@@ -744,8 +744,8 @@ bool SoccerCommand::makeKickCommand( char *str  )
   else
   {
     fprintf(stderr,
-           "(SoccerCommand::makeKickCommand) one argument %d or %d is wrong\n",
-                    (int)dPower, (int)dAngle );
+            "(SoccerCommand::makeKickCommand) one argument %d or %d is wrong\n",
+            (int)dPower, (int)dAngle );
     return false;
   }
   return true;
@@ -760,15 +760,15 @@ bool SoccerCommand::makeKickCommand( char *str  )
 bool SoccerCommand::makeMoveCommand( char *str  )
 {
   if( -PITCH_LENGTH/2 - PITCH_MARGIN <= dX &&
-       PITCH_LENGTH/2 + PITCH_MARGIN >= dX &&
+      PITCH_LENGTH/2 + PITCH_MARGIN >= dX &&
       -PITCH_WIDTH/2  - PITCH_MARGIN <= dY &&
-       PITCH_WIDTH/2  + PITCH_MARGIN >= dY   )
+      PITCH_WIDTH/2  + PITCH_MARGIN >= dY   )
     sprintf( str,"(move %d %d)", (int)dX, (int)dY);
   else
   {
     fprintf( stderr,
-         "(SoccerCommand::makeMoveCommand) one argument %d or %d is wrong\n",
-                  (int)dX, (int)dY) ;
+             "(SoccerCommand::makeMoveCommand) one argument %d or %d is wrong\n",
+             (int)dX, (int)dY) ;
     return false;
   }
   return true;
@@ -816,8 +816,8 @@ bool SoccerCommand::makeTurnCommand( char *str  )
   else
   {
     fprintf( stderr,
-      "(SoccerCommand::makeTurnCommand) argument %d incorrect (%d, %d)\n",
-      (int)dAngle, SS->getMinMoment( ), SS->getMaxMoment( ) );
+             "(SoccerCommand::makeTurnCommand) argument %d incorrect (%d, %d)\n",
+             (int)dAngle, SS->getMinMoment( ), SS->getMaxMoment( ) );
     dAngle = 0.0;
     sprintf( str, "(turn 0)" );
     return false;
@@ -839,8 +839,8 @@ bool SoccerCommand::makeTurnNeckCommand( char *str  )
   else
   {
     fprintf( stderr,
-       "(SoccerCommand::makeTurnNeckCommand) argument %d is wrong\n",
-                                                     (int)dAngle );
+             "(SoccerCommand::makeTurnNeckCommand) argument %d is wrong\n",
+             (int)dAngle );
     dAngle = 0.0;
     sprintf( str, "(turn_neck 0)" );
     return false;
@@ -865,8 +865,8 @@ bool SoccerCommand::makeChangePlayerCommand( char *str  )
   else
   {
     fprintf( stderr,
-    "(SoccerCommand::makeChangePlayerCommand) argument %d or %d is wrong\n",
-                                               (int)dX, (int)dY  );
+             "(SoccerCommand::makeChangePlayerCommand) argument %d or %d is wrong\n",
+             (int)dX, (int)dY  );
     return false;
   }
   return true;
@@ -901,8 +901,8 @@ bool SoccerCommand::makeAttentionToCommand( char *str  )
   else
   {
     fprintf( stderr,
-     "(SoccerCommand::makeAttentionToCommand) argument %s or %d is wrong\n",
-                                               strTeam, (int)dY  );
+             "(SoccerCommand::makeAttentionToCommand) argument %s or %d is wrong\n",
+             strTeam, (int)dY  );
     return false;
   }
   return true;
@@ -921,8 +921,8 @@ bool SoccerCommand::makeTackleCommand( char *str  )
   else
   {
     fprintf( stderr,
-        "(SoccerCommand::makeTackleCommand) power %d out of bounds (%d,%d)\n",
-        (int)dPower, SS->getMinPower(), SS->getMaxPower() );
+             "(SoccerCommand::makeTackleCommand) power %d out of bounds (%d,%d)\n",
+             (int)dPower, SS->getMinPower(), SS->getMaxPower() );
     return false;
   }
   return true;
@@ -949,7 +949,7 @@ bool SoccerCommand::makePointToCommand( char *str  )
   else
   {
     fprintf( stderr,
-     "(SoccerCommand::makePointToCommand) arg %f or %f is wrong\n", dX, dY  );
+             "(SoccerCommand::makePointToCommand) arg %f or %f is wrong\n", dX, dY  );
     return false;
   }
   return true;
@@ -976,7 +976,7 @@ Feature::Feature( )
     \param timeSense time of sense message to which this feature applies.
     \param object object to which this feature applies
     \param dInfo specific information that can be stored about this feature.
-    \param soc soccercommand stored with this feature 
+    \param soc soccercommand stored with this feature
     \param pos position information stored with this feature */
 Feature::Feature( Time timeSee, Time timeSense, Time timeHear, ObjectT object,
                   double dInfo, SoccerCommand soc, VecPosition pos )
@@ -995,7 +995,7 @@ Feature::Feature( Time timeSee, Time timeSense, Time timeHear, ObjectT object,
     \param object object to which this feature applies
     \param dInfo specific information that can be stored about this feature.
     \param soc command stored with this feature
-    \param pos position information stored with this feature 
+    \param pos position information stored with this feature
     \return boolean indicating whether update was successful. */
 bool Feature::setFeature( Time timeSee,  Time timeSense, Time timeHear,
                           ObjectT object, double  dInfo, SoccerCommand soc,
@@ -1020,7 +1020,7 @@ bool Feature::setTimeSee( Time time )
   return true;
 }
 
-/*! This method returns the see time for a feature. 
+/*! This method returns the see time for a feature.
     \return time that is related to this feature. */
 Time Feature::getTimeSee( )
 {
@@ -1127,18 +1127,18 @@ SoccerCommand Feature::getCommand( )
     important, since the names are in the same order as the ObjectT
     enumeration. */
 const char * ObjectNames[] =
-{
-"(b)", "(g l)", "(g r)", "(g ?)", "(l l)", "(l r)", "(l b)", "(l t)", 
-"(f l t)","(f t l 50)", "(f t l 40)", "(f t l 30)", "(f t l 20)", 
-"(f t l 10)", "(f t 0)","(f c t)","(f t r 10)", "(f t r 20)", "(f t r 30)", 
-"(f t r 40)","(f t r 50)", "(f r t)", "(f r t 30)", "(f r t 20)","(f r t 10)",
-"(f g r t)" , "(f r 0)", "(f g r b)" , "(f r b 10)", "(f r b 20)",
-"(f r b 30)", "(f r b)"   , "(f b r 50)", "(f b r 40)", "(f b r 30)",
-"(f b r 20)", "(f b r 10)", "(f c b)"   , "(f b 0)"   , "(f b l 10)",
-"(f b l 20)", "(f b l 30)", "(f b l 40)", "(f b l 50)", "(f l b)",
-"(f l b 30)", "(f l b 20)", "(f l b 10)", "(f g l b)" , "(f l 0)",
-"(f g l t)" , "(f l t 10)", "(f l t 20)", "(f l t 30)", "(f p l t)",
-"(f p l c)", "(f p l b)",   "(f p r t)",  "(f p r c)",  "(f p r b)", "(f c)" };
+    {
+        "(b)", "(g l)", "(g r)", "(g ?)", "(l l)", "(l r)", "(l b)", "(l t)",
+        "(f l t)","(f t l 50)", "(f t l 40)", "(f t l 30)", "(f t l 20)",
+        "(f t l 10)", "(f t 0)","(f c t)","(f t r 10)", "(f t r 20)", "(f t r 30)",
+        "(f t r 40)","(f t r 50)", "(f r t)", "(f r t 30)", "(f r t 20)","(f r t 10)",
+        "(f g r t)" , "(f r 0)", "(f g r b)" , "(f r b 10)", "(f r b 20)",
+        "(f r b 30)", "(f r b)"   , "(f b r 50)", "(f b r 40)", "(f b r 30)",
+        "(f b r 20)", "(f b r 10)", "(f c b)"   , "(f b 0)"   , "(f b l 10)",
+        "(f b l 20)", "(f b l 30)", "(f b l 40)", "(f b l 50)", "(f l b)",
+        "(f l b 30)", "(f l b 20)", "(f l b 10)", "(f g l b)" , "(f l 0)",
+        "(f g l t)" , "(f l t 10)", "(f l t 20)", "(f l t 30)", "(f p l t)",
+        "(f p l c)", "(f p l b)",   "(f p r t)",  "(f p r c)",  "(f p r b)", "(f c)" };
 
 /*! This method returns the string that corresponds to a specific object. This
     string name is exactly the same as the (short) name of the RoboCup
@@ -1147,7 +1147,7 @@ const char * ObjectNames[] =
     \param o ObjectT that has to be converted to the string representation
     \param strTeamName teamname that should be placed in case of player object
     \return pointer to strBuf, which contains the string representation */
-char* SoccerTypes::getObjectStr( char* strBuf, ObjectT o, 
+char* SoccerTypes::getObjectStr( char* strBuf, ObjectT o,
                                  const char *strTeamName )
 {
   if( o >= OBJECT_BALL && o <=   OBJECT_FLAG_C )
@@ -1193,9 +1193,9 @@ ObjectT SoccerTypes::getObjectFromStr( char** str, bool *isGoalie,
   {
     case 'b':                       // (ball)
     case 'B':                       // (B) in case of ball very close
-       o = OBJECT_BALL; break;
+      o = OBJECT_BALL; break;
     case 'G':
-       o = OBJECT_GOAL_UNKNOWN;      // (G) in case of goal very close, ignored
+      o = OBJECT_GOAL_UNKNOWN;      // (G) in case of goal very close, ignored
       break;                        // (g l) or (g r) goal left or goal right
     case 'g': o = (ptrStr[3] == 'l') ? OBJECT_GOAL_L : OBJECT_GOAL_R; break;
     case 'l':                       // (l l), (l r), (l b) or (l t)
@@ -1355,72 +1355,72 @@ ObjectT SoccerTypes::getObjectFromStr( char** str, bool *isGoalie,
           o = OBJECT_ILLEGAL;
       }
       break; // end flags (finally)
-  case 'p': // (p team nr) or (p team) or (p) player teammate or opponent
-  case 'P': // or (P)
-    ptrStr += 2;
+    case 'p': // (p team nr) or (p team) or (p) player teammate or opponent
+    case 'P': // or (P)
+      ptrStr += 2;
 
-    if( Parse::gotoFirstSpaceOrClosingBracket(&ptrStr) == ')' )
-      o = OBJECT_PLAYER_UNKNOWN; // if (p) or (P) player is unknown.
-    // check also with quotes since later versions use string around "teamname"
-    else if( strncmp( ptrStr+1, strMyTeamName, strlen( strMyTeamName )) == 0 ||
-             strncmp( ptrStr+2, strMyTeamName, strlen( strMyTeamName )) == 0 )
-    {
-      ptrStr++;
-      if( Parse::gotoFirstSpaceOrClosingBracket(&ptrStr) == ' ' )
-      {                                               // also team number
-        switch( Parse::parseFirstInt( &ptrStr ) )     // get team number
-        {
-          case 1:  o = OBJECT_TEAMMATE_1;  break;     // and find team member
-          case 2:  o = OBJECT_TEAMMATE_2;  break;
-          case 3:  o = OBJECT_TEAMMATE_3;  break;
-          case 4:  o = OBJECT_TEAMMATE_4;  break;
-          case 5:  o = OBJECT_TEAMMATE_5;  break;
-          case 6:  o = OBJECT_TEAMMATE_6;  break;
-          case 7:  o = OBJECT_TEAMMATE_7;  break;
-          case 8:  o = OBJECT_TEAMMATE_8;  break;
-          case 9:  o = OBJECT_TEAMMATE_9;  break;
-          case 10: o = OBJECT_TEAMMATE_10; break;
-          case 11: o = OBJECT_TEAMMATE_11; break;
-          default: o = OBJECT_ILLEGAL;
+      if( Parse::gotoFirstSpaceOrClosingBracket(&ptrStr) == ')' )
+        o = OBJECT_PLAYER_UNKNOWN; // if (p) or (P) player is unknown.
+        // check also with quotes since later versions use string around "teamname"
+      else if( strncmp( ptrStr+1, strMyTeamName, strlen( strMyTeamName )) == 0 ||
+               strncmp( ptrStr+2, strMyTeamName, strlen( strMyTeamName )) == 0 )
+      {
+        ptrStr++;
+        if( Parse::gotoFirstSpaceOrClosingBracket(&ptrStr) == ' ' )
+        {                                               // also team number
+          switch( Parse::parseFirstInt( &ptrStr ) )     // get team number
+          {
+            case 1:  o = OBJECT_TEAMMATE_1;  break;     // and find team member
+            case 2:  o = OBJECT_TEAMMATE_2;  break;
+            case 3:  o = OBJECT_TEAMMATE_3;  break;
+            case 4:  o = OBJECT_TEAMMATE_4;  break;
+            case 5:  o = OBJECT_TEAMMATE_5;  break;
+            case 6:  o = OBJECT_TEAMMATE_6;  break;
+            case 7:  o = OBJECT_TEAMMATE_7;  break;
+            case 8:  o = OBJECT_TEAMMATE_8;  break;
+            case 9:  o = OBJECT_TEAMMATE_9;  break;
+            case 10: o = OBJECT_TEAMMATE_10; break;
+            case 11: o = OBJECT_TEAMMATE_11; break;
+            default: o = OBJECT_ILLEGAL;
+          }
+          if( ptrStr[0] != ')' && ptrStr[1] == 'g' ) // goalie
+            *isGoalie = true;
         }
-        if( ptrStr[0] != ')' && ptrStr[1] == 'g' ) // goalie
-          *isGoalie = true;
+        else
+          o = OBJECT_TEAMMATE_UNKNOWN;                  // (p team) but no nr
       }
-      else
-        o = OBJECT_TEAMMATE_UNKNOWN;                  // (p team) but no nr
-    }
-    else                                              // not a teammate
-    {
-      ptrStr++;
-      if( Parse::gotoFirstSpaceOrClosingBracket( &ptrStr ) == ' ' )
-      {                                               // also team number
-        switch( Parse::parseFirstInt( &ptrStr ) )     // get team numer
-        {
-          case 1:  o = OBJECT_OPPONENT_1;  break;     // and return opponent
-          case 2:  o = OBJECT_OPPONENT_2;  break;
-          case 3:  o = OBJECT_OPPONENT_3;  break;
-          case 4:  o = OBJECT_OPPONENT_4;  break;
-          case 5:  o = OBJECT_OPPONENT_5;  break;
-          case 6:  o = OBJECT_OPPONENT_6;  break;
-          case 7:  o = OBJECT_OPPONENT_7;  break;
-          case 8:  o = OBJECT_OPPONENT_8;  break;
-          case 9:  o = OBJECT_OPPONENT_9;  break;
-          case 10: o = OBJECT_OPPONENT_10; break;
-          case 11: o = OBJECT_OPPONENT_11; break;
-          default: o = OBJECT_ILLEGAL;
+      else                                              // not a teammate
+      {
+        ptrStr++;
+        if( Parse::gotoFirstSpaceOrClosingBracket( &ptrStr ) == ' ' )
+        {                                               // also team number
+          switch( Parse::parseFirstInt( &ptrStr ) )     // get team numer
+          {
+            case 1:  o = OBJECT_OPPONENT_1;  break;     // and return opponent
+            case 2:  o = OBJECT_OPPONENT_2;  break;
+            case 3:  o = OBJECT_OPPONENT_3;  break;
+            case 4:  o = OBJECT_OPPONENT_4;  break;
+            case 5:  o = OBJECT_OPPONENT_5;  break;
+            case 6:  o = OBJECT_OPPONENT_6;  break;
+            case 7:  o = OBJECT_OPPONENT_7;  break;
+            case 8:  o = OBJECT_OPPONENT_8;  break;
+            case 9:  o = OBJECT_OPPONENT_9;  break;
+            case 10: o = OBJECT_OPPONENT_10; break;
+            case 11: o = OBJECT_OPPONENT_11; break;
+            default: o = OBJECT_ILLEGAL;
+          }
+          if( ptrStr[0] != ')' && ptrStr[1] == 'g' ) // goalie
+            *isGoalie = true;
         }
-        if( ptrStr[0] != ')' && ptrStr[1] == 'g' ) // goalie
-          *isGoalie = true;
-      }
-      else
-        o = OBJECT_OPPONENT_UNKNOWN;                  // number not known
+        else
+          o = OBJECT_OPPONENT_UNKNOWN;                  // number not known
 
-    }
-    break;
-  default:
-    cerr << "(SoccerTypes::getObjectFromStr) Unknown msg: " <<  ptrStr << "\n";
-    o = OBJECT_ILLEGAL;
-    break;
+      }
+      break;
+    default:
+      cerr << "(SoccerTypes::getObjectFromStr) Unknown msg: " <<  ptrStr << "\n";
+      o = OBJECT_ILLEGAL;
+      break;
   }
   // go to the end of the object
   Parse::gotoFirstOccurenceOf( ')', &ptrStr );
@@ -1484,9 +1484,9 @@ bool SoccerTypes::isInSet( ObjectT o, ObjectSetT o_g, ObjectT objGoalie )
     case OBJECT_SET_PLAYERS:   return isPlayer  ( o ) && isKnownPlayer( o );
     case OBJECT_SET_FLAGS:     return isFlag    ( o );
     case OBJECT_SET_LINES:     return isLine    ( o );
-    case OBJECT_SET_TEAMMATES_NO_GOALIE: 
-                               return isTeammate( o ) && isKnownPlayer( o ) &&
-                                      o != objGoalie;    
+    case OBJECT_SET_TEAMMATES_NO_GOALIE:
+      return isTeammate( o ) && isKnownPlayer( o ) &&
+             o != objGoalie;
     case OBJECT_SET_ILLEGAL:
     default:                   break;
   }
@@ -1501,7 +1501,7 @@ bool SoccerTypes::isPlayerTypeInSet( PlayerT p, PlayerSetT p_s )
 {
   switch( p_s )
   {
-    case PS_DEFENDERS: 
+    case PS_DEFENDERS:
       return p == PT_DEFENDER_CENTRAL || p == PT_DEFENDER_WING;
     case PS_MIDFIELDERS:
       return p == PT_MIDFIELDER_CENTER || p ==  PT_MIDFIELDER_WING;
@@ -1509,7 +1509,7 @@ bool SoccerTypes::isPlayerTypeInSet( PlayerT p, PlayerSetT p_s )
       return p == PT_ATTACKER_WING || p == PT_ATTACKER;
     case PS_ALL:
       return true;
-    default: 
+    default:
       break;
   }
   return false;
@@ -1643,7 +1643,7 @@ VecPosition SoccerTypes::getGlobalPositionFlag( ObjectT o, SideT s,
 {
   VecPosition pos;
   if( !(isFlag(o) || isGoal(o)) )
-      return VecPosition(UnknownDoubleValue, UnknownDoubleValue);
+    return VecPosition(UnknownDoubleValue, UnknownDoubleValue);
   switch( o ) // for every object the global position is entered
   {
     case OBJECT_GOAL_L:
@@ -1744,29 +1744,29 @@ VecPosition SoccerTypes::getGlobalPositionFlag( ObjectT o, SideT s,
       pos.setVecPosition( -PITCH_LENGTH/2.0 - PITCH_MARGIN, -30.0 ); break;
     case OBJECT_FLAG_P_L_T:
       pos.setVecPosition( -PITCH_LENGTH/2.0 + PENALTY_AREA_LENGTH,
-                                         - PENALTY_AREA_WIDTH/2.0 ); break;
+                          - PENALTY_AREA_WIDTH/2.0 ); break;
     case OBJECT_FLAG_P_L_C:
       pos.setVecPosition( -PITCH_LENGTH/2.0 + PENALTY_AREA_LENGTH, 0.0 );break;
     case OBJECT_FLAG_P_L_B:
       pos.setVecPosition( -PITCH_LENGTH/2.0 + PENALTY_AREA_LENGTH,
-                                           PENALTY_AREA_WIDTH/2.0 ); break;
+                          PENALTY_AREA_WIDTH/2.0 ); break;
     case OBJECT_FLAG_P_R_T:
       pos.setVecPosition(  PITCH_LENGTH/2.0 - PENALTY_AREA_LENGTH,
-                                          -PENALTY_AREA_WIDTH/2.0 ); break;
+                           -PENALTY_AREA_WIDTH/2.0 ); break;
     case OBJECT_FLAG_P_R_C:
       pos.setVecPosition(  PITCH_LENGTH/2.0 - PENALTY_AREA_LENGTH, 0.0 );break;
     case OBJECT_FLAG_P_R_B:
       pos.setVecPosition(  PITCH_LENGTH/2.0 - PENALTY_AREA_LENGTH,
-                                           PENALTY_AREA_WIDTH/2.0 ); break;
+                           PENALTY_AREA_WIDTH/2.0 ); break;
     case OBJECT_FLAG_C:
       pos.setVecPosition(  0.0 , 0.0 );                              break;
     default:
       cerr << "(SoccerTypes::getGlobalPositionObject) wrong objecttype! " <<
-        (int)o << "\n" ;
+           (int)o << "\n" ;
   }
 
   if( s == SIDE_RIGHT ) // change side for team on the right side.
-      pos.setVecPosition( -pos.getX(), -pos.getY() );
+    pos.setVecPosition( -pos.getX(), -pos.getY() );
   return pos;
 }
 
@@ -1788,10 +1788,10 @@ AngDeg SoccerTypes::getGlobalAngleLine( ObjectT o , SideT s )
     case OBJECT_LINE_R: angle =   0.0; break;
     case OBJECT_LINE_T: angle = -90.0; break;
     case OBJECT_LINE_B: angle =  90.0; break;
-  default:
-    cerr << "(SoccerTypes::getGlobalAngleLine) wrong objecttype! " <<
-      (int)o << "\n";
-    return UnknownAngleValue;
+    default:
+      cerr << "(SoccerTypes::getGlobalAngleLine) wrong objecttype! " <<
+           (int)o << "\n";
+      return UnknownAngleValue;
   }
 
   if( s == SIDE_RIGHT )
@@ -1840,7 +1840,7 @@ char* SoccerTypes::getPlayModeStr( PlayModeT pm )
     case PM_QUIT:                     return "quit";
     case PM_ILLEGAL:
     default:                          return NULL;
-   }
+  }
 }
 
 /*! This method returns the play mode associated with a string.
@@ -1998,17 +1998,17 @@ RefereeMessageT SoccerTypes::getRefereeMessageFromStr( char* str )
       return REFC_HALF_TIME;
     case 'i':                  // indirect_free_kick_[lr]
       if( strlen( str ) > 19 )
-        return ( str[19] == 'l' ) 
-          ?  REFC_INDIRECT_FREE_KICK_LEFT 
-          :  REFC_INDIRECT_FREE_KICK_RIGHT;
+        return ( str[19] == 'l' )
+               ?  REFC_INDIRECT_FREE_KICK_LEFT
+               :  REFC_INDIRECT_FREE_KICK_RIGHT;
       break;
     case 'f':
       if( str[5] == 'k' )      // free_kick_[lr], free_kick_fault_[lr]
       {
         if( str[10] == 'f' )
           return ( str[16] == 'l' )
-                    ? REFC_FREE_KICK_FAULT_LEFT
-                    : REFC_FREE_KICK_FAULT_RIGHT;
+                 ? REFC_FREE_KICK_FAULT_LEFT
+                 : REFC_FREE_KICK_FAULT_RIGHT;
         else
           return (str[10] == 'l') ? REFC_FREE_KICK_LEFT : REFC_FREE_KICK_RIGHT;
       }
@@ -2026,8 +2026,8 @@ RefereeMessageT SoccerTypes::getRefereeMessageFromStr( char* str )
     case 'p':                // play_on or penalty_setup_l or penalty_ready_l
       if( str[1] == 'l' )    // penalty_taken_l, penalty_miss_l, penalty_foul_l
         return REFC_PLAY_ON; // penalty_onfield_l, penalty_score_l,
-      else if( str[8] == 's' && str[9] == 'e' ) 
-                             // penalty_winner_l,penalty_draw
+      else if( str[8] == 's' && str[9] == 'e' )
+        // penalty_winner_l,penalty_draw
         return ( str[14] == 'l' ) ? REFC_PENALTY_SETUP_LEFT
                                   : REFC_PENALTY_SETUP_RIGHT;
       else if( str[8] == 's' && str[9] == 'c' )
@@ -2052,7 +2052,7 @@ RefereeMessageT SoccerTypes::getRefereeMessageFromStr( char* str )
         return ( str[15] == 'l' ) ? REFC_PENALTY_WINNER_LEFT
                                   : REFC_PENALTY_WINNER_RIGHT;
       else if( str[8] == 'd' )
-        return REFC_PENALTY_DRAW;               
+        return REFC_PENALTY_DRAW;
     case 't':
       if( str[5] == 'o' )      // time_over
         return REFC_TIME_OVER;
@@ -2063,7 +2063,7 @@ RefereeMessageT SoccerTypes::getRefereeMessageFromStr( char* str )
       else if( str[8] == 'w' ) // time_up_without_a_team
         return REFC_TIME_UP_WITHOUT_A_TEAM;
       else if( str[5] == 'i' ) // training
-	return REFC_TRAINING_KEEPAWAY;
+        return REFC_TRAINING_KEEPAWAY;
     default:
       printf("(SoccerTypes::getRefereeMessageFromStr) ?? ref msg %s\n",str);
       return REFC_ILLEGAL;
@@ -2116,9 +2116,9 @@ AngDeg SoccerTypes::getHalfViewAngleValue( ViewAngleT va )
 {
   switch( va )
   {
-  case VA_NARROW:  return 22.5;
-  case VA_NORMAL:  return 45.0;
-  case VA_WIDE:    return 90.0;
+    case VA_NARROW:  return 22.5;
+    case VA_NORMAL:  return 45.0;
+    case VA_WIDE:    return 90.0;
     case VA_ILLEGAL:
     default:         return 0.0;
   }
@@ -2145,9 +2145,9 @@ char* SoccerTypes::getViewQualityStr( ViewQualityT vq )
    \return ViewQualityT of string, VQ_ILLEGAL if it is not known */
 ViewQualityT SoccerTypes::getViewQualityFromStr( char* str )
 {
-    if( str[0] == 'h' )      return VQ_HIGH;
-    else if( str[0] == 'l' ) return VQ_LOW;
-    else                     return VQ_ILLEGAL;
+  if( str[0] == 'h' )      return VQ_HIGH;
+  else if( str[0] == 'l' ) return VQ_LOW;
+  else                     return VQ_ILLEGAL;
 }
 
 /*! This method returns the string representation of a CommandT as is
@@ -2246,9 +2246,9 @@ BallStatusT SoccerTypes::getBallStatusFromStr( char* str )
     case 'o': return BS_OUT_OF_FIELD;
     case 'g': return (str[5]=='l') ? BS_GOAL_LEFT : BS_GOAL_RIGHT;
     default:
-              cout << "(SoccerTypes::getBallStatusFromStr) illegal status " <<
-                      str << "\n";
-              return BS_ILLEGAL;
+      cout << "(SoccerTypes::getBallStatusFromStr) illegal status " <<
+           str << "\n";
+      return BS_ILLEGAL;
   }
 }
 
@@ -2266,10 +2266,10 @@ AngDeg SoccerTypes::getAngleFromDirection( DirectionT dir )
     case DIR_SOUTHEAST:  return  135.0;
     case DIR_EAST:       return   90.0;
     case DIR_NORTHEAST:  return   45.0;
-    case DIR_ILLEGAL:   
+    case DIR_ILLEGAL:
     default:
-      break;    
-  
+      break;
+
   }
   cerr << "(SoccerTypes::getAngleFromDirection) illegal dir " << dir << endl;
   return 0.0;

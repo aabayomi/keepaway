@@ -32,7 +32,7 @@ def launch_player(player_type, index, options):
     # Build up the options for the player process.
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
-        # l = 101, # logger level
+        l = 101, # logger level
         o = 'logs/{}_{}.log'.format(player_type, index),
         e = int(getattr(options, player_type + '_learn')),
         j = options.taker_count,

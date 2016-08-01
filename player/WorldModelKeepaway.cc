@@ -96,6 +96,7 @@ void WorldModel::resetEpisode()
 
 void WorldModel::setNewEpisode( bool bNewEp )
 {
+  Log.log( 101, "WorldModel::setNewEpisode bNewEp: %d", bNewEp);
   m_newEpisode = bNewEp;
 }
 
@@ -128,7 +129,7 @@ int WorldModel::getLastAction()
 
 int WorldModel::getTimeLastAction()
 {
-  return m_timeLastAction;
+  return m_timeLastAction; // shared in hive mind mode
 }
 
 int WorldModel::keeperStateVars( double state[] )

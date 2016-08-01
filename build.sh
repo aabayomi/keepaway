@@ -1,9 +1,9 @@
 #!/bin/bash - 
 #===============================================================================
 #
-#          FILE: trainall.sh
+#          FILE: build.sh
 # 
-#         USAGE: ./trainall.sh 
+#         USAGE: ./build.sh 
 # 
 #   DESCRIPTION: 
 # 
@@ -13,15 +13,12 @@
 #         NOTES: ---
 #        AUTHOR: YOUR NAME (), 
 #  ORGANIZATION: 
-#       CREATED: 08/01/2016 00:27
+#       CREATED: 08/01/2016 14:48
 #      REVISION:  ---
 #===============================================================================
 
 set -o nounset                              # Treat unset variables as an error
 
-./train.sh &
-sleep 2
-./train-hive.sh &
-
-wait
-
+cd player
+make clean
+make
