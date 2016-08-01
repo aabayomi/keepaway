@@ -19,8 +19,8 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-cat $1 | ./winsum 100 0.01 > 1.out
+cat $1 | ./winsum 1000 0.01 > 1.out
 gnuplot graph.gnuplot
-gv graph.eps
+evince graph.eps
 
 

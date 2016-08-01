@@ -40,15 +40,15 @@ class SMDPAgent
   int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
   int m_numActions;  /* number of possible actions <= MAX_ACTIONS */
 
- protected:
+protected:
 
   int getNumFeatures() { return m_numFeatures; }
   int getNumActions()  { return m_numActions;  }
 
- public:
-  
-  SMDPAgent( int numFeatures, int numActions ) 
-    { m_numFeatures = numFeatures; m_numActions = numActions; }
+public:
+
+  SMDPAgent( int numFeatures, int numActions )
+  { m_numFeatures = numFeatures; m_numActions = numActions; }
   virtual ~SMDPAgent() {}
 
   // abstract methods to be supplied by implementing class

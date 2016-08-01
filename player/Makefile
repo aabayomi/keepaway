@@ -77,7 +77,7 @@ OBJS_PLAYER	= $(SRCS_PLAYER:.cc=.o)
 
 # ==== RULES ==================================================
 
-all::	$(TARGET) demo_extension.so
+all::	depend $(TARGET) demo_extension.so
 
 .cc.o:
 	$(COMPILE) -c -o $@ $(@F:%.o=%.cc)
@@ -2468,8 +2468,16 @@ LinearSarsaAgent.o: LinearSarsaAgent.cc /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
  /usr/include/x86_64-linux-gnu/bits/environments.h \
  /usr/include/x86_64-linux-gnu/bits/confname.h /usr/include/getopt.h \
- LoggerDraw.h SoccerTypes.h /usr/include/c++/5/iostream Geometry.h \
- /usr/include/math.h /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+ Logger.h /usr/include/c++/5/iostream /usr/include/c++/5/fstream \
+ /usr/include/c++/5/bits/codecvt.h /usr/include/c++/5/cstdio \
+ /usr/include/x86_64-linux-gnu/c++/5/bits/basic_file.h \
+ /usr/include/x86_64-linux-gnu/c++/5/bits/c++io.h \
+ /usr/include/c++/5/bits/fstream.tcc /usr/include/c++/5/iomanip \
+ /usr/include/c++/5/set /usr/include/c++/5/bits/stl_tree.h \
+ /usr/include/c++/5/bits/stl_set.h /usr/include/c++/5/bits/stl_multiset.h \
+ /usr/include/x86_64-linux-gnu/sys/time.h LoggerDraw.h SoccerTypes.h \
+ Geometry.h /usr/include/math.h \
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
  /usr/include/x86_64-linux-gnu/bits/huge_val.h \
  /usr/include/x86_64-linux-gnu/bits/huge_valf.h \
@@ -2478,11 +2486,7 @@ LinearSarsaAgent.o: LinearSarsaAgent.cc /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/nan.h \
  /usr/include/x86_64-linux-gnu/bits/mathdef.h \
  /usr/include/x86_64-linux-gnu/bits/mathcalls.h ServerSettings.h \
- GenericValues.h /usr/include/c++/5/fstream \
- /usr/include/c++/5/bits/codecvt.h /usr/include/c++/5/cstdio \
- /usr/include/x86_64-linux-gnu/c++/5/bits/basic_file.h \
- /usr/include/x86_64-linux-gnu/c++/5/bits/c++io.h \
- /usr/include/c++/5/bits/fstream.tcc
+ GenericValues.h
 main.o: main.cc /usr/include/stdc-predef.h SenseHandler.h Connection.h \
  /usr/include/stdio.h /usr/include/features.h \
  /usr/include/x86_64-linux-gnu/sys/cdefs.h \

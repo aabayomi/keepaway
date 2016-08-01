@@ -36,14 +36,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern LoggerDraw LogDraw;
 
-KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm, 
+KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
                                 ServerSettings *ss, PlayerSettings *ps,
                                 char* strTeamName, int iNumKeepers, int iNumTakers,
                                 double dVersion, int iReconnect )
 
 {
   char str[MAX_MSG];
-  
+
   SA            = sa;
   ACT           = act;
   WM            = wm;
@@ -52,7 +52,7 @@ KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
   bContLoop     = true;
   WM->setTeamName( strTeamName );
   WM->setNumKeepers( iNumKeepers );
-  WM->setNumTakers( iNumTakers ); 
+  WM->setNumTakers( iNumTakers );
   WM->setNewEpisode( false );
   WM->setLastAction( UnknownIntValue );
   m_timeLastSay = -5;
@@ -64,7 +64,7 @@ KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
   else
     sprintf( str, "(init %s (version %f))", strTeamName, dVersion );
   ACT->sendMessage( str );
-  
+
 }
 
 /*! This is the main loop of the agent. This method calls the update methods
@@ -88,6 +88,8 @@ void KeepawayPlayer::mainLoop( )
 
     if( WM->updateAll( ) == true )
     {
+      Log.log( 101, "KeepawayPlayer::mainLoop: keeper/taker main loop" );
+
       timer.restartTime();
       SoccerCommand soc;
 
@@ -97,14 +99,14 @@ void KeepawayPlayer::mainLoop( )
         soc = taker();
 
       if( shallISaySomething() == true )           // shall I communicate
-        {
-          m_timeLastSay = WM->getCurrentTime();
-          char strMsg[MAX_SAY_MSG];
-          makeSayMessage( soc, strMsg );
-          if( strlen( strMsg ) != 0 )
-            Log.log( 600, "send communication string: %s", strMsg );
-          WM->setCommunicationString( strMsg );
-        }
+      {
+        m_timeLastSay = WM->getCurrentTime();
+        char strMsg[MAX_SAY_MSG];
+        makeSayMessage( soc, strMsg );
+        if( strlen( strMsg ) != 0 )
+          Log.log( 600, "send communication string: %s", strMsg );
+        WM->setCommunicationString( strMsg );
+      }
       Log.logWithTime( 3, "  determined action; waiting for new info" );
       // directly after see message, will not get better info, so send commands
       if( WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
@@ -119,7 +121,7 @@ void KeepawayPlayer::mainLoop( )
           ACT->sendMessageDirect( "(done)" );
         }
       }
-    }  
+    }
     else
       Log.logWithTime( 3, "  HOLE no action determined; waiting for new info");
 
@@ -127,8 +129,8 @@ void KeepawayPlayer::mainLoop( )
     double dConfThr = PS->getPlayerConfThr();
     char buffer[128];
     for( ObjectT o = WM->iterateObjectStart( iIndex, OBJECT_SET_TEAMMATES, dConfThr);
-           o != OBJECT_ILLEGAL;
-           o = WM->iterateObjectNext ( iIndex, OBJECT_SET_TEAMMATES, dConfThr ) ) {
+         o != OBJECT_ILLEGAL;
+         o = WM->iterateObjectNext ( iIndex, OBJECT_SET_TEAMMATES, dConfThr ) ) {
       LogDraw.logCircle( "Players", WM->getGlobalPosition( o ), 1.6, 80,
                          false,
                          COLOR_ORANGE, WM->getConfidence( o ) );
@@ -147,8 +149,8 @@ void KeepawayPlayer::mainLoop( )
                      buffer,
                      81, COLOR_PURPLE );
     for( ObjectT o = WM->iterateObjectStart( iIndex, OBJECT_SET_OPPONENTS, dConfThr);
-           o != OBJECT_ILLEGAL;
-           o = WM->iterateObjectNext ( iIndex, OBJECT_SET_OPPONENTS, dConfThr ) ) {
+         o != OBJECT_ILLEGAL;
+         o = WM->iterateObjectNext ( iIndex, OBJECT_SET_OPPONENTS, dConfThr ) ) {
       LogDraw.logCircle( "Players", WM->getGlobalPosition( o ), 1.6, 80,
                          false,
                          COLOR_PINK, WM->getConfidence( o ) );
@@ -159,22 +161,22 @@ void KeepawayPlayer::mainLoop( )
     }
 
     Log.logWithTime( 604, "time for action: %f", timer.getElapsedTime()*1000 );
-           
+
     // wait for new information from the server cannot say
     // bContLoop=WM->wait... since bContLoop can be changed elsewhere
     if(  WM->waitForNewInformation() == false )
-        bContLoop =  false;
+      bContLoop =  false;
   }
 
   // shutdown, print hole and number of players seen statistics
   SA->shutDown();
   printf("Shutting down player %d\n", WM->getPlayerNumber() );
   printf("   Number of holes: %d (%f)\n", WM->iNrHoles,
-                         ((double)WM->iNrHoles/WM->getCurrentCycle())*100 );
+         ((double)WM->iNrHoles/WM->getCurrentCycle())*100 );
   printf("   Teammates seen: %d (%f)\n", WM->iNrTeammatesSeen,
-                         ((double)WM->iNrTeammatesSeen/WM->getCurrentCycle()));
+         ((double)WM->iNrTeammatesSeen/WM->getCurrentCycle()));
   printf("   Opponents seen: %d (%f)\n", WM->iNrOpponentsSeen,
-                         ((double)WM->iNrOpponentsSeen/WM->getCurrentCycle()));
+         ((double)WM->iNrOpponentsSeen/WM->getCurrentCycle()));
 
 }
 
@@ -210,17 +212,17 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
         WM->getTimeLastSeen( OBJECT_BALL ) == WM->getCurrentTime() )
       ||
       (
-       WM->getRelativeDistance( OBJECT_BALL ) < SS->getVisibleDistance() &&
-       WM->getTimeLastSeen( OBJECT_BALL ) == WM->getCurrentTime()  
-       )
+          WM->getRelativeDistance( OBJECT_BALL ) < SS->getVisibleDistance() &&
+          WM->getTimeLastSeen( OBJECT_BALL ) == WM->getCurrentTime()
+      )
       ||
       (
-       WM->getRelativeDistance( OBJECT_BALL ) < SS->getMaximalKickDist() &&
-       posBallPred.getDistanceTo( posAgentPred ) > SS->getMaximalKickDist() 
-       )
-      ) 
+          WM->getRelativeDistance( OBJECT_BALL ) < SS->getMaximalKickDist() &&
+          posBallPred.getDistanceTo( posAgentPred ) > SS->getMaximalKickDist()
+      )
+      )
   {
-    // If we are kicking the ball 
+    // If we are kicking the ball
     if( WM->getRelativeDistance( OBJECT_BALL ) < SS->getMaximalKickDist() )
     {
       // if kick and a pass
@@ -231,7 +233,7 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
         if( posBall.getDistanceTo( posAgent ) > SS->getMaximalKickDist() + 0.2 )
           iDiff = 1;
       }
-      
+
       if( iDiff == 0 )
       {
         posBall = WM->getGlobalPosition( OBJECT_BALL );
@@ -241,7 +243,7 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
 
     LogDraw.logCircle( "ball sending", posBall,
                        1.1, 90, false, COLOR_BLUE );
-    
+
     myencoder.add( new BallInfo( posBall.getX(), posBall.getY(),
                                  velBall.getX(), velBall.getY(), 1 - iDiff ) );
   }
@@ -256,7 +258,7 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
          WM->getTimeLastSeen( T[ numSeen ] ) == WM->getCurrentTime() )
       numSeen++;  // store this opponent if we just saw him
   }
-  WM->sortClosestTo( T, numSeen, WM->getAgentObjectType() ); 
+  WM->sortClosestTo( T, numSeen, WM->getAgentObjectType() );
 
   if ( numSeen > 0 ) { // add closest
     VecPosition posOpp = WM->getGlobalPosition( T[ 0 ] );
@@ -277,6 +279,8 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
 
 SoccerCommand KeepawayPlayer::keeper()
 {
+  Log.log( 101, "KeepawayPlayer::keeper: decision" );
+
   SoccerCommand soc;
 
   if ( WM->isNewEpisode() ) {
@@ -309,15 +313,14 @@ SoccerCommand KeepawayPlayer::keeper()
   // If the ball is kickable,
   // call main action selection routine.
   if ( WM->isBallKickable() ) {
-    Log.log( 100, "Ball is kickable for me." );
     return keeperWithBall();
   }
 
   // Get fastest to ball
   int iTmp;
-  ObjectT fastest = WM->getFastestInSetTo( OBJECT_SET_TEAMMATES, 
+  ObjectT fastest = WM->getFastestInSetTo( OBJECT_SET_TEAMMATES,
                                            OBJECT_BALL, &iTmp );
-  
+
   // If fastest, intercept the ball.
   if ( fastest == WM->getAgentObjectType() ) {
     Log.log( 100, "I am fastest to ball; can get there in %d cycles", iTmp );
@@ -328,7 +331,7 @@ SoccerCommand KeepawayPlayer::keeper()
     ObjectT lookObject = chooseLookObject( 0.98 );
 
     char buffer[128];
-    LogDraw.logText( "lookObject", VecPosition( 25, -25 ), 
+    LogDraw.logText( "lookObject", VecPosition( 25, -25 ),
                      SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
 
     ACT->putCommandInQueue( soc = intercept( false ) );
@@ -344,10 +347,12 @@ SoccerCommand KeepawayPlayer::keeper()
                    "support",
                    1, COLOR_WHITE );
   return keeperSupport( fastest );
-}    
+}
 
 SoccerCommand KeepawayPlayer::keeperWithBall()
 {
+  Log.log( 101, "KeepawayPlayer::keeperWithBall: Ball kickable" );
+
   double state[ MAX_STATE_VARS ];
   int action;
 
@@ -356,18 +361,19 @@ SoccerCommand KeepawayPlayer::keeperWithBall()
     if ( WM->getTimeLastAction() == UnknownTime ) {
       action = SA->startEpisode( state );
     }
-    else if ( WM->getTimeLastAction() == WM->getCurrentCycle() - 1 && 
+    else if ( WM->getTimeLastAction() == WM->getCurrentCycle() - 1 &&
               WM->getLastAction() > 0 ) {   // if we were in the middle of a pass last cycle
+      Log.log( 101, "KeepawayPlayer::keeperWithBall Passing...: %d", WM->getLastAction());
       action = WM->getLastAction();         // then we follow through with it
     }
-    // Call step() on all but first SMDP step
+      // Call step() on all but first SMDP step
     else {
       action = SA->step( WM->keeperReward(), state );
     }
     WM->setLastAction( action );
   }
   else { // if we don't have enough info to calculate state vars
-    action = 0;  // hold ball 
+    action = 0;  // hold ball
     LogDraw.logText( "state", VecPosition( 35, 25 ),
                      "clueless",
                      1, COLOR_RED );
@@ -379,7 +385,7 @@ SoccerCommand KeepawayPlayer::keeperWithBall()
 SoccerCommand KeepawayPlayer::interpretKeeperAction( int action )
 {
   SoccerCommand soc;
-  
+
   if ( action == 0 ) { // interpret HOLD action
     ACT->putCommandInQueue( soc = holdBall() );
     LogDraw.logText( "state", VecPosition( 25, 25 ),
@@ -402,7 +408,7 @@ SoccerCommand KeepawayPlayer::interpretKeeperAction( int action )
                      SoccerTypes::getObjectStr( buffer, K[ action ] ),
                      1, COLOR_WHITE );
   }
-  
+
   return soc;
 }
 
@@ -411,15 +417,15 @@ SoccerCommand KeepawayPlayer::keeperSupport( ObjectT fastest )
   SoccerCommand soc;
 
   int iCycles = WM->predictNrCyclesToObject( fastest, OBJECT_BALL );
-  VecPosition posPassFrom = 
-    WM->predictPosAfterNrCycles( OBJECT_BALL, iCycles );
+  VecPosition posPassFrom =
+      WM->predictPosAfterNrCycles( OBJECT_BALL, iCycles );
   LogDraw.logCircle( "BallPredict", posPassFrom, 1, 70, true, COLOR_BROWN );
   soc = getOpenForPassFromInRectangle( WM->getKeepawayRect(), posPassFrom );
 
   ObjectT lookObject = chooseLookObject( 0.97 );
 
   char buffer[128];
-  LogDraw.logText( "lookObject", VecPosition( 25, -25 ), 
+  LogDraw.logText( "lookObject", VecPosition( 25, -25 ),
                    SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
 
   ACT->putCommandInQueue( soc );
@@ -471,7 +477,7 @@ SoccerCommand KeepawayPlayer::taker()
        WM->getAgentObjectType() ) {
     ACT->putCommandInQueue( soc = holdBall( 0.3 ) );
     return soc;
-  }  
+  }
 
   // If not first or second closest, then mark open opponent
   int numT = WM->getNumTakers();
@@ -481,7 +487,7 @@ SoccerCommand KeepawayPlayer::taker()
   WM->sortClosestTo( T, numT, OBJECT_BALL );
   if ( numT > 2 && T[ 0 ] != WM->getAgentObjectType() &&
        T[ 1 ] != WM->getAgentObjectType() ) {
-    ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS, 
+    ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS,
                                               OBJECT_BALL );
     ACT->putCommandInQueue( soc = markMostOpenOpponent( withBall ) );
     ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
@@ -490,7 +496,7 @@ SoccerCommand KeepawayPlayer::taker()
 
   // If teammate has it, don't mess with it
   double dDist;
-  ObjectT closest = WM->getClosestInSetTo( OBJECT_SET_PLAYERS, 
+  ObjectT closest = WM->getClosestInSetTo( OBJECT_SET_PLAYERS,
                                            OBJECT_BALL, &dDist );
   if ( SoccerTypes::isTeammate( closest ) &&
        closest != WM->getAgentObjectType() &&
@@ -499,7 +505,7 @@ SoccerCommand KeepawayPlayer::taker()
     ACT->putCommandInQueue( alignNeckWithBody() );
     return soc;
   }
-  
+
 
   // Otherwise try to intercept the ball
   ACT->putCommandInQueue( soc = intercept( false ) );

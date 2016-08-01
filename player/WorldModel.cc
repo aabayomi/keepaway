@@ -73,7 +73,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \param ss reference to class in which all server parameters are stored
     \param ps reference to class in which all client parameters are stored
     \param fs reference to class in which all formation information is stored*/
-WorldModel::WorldModel( ServerSettings *ss, PlayerSettings *ps, 
+WorldModel::WorldModel( ServerSettings *ss, PlayerSettings *ps,
                         Formations *fs):agentObject(  )
 {
   dTotalVarVel   = 0.0;
@@ -306,6 +306,7 @@ bool WorldModel::setTimeLastSeeMessage( Time time )
 #else
     pthread_mutex_lock  ( &mutex_newInfo );
     bNewInfo            = true;
+    Log.log( 101, "WorldModel::setTimeLastSeeMessage" );
     pthread_cond_signal ( &cond_newInfo );
     pthread_mutex_unlock( &mutex_newInfo );
 #endif
@@ -331,7 +332,7 @@ Time WorldModel::getTimeLastRecvSenseMessage( ) const
   return timeLastRecvSenseMessage ;
 }
 
-  
+
 /*! This method sets the time of the last sense message. It also send a
     condition signal to indicate that variable bNewInfo has changed.
     When main thread is stopped in waitForNewInformation, it is
@@ -340,6 +341,8 @@ Time WorldModel::getTimeLastRecvSenseMessage( ) const
     \return true when update was succesful */
 bool WorldModel::setTimeLastSenseMessage( Time time )
 {
+  Log.log( 101, "WorldModel::setTimeLastSenseMessage" );
+
   timeLastRecvSenseMessage = time;
   if( SS->getSynchMode() == false )
   {
@@ -366,7 +369,7 @@ Time WorldModel::getTimeLastHearMessage( ) const
   return timeLastHearMessage ;
 }
 
-/*! This method sets the time of the last hear message. 
+/*! This method sets the time of the last hear message.
     \param time hear message has arrived
     \return true when update was succesful */
 bool WorldModel::setTimeLastHearMessage( Time time )
@@ -584,7 +587,7 @@ bool WorldModel::setObjectFocus( ObjectT obj )
 bool WorldModel::setCommunicationString( char *str )
 {
   strncpy( m_strCommunicate, str, MAX_SAY_MSG );
-  LogDraw.logText( "comm string", VecPosition( -40, 20 ), 
+  LogDraw.logText( "comm string", VecPosition( -40, 20 ),
 		   str, 40, COLOR_SADDLE_BROWN );
   return true;
 }
@@ -618,10 +621,10 @@ ObjectT WorldModel::iterateObjectNext(int& iIndex,ObjectSetT g, double dConf,
 {
   ObjectT o, objGoalie = OBJECT_TEAMMATE_1;
   bool bContinue = true;
-  
+
   if( g == OBJECT_SET_TEAMMATES_NO_GOALIE )
     objGoalie = getOwnGoalieType();
-    
+
   if( iIndex < 0 )
     iIndex = (bForward==false) ? OBJECT_MAX_OBJECTS : -1 ;
 
@@ -638,7 +641,7 @@ ObjectT WorldModel::iterateObjectNext(int& iIndex,ObjectSetT g, double dConf,
     i = iIndex + 1;
   else
     i = iIndex - 1;
-  bContinue = ( bForward == false ) ? ( i >= 0 ) : ( i < OBJECT_MAX_OBJECTS ); 
+  bContinue = ( bForward == false ) ? ( i >= 0 ) : ( i < OBJECT_MAX_OBJECTS );
 
   while( bContinue )
   {
@@ -662,7 +665,7 @@ ObjectT WorldModel::iterateObjectNext(int& iIndex,ObjectSetT g, double dConf,
       i++;
     else
       i--;
-    bContinue = ( bForward == false ) ? ( i >= 0 ) :( i < OBJECT_MAX_OBJECTS); 
+    bContinue = ( bForward == false ) ? ( i >= 0 ) :( i < OBJECT_MAX_OBJECTS);
   }
 
   return OBJECT_ILLEGAL;
@@ -767,14 +770,14 @@ VecPosition WorldModel::getAgentGlobalPosition( ) const
 
 /*! This method sets the view angle of the agent.
     \return bool indicating whether update was successful.  */
-bool WorldModel::setAgentViewAngle( ViewAngleT va ) 
+bool WorldModel::setAgentViewAngle( ViewAngleT va )
 {
   agentObject.setViewAngle( va );
   return true;
 }
 
 
-/*! This method returns the view angle of the agent.  
+/*! This method returns the view angle of the agent.
 
     \return ViewAngleT view angle of the agent (VA_NARROW, VA_NORMAL,
     VA_WIDE)*/
@@ -785,7 +788,7 @@ ViewAngleT WorldModel::getAgentViewAngle( ) const
 
 /*! This method sets the view quality of the agent.
     \return bool indicating whether update was successful.  */
-bool WorldModel::setAgentViewQuality( ViewQualityT vq ) 
+bool WorldModel::setAgentViewQuality( ViewQualityT vq )
 {
   agentObject.setViewQuality( vq );
   return true;
@@ -837,7 +840,7 @@ bool WorldModel::getAgentArmMovable( )
   return agentObject.getArmMovable();
 }
 
-/*! This method returns the current position the arm of the agent is 
+/*! This method returns the current position the arm of the agent is
     pointing towards. */
 VecPosition WorldModel::getAgentArmPosition( )
 {
@@ -1180,7 +1183,7 @@ Time WorldModel::getTimeChangeInformation( ObjectT o )
 }
 
 /*! This method returns the last global position derived from a see message.
-    The time corresponds to the method 'getTimeGlobalPositionLastSee'. 
+    The time corresponds to the method 'getTimeGlobalPositionLastSee'.
     \param object type of object that should be checked
     \return global position related to the last see message. */
 VecPosition WorldModel::getGlobalPositionLastSee( ObjectT o )
@@ -1190,8 +1193,8 @@ VecPosition WorldModel::getGlobalPositionLastSee( ObjectT o )
     return object->getGlobalPositionLastSee(  );
   return VecPosition( UnknownDoubleValue, UnknownDoubleValue);
 }
-             
-/*! This method returns the last server cycle the global position 
+
+/*! This method returns the last server cycle the global position
     the specified object has been calculated.
     \param object type of object that should be checked
     \return server time global position of this object was last
@@ -1205,7 +1208,7 @@ Time WorldModel::getTimeGlobalPositionLastSee( ObjectT o )
 }
 
 /*! This method returns the last global velocity derived from a see message.
-    The time corresponds to the method 'getTimeChangeInformation'. 
+    The time corresponds to the method 'getTimeChangeInformation'.
     \param object type of object that should be checked
     \return global velocity related to the last see message. */
 VecPosition WorldModel::getGlobalVelocityLastSee( ObjectT o )
@@ -1217,7 +1220,7 @@ VecPosition WorldModel::getGlobalVelocityLastSee( ObjectT o )
 }
 
 /*! This method returns the last global body angle derived from a see message.
-    The time corresponds to the method 'getTimeChangeInformation'. 
+    The time corresponds to the method 'getTimeChangeInformation'.
     \param object type of object that should be checked
     \return global body angle related to the last see message. */
 AngDeg WorldModel::getGlobalBodyAngleLastSee( ObjectT o )
@@ -1229,7 +1232,7 @@ AngDeg WorldModel::getGlobalBodyAngleLastSee( ObjectT o )
 }
 
 /*! This method returns the number of cycles it will take the tackle to expire.
-    In case of the argument OBJECT_ILLEGAL, the number of cycles for the 
+    In case of the argument OBJECT_ILLEGAL, the number of cycles for the
     agentObject is returned. */
 int WorldModel::getTackleExpires( ObjectT o )
 {
@@ -1257,7 +1260,7 @@ AngDeg WorldModel::getGlobalArmDirection( ObjectT o )
 }
 
 /*! This method returns the time related to the global arm direction of object
-    'o'. When the pointing agent stops pointing the angle is set to 
+    'o'. When the pointing agent stops pointing the angle is set to
     UnknownAngleValue and the returned time is not relevant. */
 Time  WorldModel::getTimeGlobalArmDirection( ObjectT o )
 {
@@ -1270,7 +1273,7 @@ Time  WorldModel::getTimeGlobalArmDirection( ObjectT o )
 
 /*! This method returns the probability that a tackle performed by object o
     will succeed. This probability depends on the relative distance to the
-    ball in both the x and y direction and various server parameters. In the 
+    ball in both the x and y direction and various server parameters. In the
     case that o equals OBJECT_ILLEGAL, the returned probability corresponds
     to that of the agent object. */
 double WorldModel::getProbTackleSucceeds( ObjectT o, int iExtraCycles,
@@ -1278,7 +1281,7 @@ double WorldModel::getProbTackleSucceeds( ObjectT o, int iExtraCycles,
 {
   if( o == OBJECT_ILLEGAL )
     o = getAgentObjectType();
-     
+
   VecPosition posObject   = getGlobalPosition( o );
   VecPosition posBall     = (pos == NULL ) ? getBallPos() : *pos ;
   AngDeg      angBody     = getGlobalBodyAngle( o );
@@ -1298,9 +1301,9 @@ double WorldModel::getProbTackleSucceeds( ObjectT o, int iExtraCycles,
     // then move object position closer to the ball
     dDist  = posBall.getDistanceTo( posObject );
     iExtra = getCurrentTime() - getTimeLastSeen( o ) + iExtraCycles;
-    AngDeg ang    = (posBall - posObject).getDirection();   
+    AngDeg ang    = (posBall - posObject).getDirection();
 
-    // if body angle ok, 
+    // if body angle ok,
     if( getCurrentTime() - getTimeGlobalAngles( o ) < 2 )
     {
       if( fabs( VecPosition::normalizeAngle( ang - angBody ) ) > 35 )
@@ -1312,7 +1315,7 @@ double WorldModel::getProbTackleSucceeds( ObjectT o, int iExtraCycles,
     double dExtra = 0.7*max( 0, iExtra );
 
     // if object was not seen in last see message, he stood further away
-    // then the visible_distance. 
+    // then the visible_distance.
     if( getTimeLastSeen( o ) != getTimeLastSeeMessage() &&
         getCurrentTime() == getTimeLastSeeMessage() &&
         dDist - dExtra < SS->getVisibleDistance() )
@@ -1321,8 +1324,8 @@ double WorldModel::getProbTackleSucceeds( ObjectT o, int iExtraCycles,
       dExtra = dDist - SS->getVisibleDistance();
     }
 
-    // now incorporate that to kick the ball we may need more cycles         
-    //    dExtra = max( 0, dExtra + iExtraCycles );    
+    // now incorporate that to kick the ball we may need more cycles
+    //    dExtra = max( 0, dExtra + iExtraCycles );
 
     // do not move object more than 4.0 metres.
     posObject += VecPosition( min(4.0,min(dDist - 0.2, dExtra )), ang, POLAR );
@@ -1331,22 +1334,22 @@ double WorldModel::getProbTackleSucceeds( ObjectT o, int iExtraCycles,
     angBody = ang;
   }
 
-  VecPosition posBallRel  = posBall - posObject; 
-  posBallRel.rotate( - angBody ); 
+  VecPosition posBallRel  = posBall - posObject;
+  posBallRel.rotate( - angBody );
   if ( posBallRel.getX() > 0.0 )      // ball in front -> tackle_dist parameter
-    dTackleDist = SS->getTackleDist(); 
+    dTackleDist = SS->getTackleDist();
   else
     dTackleDist = SS->getTackleBackDist();
-   
-  double dProb = 
+
+  double dProb =
      pow(fabs(posBallRel.getX())/dTackleDist         ,SS->getTackleExponent())+
      pow(fabs(posBallRel.getY())/SS->getTackleWidth(),SS->getTackleExponent());
-  
-  Log.log( 556, 
+
+  Log.log( 556,
            "tackle relpos o %d: (%f,%f) dist %f body %f extra %d %d: prob %f",
-           o, posBallRel.getX(),posBallRel.getY(), dDist, angBody, iExtra, 
+           o, posBallRel.getX(),posBallRel.getY(), dDist, angBody, iExtra,
            iExtraCycles, max(0,1-dProb) );
-  
+
   return max( 0, 1 - dProb );
 }
 
@@ -1375,7 +1378,7 @@ double WorldModel::getProbTackleClosestOpp( int iExtraCycles )
   ObjectT obj = getClosestInSetTo( OBJECT_SET_OPPONENTS, OBJECT_BALL );
   if( obj == OBJECT_ILLEGAL )
     return -1.0;
-  
+
   return getProbTackleSucceeds( obj, iExtraCycles );
 }
 
@@ -1396,7 +1399,7 @@ bool WorldModel::setIsKnownPlayer( ObjectT o, bool isKnownPlayer )
 }
 
 /*! This method sets the time the object 'o' has last been seen.
-    \param o object of which the time should be changed  
+    \param o object of which the time should be changed
     \param time new time for this object
     \return bool indicating whether update was successful. */
 bool WorldModel::setTimeLastSeen( ObjectT o, Time time )
@@ -1435,7 +1438,7 @@ bool WorldModel::isInPlayerSet( ObjectT o, PlayerSetT ps )
 }
 
 
-/*! This methods returns the heterogeneous player type of object 'obj'. 
+/*! This methods returns the heterogeneous player type of object 'obj'.
     Initially, the player types of all players are set to the type of the agent
     itself. After new information from the coach, they are set correctly. */
 int WorldModel::getHeteroPlayerType( ObjectT obj )
@@ -1466,7 +1469,7 @@ VecPosition WorldModel::getPosOwnGoal( )
 {
   SideT sideGoal = getSide();
   ObjectT objGoal = SoccerTypes::getOwnGoal( sideGoal );
-  if( isPenaltyUs() || isPenaltyThem() ) 
+  if( isPenaltyUs() || isPenaltyThem() )
     objGoal = (getSidePenalty() == SIDE_LEFT ) ? OBJECT_GOAL_L : OBJECT_GOAL_R;
 
   return SoccerTypes::getGlobalPositionFlag(
@@ -1516,7 +1519,7 @@ HeteroPlayerSettings WorldModel::getInfoHeteroPlayer( int iIndex )
 HeteroPlayerSettings WorldModel::getHeteroInfoPlayer( ObjectT obj )
 {
 //  if( obj == getAgentObjectType() || SoccerTypes::isOpponent( obj ) )
-//    return getInfoHeteroPlayer( agentObject.getHeteroPlayerType() );    
+//    return getInfoHeteroPlayer( agentObject.getHeteroPlayerType() );
   if( ! SoccerTypes::isKnownPlayer( obj ) )
     obj = getAgentObjectType();
 
@@ -1536,13 +1539,13 @@ bool WorldModel::setSubstitutedOpp( ObjectT obj )
   return true;
 }
 
-/*! This method returns the first substituted opponent player in the set of 
+/*! This method returns the first substituted opponent player in the set of
     substituted opponent players and then erases this opponent from the set. */
 ObjectT WorldModel::getSubstitutedOpp( )
 {
   if( m_setSubstitutedOpp.empty() == true )
     return OBJECT_ILLEGAL;
-  
+
   ObjectT obj = *m_setSubstitutedOpp.begin();
   m_setSubstitutedOpp.erase( obj );
   return obj;
@@ -2020,7 +2023,7 @@ bool WorldModel::isFullStateOn( SideT s )
 {
   if( s == SIDE_ILLEGAL )
     s = getSide();
-  
+
   if( s == SIDE_LEFT )
     return SS->getFullStateLeft();
   else if( s == SIDE_RIGHT )
@@ -2117,6 +2120,8 @@ void WorldModel::show( ObjectT o, ostream &os )
     \return true when new info has arrived, false if server is dead */
 bool WorldModel::waitForNewInformation( )
 {
+  Log.log( 101, "WorldModel::waitForNewInformation" );
+
   bool bReturn = true;
   if( bNewInfo == false ) // there hasn't arrived any information yet
   {
@@ -2148,22 +2153,45 @@ bool WorldModel::waitForNewInformation( )
     Log.logWithTime( 2, "go into conditional wait" );
     while( (ret = pthread_cond_timedwait( &cond_newInfo,
                     &mutex_newInfo, &timeout) ) == EINTR )
-     printf("(WorldModel::waitForNewInformation) failure in loop!!\n");
+     printf("(WorldModel::waitForNewInformation) failure in loop!!\n"); // wait for sense msg
     Log.logWithTime( 2, "go out of conditional wait" );
     if( ret == ETIMEDOUT ) // if no info was received but timer timed out
       bReturn = false;
     pthread_mutex_unlock( &mutex_newInfo );
+
+    if (bReturn) {
+      gettimeofday(&now, NULL);
+      timeout.tv_sec = now.tv_sec;
+      timeout.tv_nsec = now.tv_usec * 1000;
+
+      timeout.tv_nsec += 50 * 1000000; // wait for another 50ms
+
+      timeout.tv_sec += timeout.tv_nsec / 1000000000L;
+      timeout.tv_nsec = timeout.tv_nsec % 1000000000L;
+
+      // lock mutex and wait till it is unlocked by Sense thread
+      // this happens in setTimeLastSeeMessage, setTimeLastSenseMessage
+      // or setTimeLastSeeGlobalMessage
+      pthread_mutex_lock(&mutex_newInfo);
+      int ret;
+      Log.logWithTime(2, "go into conditional wait");
+      while ((ret = pthread_cond_timedwait(&cond_newInfo,
+                                           &mutex_newInfo, &timeout)) == EINTR)
+        printf("(WorldModel::waitForNewInformation) failure in loop!!\n"); // wait for see/fullsate msg
+      Log.logWithTime(2, "go out of conditional wait");
+      pthread_mutex_unlock(&mutex_newInfo);
+    }
 #endif
   }
   else
     Log.logWithTime( 2, "already new info waiting" );
-    
+
   // update the time of the see and the sense messages not yet with the time
   // from the last received messages. This is done to circumvent that a time
   // is updated while the main thread is still determining a new action and
   // the last see message is not yet updated in the world model. This is
   // therefore then in updateAll;
-  
+
   // reset the indication of new visual information
   bNewInfo = false;
 
@@ -2276,19 +2304,19 @@ bool WorldModel::isFeatureRelevant( FeatureT type )
 
 #if 0
   Log.log( 460, "check feature (%d,%d,%d) relevance now (%d,%d,%d)",
-         m_features[iIndex].getTimeSee().getTime(), 
+         m_features[iIndex].getTimeSee().getTime(),
          m_features[iIndex].getTimeSense().getTime(),
          m_features[iIndex].getTimeHear().getTime(),
-         getTimeLastSeeMessage().getTime(), 
+         getTimeLastSeeMessage().getTime(),
          getTimeLastSenseMessage().getTime(),
          getTimeLastHearMessage().getTime() );
 #endif
-  // feature is relevant when see and hear time is larger or equal than the  
+  // feature is relevant when see and hear time is larger or equal than the
   // current time
   bReturn  = m_features[iIndex].getTimeSee()  >= getTimeLastSeeMessage() &&
              m_features[iIndex].getTimeHear() >= getTimeLastHearMessage();
-             
-  // if ball kicked, also recheck 
+
+  // if ball kicked, also recheck
   if( timeKickedUsed != getTimeLastSenseMessage() )
   {
     bReturn &= ( m_bPerformedKick == false );

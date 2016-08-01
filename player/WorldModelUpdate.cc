@@ -88,21 +88,21 @@ void WorldModel::processSeeGlobalInfo( ObjectT o, Time time,
   DynamicObject * dobj;
   PlayerObject * pobj;
 
-  if( o == OBJECT_ILLEGAL ) 
+  if( o == OBJECT_ILLEGAL )
     return;
   if( SoccerTypes::isPlayer( o ) )
   {
     pobj = (PlayerObject*)getObjectPtrFromType( o );
     pobj->setTimeLastSeen( time );
-    pobj->setGlobalPositionLastSee( pos, time ); 
-    pobj->setTimeChangeInformation( time );            
+    pobj->setGlobalPositionLastSee( pos, time );
+    pobj->setTimeChangeInformation( time );
     pobj->setGlobalPosition( pos, time );
     pobj->setGlobalVelocity( vel, time );
     pobj->setGlobalBodyAngle( angBody, time );
     pobj->setGlobalNeckAngle( VecPosition::normalizeAngle(angBody+angNeck),
                                                                      time );
     pobj->setIsKnownPlayer( true );
-      
+
   }
   else if( SoccerTypes::isBall( o ) )
   {
@@ -130,7 +130,7 @@ void WorldModel::processSeeGlobalInfo( ObjectT o, Time time,
     \return bool indicating whether update was succesful */
 bool WorldModel::processNewAgentInfo( ViewQualityT vq, ViewAngleT va,
      double dStamina, double dEffort, double dSpeed, AngDeg angSpeed,
-     AngDeg angHeadAngle, int iTackleExpires, int iArmMovable, 
+     AngDeg angHeadAngle, int iTackleExpires, int iArmMovable,
      int iArmExpires, VecPosition posArm )
 {
   Stamina sta = agentObject.getStamina();
@@ -175,7 +175,7 @@ bool WorldModel::processNewAgentInfo( ViewQualityT vq, ViewAngleT va,
     \param angRelNeckAng angle between neck of agent and neck of object o
     \param isGoalie bool indicating whether object is a goalie
     \param dPointDir pointing direction of arm of observed player
-    \param isTackling bool indicating whether object is tackling 
+    \param isTackling bool indicating whether object is tackling
     \return bool indicating whether update was succesful */
 void WorldModel::processNewObjectInfo( ObjectT o, Time time,
       double dDist, int iDir, double dDistChange, double dDirChange,
@@ -233,8 +233,8 @@ void WorldModel::processNewObjectInfo( ObjectT o, Time time,
 
       if( isTackling )
       {
-        // if last observed tackle time has been passed. 
-        if( ((PlayerObject*)d)->getTimeTackle() + SS->getTackleCycles() 
+        // if last observed tackle time has been passed.
+        if( ((PlayerObject*)d)->getTimeTackle() + SS->getTackleCycles()
                                              < getCurrentTime() )
           ((PlayerObject*)d)->setTimeTackle( getCurrentTime() - 1  );
       }
@@ -277,11 +277,11 @@ void WorldModel::processNewObjectInfo( ObjectT o, Time time,
         {
           PlayerObject *pob = (PlayerObject*) getObjectPtrFromType( objMin );
           pob->setTimeLastSeen( -1 ); // delete the unknown player
-          Log.log( 464, "set time objMin %d to -1 mapped to  player %d %f %f", 
+          Log.log( 464, "set time objMin %d to -1 mapped to  player %d %f %f",
                    objMin, o, dMinDist, getMaxTraveledDistance( objMin )  );
         }
         else
-          Log.log( 464, "don't set time objMin %d to -1  player %d dist %f", 
+          Log.log( 464, "don't set time objMin %d to -1  player %d dist %f",
                    objMin, o, dMinDist  );
 
       }
@@ -395,22 +395,22 @@ bool WorldModel::processPerfectHearInfoBall( VecPosition posGlobal,
                              VecPosition vel, double dConf )
 {
 //   LogDraw.logCircle( "hear belief", getBallPos(),
-// 		     1.1, 12, false, COLOR_BLUE, 
+// 		     1.1, 12, false, COLOR_BLUE,
 // 		     getConfidence( OBJECT_BALL ) );
 //   char buffer[128];
 //   sprintf( buffer, "%.2f", Ball.getConfidence( getCurrentTime() ) );
 //   LogDraw.logText( "hear belief", getBallPos(),
 // 		   buffer,
-// 		   12, COLOR_BLUE );	  
+// 		   12, COLOR_BLUE );
 
 //   LogDraw.logCircle( "hear info", posGlobal,
-// 		     1.1, 13, false, COLOR_YELLOW, 
+// 		     1.1, 13, false, COLOR_YELLOW,
 // 		     dConf );
 //   sprintf( buffer, "%.2f", dConf );
 //   LogDraw.logText( "hear info", posGlobal,
 // 		   buffer,
-// 		   13, COLOR_YELLOW );	  
-  
+// 		   13, COLOR_YELLOW );
+
 
   Log.log( 501, "ball conf: %f %d", getConfidence( OBJECT_BALL ),
     getTimeLastSeen( OBJECT_BALL ).getTime() );
@@ -422,7 +422,7 @@ bool WorldModel::processPerfectHearInfoBall( VecPosition posGlobal,
     Ball.setGlobalVelocity( vel,       time );
     Ball.setTimeLastSeen  (            time );
     updateObjectRelativeFromGlobal( OBJECT_BALL );
-    setTimeLastHearMessage( getCurrentTime() );          
+    setTimeLastHearMessage( getCurrentTime() );
     return true;
   }
   return false;
@@ -467,7 +467,7 @@ bool WorldModel::processPerfectHearInfo( ObjectT o, VecPosition posGlobal,
     object->setIsKnownPlayer      ( true                     );
     object->setIsGoalie           ( bIsGoalie                );
     updateObjectRelativeFromGlobal( o                        );
-    setTimeLastHearMessage( getCurrentTime() );              
+    setTimeLastHearMessage( getCurrentTime() );
     return true;
   }
   return false;
@@ -571,8 +571,8 @@ bool WorldModel::processNewHeteroPlayer( int iIndex,    double dPlayerSpeedMax,
    pt[iIndex].dExtraStamina    = dExtraStamina;
    pt[iIndex].dEffortMax       = dEffortMax;
    pt[iIndex].dEffortMin       = dEffortMin;
-   pt[iIndex].dMaximalKickDist = dKickableMargin +   
-                                 dPlayerSize +       
+   pt[iIndex].dMaximalKickDist = dKickableMargin +
+                                 dPlayerSize +
                                  SS->getBallSize();
 
    return true;
@@ -631,10 +631,12 @@ void WorldModel::processQueuedCommands( SoccerCommand commands[],
     \return bool to indicate whether update succeeded. */
 bool WorldModel::updateAll( )
 {
+  Log.log( 101, "WorldModel::updateAll" );
+
   static Timing timer;
   double dTimeSense = 0.0, dTimeSee = 0.0, dTimeComm=0.0, dTimeFastest = 0.0;
   static struct tms times1, times2;
-  
+
   bool        bReturn            = false, bUpdateAfterSee = false;
   bool        bUpdateAfterSense  = false, bDebug = false;
   static Time timeLastHoleRecorded;
@@ -649,24 +651,24 @@ bool WorldModel::updateAll( )
     timer.restartTime();
     times( &times1 );
   }
-    
+
   // check if last update of agent was not more than one cycle ago
   if( agentObject.getTimeGlobalPosition() < getCurrentTime() - 1  )
     Log.log( 3, "(WorldModel::updateAll) missed a sense??" );
 
   // call update method depending on last received message
-  if( isFullStateOn( ) == true ) 
+  if( isFullStateOn( ) == true )
   {
-    Log.log( 4, "full state is on" );
-    updateRelativeFromGlobal();   
-    timeLastSenseMessage = timeLastRecvSeeMessage;   
-    timeLastSeeMessage   = timeLastRecvSeeMessage;       
+    Log.log( 101, "full state is on" );
+    updateRelativeFromGlobal();
+    timeLastSenseMessage = timeLastRecvSeeMessage;
+    timeLastSeeMessage   = timeLastRecvSeeMessage;
     bUpdateAfterSee = bUpdateAfterSense = false;
     bReturn = true;
   }
   else
   {
-    Log.log( 4, "full state is off" );  
+    Log.log( 4, "full state is off" );
     if( getTimeLastRecvSeeMessage() > timeLastSeeUpdate )
       bUpdateAfterSee = true;
     if( getTimeLastRecvSenseMessage() > timeLastSenseUpdate )
@@ -792,20 +794,20 @@ bool WorldModel::updateAll( )
     show( OBJECT_BALL, Log.getOutputStream() );
     show( OBJECT_SET_PLAYERS, Log.getOutputStream() );
   }
-  if( ( Log.isInLogLevel( 101 ) && getRelativeDistance( OBJECT_BALL ) < 2.0 ) )
+  if( ( Log.isInLogLevel( 102 ) && getRelativeDistance( OBJECT_BALL ) < 2.0 ) )
     show( OBJECT_BALL, Log.getOutputStream() );
-  if( Log.isInLogLevel( 556 ) && 
+  if( Log.isInLogLevel( 556 ) &&
       getRelativeDistance( OBJECT_BALL ) < SS->getVisibleDistance() )
   {
     Log.log( 556, "%s", strLastSeeMessage );
     show( OBJECT_SET_PLAYERS, Log.getOutputStream() );
     show( OBJECT_BALL, Log.getOutputStream() );
   }
-  if( bDebug ) 
+  if( bDebug )
   {
      Log.logWithTime( 461, "time update all: %f\n time comm:        %1.5f\n\
      time see:       %1.5f\n time sense:    %1.5f\n time fastest:     %1.5f\n\
-     time rest:      %1.5f\n utime:         %1.5f", 
+     time rest:      %1.5f\n utime:         %1.5f",
      timer.getElapsedTime()*1000, dTimeComm, dTimeSee, dTimeSense,dTimeFastest,
      timer.getElapsedTime()*1000-(dTimeComm+dTimeSee+dTimeSense+dTimeFastest ),
      times2.tms_utime  - times1.tms_utime );
@@ -891,11 +893,11 @@ void  WorldModel::processLastSeeMessage( )
 
       double dValues[7];
       int    i = 0;
-      if( *strMsg == ' ' )                        // stil not finished 
+      if( *strMsg == ' ' )                        // stil not finished
       {                                           // get dist and dir change
         while( *strMsg != ')' && *(strMsg+1) != 't' && i < 7 )
         {
-          dValues[i]  = Parse::parseFirstDouble( &strMsg ); 
+          dValues[i]  = Parse::parseFirstDouble( &strMsg );
           i++;
         }
       }
@@ -912,7 +914,7 @@ void  WorldModel::processLastSeeMessage( )
         case 4:
           angBodyFacingDir = dValues[2];
           angHeadFacingDir = dValues[3]; // fall through
-        case 2:                        // in case of ball 
+        case 2:                        // in case of ball
           dDistChange = dValues[0];
           dDirChange  = dValues[1];
           break;
@@ -921,7 +923,7 @@ void  WorldModel::processLastSeeMessage( )
 
       }
 
-      if( *(strMsg+1) == 't') 
+      if( *(strMsg+1) == 't')
         isTackling = true;
     }
 
@@ -1070,7 +1072,7 @@ bool WorldModel::updateDynamicObjectAfterSee( ObjectT o )
       ang = getAgentGlobalNeckAngle() + pob->getRelativeNeckAngle();
       ang = VecPosition::normalizeAngle( ang );
       pob->setGlobalNeckAngle( ang, getTimeLastSeeMessage() );
-      pob->setGlobalVelocityLastSee( velGlobal );          
+      pob->setGlobalVelocityLastSee( velGlobal );
     }
     return true;
   }
@@ -1118,7 +1120,7 @@ void WorldModel::processLastSenseMessage( )
   int    iArmMovable = Parse::parseFirstInt( &strMsg );         // arm movable
   int    iArmExpires = Parse::parseFirstInt( &strMsg );         // arm expires
   double dArmDist    = Parse::parseFirstDouble( &strMsg );      // arm dist
-  AngDeg angArm      = Parse::parseFirstDouble( &strMsg );       // arm dir 
+  AngDeg angArm      = Parse::parseFirstDouble( &strMsg );       // arm dir
 
   setNrOfCommands( CMD_POINTTO    , Parse::parseFirstInt( &strMsg ) );// count
 
@@ -1128,13 +1130,13 @@ void WorldModel::processLastSenseMessage( )
   Log.log( 602, "focus %d |%c|", i, c );
   if( c == 'l' || c == 'r' )    // target l or r
   {
-    Log.log( 602, "set focus: %d", 
+    Log.log( 602, "set focus: %d",
                     SoccerTypes::getTeammateObjectFromIndex( -1 + i ) );
     setObjectFocus( SoccerTypes::getTeammateObjectFromIndex( -1 + i ) );
     i = Parse::parseFirstInt( &strMsg );
   }
   setNrOfCommands( CMD_ATTENTIONTO , i );
-  
+
   int iTackleExpires = Parse::parseFirstInt( &strMsg );   // tackle expires
   setNrOfCommands( CMD_TACKLE , Parse::parseFirstInt( &strMsg ) );
 
@@ -1162,7 +1164,7 @@ bool WorldModel::updateAfterSenseMessage( )
   // update all global information of players that have a good confidence
   double dConfThr = PS->getPlayerConfThr();
   int    iIndex;
-    
+
   for( ObjectT o = iterateObjectStart( iIndex, OBJECT_SET_PLAYERS, dConfThr );
        o != OBJECT_ILLEGAL;
        o = iterateObjectNext ( iIndex, OBJECT_SET_PLAYERS, dConfThr ) )
@@ -1182,18 +1184,18 @@ bool WorldModel::updateAfterSenseMessage( )
     for( ObjectT o = iterateObjectStart( iIndex, OBJECT_SET_TEAMMATES, -2000 );
          o != OBJECT_ILLEGAL;
          o = iterateObjectNext ( iIndex, OBJECT_SET_TEAMMATES, -2000  ) )
-   {  
+   {
       if( o == getAgentObjectType() )
         continue;
       PlayerObject *pob = (PlayerObject*) getObjectPtrFromType( o );
-    
+
       VecPosition pos;// = getStrategicPosition( SoccerTypes::getIndex( o )  ) ;
       VecPosition vel( 0, 0 );
 
       pob->setGlobalVelocity       ( vel, getTimeLastSenseMessage() );
       pob->setGlobalPosition       ( pos, getTimeLastSenseMessage() );
-      pob->setGlobalPositionLastSee( pos, getTimeLastSenseMessage() );    
-      pob->setTimeLastSeen         ( getTimeLastSenseMessage() - 2 );    
+      pob->setGlobalPositionLastSee( pos, getTimeLastSenseMessage() );
+      pob->setTimeLastSeen         ( getTimeLastSenseMessage() - 2 );
       updateObjectRelativeFromGlobal( o );
       Log.log( 459, "set info %d (%f,%f)", SoccerTypes::getIndex( o ),
         pos.getX(), pos.getY() );
@@ -1201,7 +1203,7 @@ bool WorldModel::updateAfterSenseMessage( )
     Ball.setGlobalPosition( VecPosition(0,0), getTimeLastSenseMessage() );
     Ball.setGlobalVelocity( VecPosition(0,0), getTimeLastSenseMessage() );
   }
-//    show( OBJECT_SET_PLAYERS, Log.getOutputStream() );  
+//    show( OBJECT_SET_PLAYERS, Log.getOutputStream() );
   iterateObjectDone( iIndex);
 
   return true;
@@ -1240,7 +1242,7 @@ bool WorldModel::updateAgentAndBallAfterSense( )
         case CMD_TACKLE: // in case of tackle do not update ball -> we do not
                          // know whether tackle succeeded
           predictStateAfterCommand( queuedCommands[i], &pos, &vel,
-                                    &angGlobalBody, &angGlobalNeck, 
+                                    &angGlobalBody, &angGlobalNeck,
                                     getAgentObjectType(), &sta );
           break;
         case CMD_KICK:
@@ -1276,11 +1278,11 @@ bool WorldModel::updateAgentAndBallAfterSense( )
       dDistBall < 0.6 )
     Log.log( 102, "I assume collision after kick" );
 
-  if( (   
+  if( (
         velNeck.getMagnitude() < EPSILON &&
         vel.getMagnitude() > 0.01 &&
         dDistBall < 0.8
-        ) 
+        )
       ||
     ( dDistBall<SS->getPlayerSize()+SS->getBallSize() && // ball too close AND
         velNeck.getMagnitude( ) < EPSILON                 // vel. gives no info
@@ -1344,7 +1346,7 @@ bool WorldModel::updateAgentAndBallAfterSense( )
           case CMD_TURN:
           case CMD_TURNNECK:
             predictStateAfterCommand( queuedCommands[i], &pos, &vel,
-                               &angGlobalBody, &angGlobalNeck, 
+                               &angGlobalBody, &angGlobalNeck,
                                getAgentObjectType(), &sta );
             break;
           case CMD_MOVE:
@@ -1405,13 +1407,13 @@ bool WorldModel::updateBallAfterKick( SoccerCommand soc )
     predictBallInfoAfterCommand( soc, &posBall, &velBall );
     Ball.setGlobalPosition( posBall, getCurrentTime()  );
     Ball.setGlobalVelocity( velBall, getCurrentTime()  );
-// updateParticlesBall( particlesPosBall, particlesVelBall, 
+// updateParticlesBall( particlesPosBall, particlesVelBall,
 //                        iNrParticlesBall, dPower, ang );
   }
   else
   {
     updateDynamicObjectForNextCycle( OBJECT_BALL, 1 );
-//  updateParticlesBall( particlesPosBall, particlesVelBall, 
+//  updateParticlesBall( particlesPosBall, particlesVelBall,
 //  iNrParticlesBall, 0, 0 );
 #ifdef WIN32
     Log.log( 21, "(WorldModel::%s) KICK command, but ball not kickable (%f)",
@@ -1440,7 +1442,7 @@ bool WorldModel::updateDynamicObjectForNextCycle( ObjectT obj, int iCycles)
   VecPosition vel = getGlobalVelocity( obj );
   VecPosition pos = getGlobalPosition( obj );
   VecPosition posBall = getBallPos();
-  //  ObjectT objFastest =  getFastestInSetTo( OBJECT_SET_TEAMMATES, 
+  //  ObjectT objFastest =  getFastestInSetTo( OBJECT_SET_TEAMMATES,
   //                                       OBJECT_BALL );
   if( SoccerTypes::isBall( obj ) )
   {
@@ -1460,7 +1462,7 @@ bool WorldModel::updateDynamicObjectForNextCycle( ObjectT obj, int iCycles)
       vel.setVecPosition(0,0);
     }
   }
-  else if( SoccerTypes::isTeammate( obj ) && 
+  else if( SoccerTypes::isTeammate( obj ) &&
            obj != OBJECT_TEAMMATE_1 && getPlayMode() == PM_PLAY_ON )
   {
     for( int i = 0; i < iCycles ; i++ )
@@ -1484,10 +1486,10 @@ bool WorldModel::updateDynamicObjectForNextCycle( ObjectT obj, int iCycles)
 	AngDeg ang = (getBallPos()-getGlobalPosition( obj )).getDirection();
 	pos += VecPosition( 0.3, ang, POLAR );
 	vel *= SS->getPlayerDecay();
-	Log.log( 556, "update fastest opp to (%f,%f) cyc %d", 
-		 pos.getX(), pos.getY(), iCycles );     
+	Log.log( 556, "update fastest opp to (%f,%f) cyc %d",
+		 pos.getX(), pos.getY(), iCycles );
       }
-      else if( velBall.getX() > 0 && ! ( isDeadBallUs() || isDeadBallThem() ) 
+      else if( velBall.getX() > 0 && ! ( isDeadBallUs() || isDeadBallThem() )
 	       && ! ( fabs( pos.getX() ) > PENALTY_X + 5 ) )
       {
 	pos += VecPosition( (velBall.getX() > 1.0) ? 0.5 : 0.25, 0 );
@@ -1602,7 +1604,7 @@ bool WorldModel::calculateStateAgent( VecPosition *posGlobal,
   }
   else
   {
-    Log.log( 21, 
+    Log.log( 21,
              "(WorldModel::calculateStateAgent) no line in last see message" );
     *angGlobal           = getAgentGlobalNeckAngle();
   }
@@ -2013,7 +2015,7 @@ VecPosition WorldModel::calculatePosAgentWith2Flags( ObjectT objFlag1,
     double angB1 = ( pB - p1 ).getDirection() - aB;
     double angA2 = ( pA - p2 ).getDirection() - aA;
     double angB2 = ( pB - p2 ).getDirection() - aB;
-    
+
     double err1 = fabs( VecPosition::normalizeAngle( angA1 - angB1 ) );
     double err2 = fabs( VecPosition::normalizeAngle( angA2 - angB2 ) );
 
@@ -2148,7 +2150,7 @@ bool WorldModel::calculateStateBall( VecPosition *posGlobal,
 
     VecPosition posGlobalDiff   = *posGlobal - Ball.getGlobalPositionLastSee()
                                          - agentObject.getPositionDifference();
-    Log.log( 101, "2 pos: ball(%f,%f), ball_prev(%f,%f), agentdiff(%f,%f)",
+    Log.log( 102, "2 pos: ball(%f,%f), ball_prev(%f,%f), agentdiff(%f,%f)",
         posGlobal->getX(), posGlobal->getY(),
         Ball.getGlobalPositionLastSee().getX(),
         Ball.getGlobalPositionLastSee().getY(),
@@ -2170,16 +2172,16 @@ bool WorldModel::calculateStateBall( VecPosition *posGlobal,
       *velGlobal = posGlobalDiff*SS->getBallDecay();
       Log.log( 458, "vel based on 2 pos: (%f,%f)", velGlobal->getX(),
                           velGlobal->getY() );
-      Log.log( 101, "vel based on 2 pos: (%f,%f)", velGlobal->getX(),
+      Log.log( 102, "vel based on 2 pos: (%f,%f)", velGlobal->getX(),
                           velGlobal->getY() );
     }
     else if(getTimeLastSeeMessage()-Ball.getTimeGlobalPosDerivedFromSee()==2 &&
         m_bWasCollision == false )
     {
       VecPosition velTmp, posTmp;
-      double      dDist;      
+      double      dDist;
       // we have seen ball for the last time two cycles ago
-      // name v velocity after first cycle, vel. now is then v*d^2. 
+      // name v velocity after first cycle, vel. now is then v*d^2.
       // v can be calculated as v + v * d = diff -> v = diff / ( 1 + d)
 
       // velTmp is now distance traveled in previous cycle.
@@ -2242,8 +2244,8 @@ bool WorldModel::calculateStateBall( VecPosition *posGlobal,
 
   Log.log( 458, "final ball vel: (%f,%f)",velGlobal->getX(),velGlobal->getY());
   if( getRelativeDistance(OBJECT_BALL) < SS->getVisibleDistance() )
-    Log.log( 101, "direction old: %f, new: %f",
-             ( getGlobalPosition( OBJECT_BALL ) - 
+    Log.log( 102, "direction old: %f, new: %f",
+             ( getGlobalPosition( OBJECT_BALL ) -
                getAgentGlobalPosition()).getDirection(),
          ( *posGlobal - getAgentGlobalPosition()).getDirection() );
   return true;
@@ -2273,7 +2275,7 @@ bool WorldModel::calculateStatePlayer( ObjectT o, VecPosition *posGlobal,
                    POLAR );
   *posGlobal = getAgentGlobalPosition() + posRelWorld;
 
-  *velGlobal = getGlobalVelocity( o ) ; 
+  *velGlobal = getGlobalVelocity( o ) ;
   if( pob->getTimeChangeInformation( ) == getTimeLastSeen( o ) )
   {
     // calculate the global velocity using the distance and angle change
@@ -2420,14 +2422,14 @@ void WorldModel::mapUnknownPlayers( Time time)
   for( int j = 0; j < iNrUnknownPlayers; j ++ )
   {
     pos = posAgent + VecPosition( UnknownPlayers[j].getRelativeDistance(),
-	  VecPosition::normalizeAngle( getAgentGlobalNeckAngle() + 
+	  VecPosition::normalizeAngle( getAgentGlobalNeckAngle() +
 				       UnknownPlayers[j].getRelativeAngle() ),
 				  POLAR );
     dMinDist = 1000.0;
     o     = UnknownPlayers[j].getType();
     o_new = OBJECT_ILLEGAL;
     Log.log( 464, "map unknown player: %d %f %f (%f,%f) neck %f",
-                  o, 
+                  o,
                   UnknownPlayers[j].getRelativeDistance(),
                   UnknownPlayers[j].getRelativeAngle(),
                   pos.getX(), pos.getY(),
@@ -2438,7 +2440,7 @@ void WorldModel::mapUnknownPlayers( Time time)
       {
         objTmp = Teammates[i].getType();
         if( isConfidenceGood( objTmp ) && getTimeLastSeen( objTmp ) != time &&
-            objTmp != getAgentObjectType()  ) 
+            objTmp != getAgentObjectType()  )
         {
           dDist = pos.getDistanceTo( Teammates[i].getGlobalPosition( ) );
           Log.log( 464, "distance with %d %f (%f,%f)", objTmp, dDist,
@@ -2469,7 +2471,7 @@ void WorldModel::mapUnknownPlayers( Time time)
       for( int i = 0 ; i < MAX_OPPONENTS ; i++ )
       {
         objTmp = Opponents[i].getType();
-        if( isConfidenceGood( objTmp ) && getTimeLastSeen( objTmp ) != time ) 
+        if( isConfidenceGood( objTmp ) && getTimeLastSeen( objTmp ) != time )
         {
           dDist = pos.getDistanceTo( Opponents[i].getGlobalPosition( ) );
           Log.log( 464, "distance with %d %f (%f,%f)", objTmp, dDist,
@@ -2497,7 +2499,7 @@ void WorldModel::mapUnknownPlayers( Time time)
 
     Log.log( 464, "closest obj %d, found %f, max_move %f rel_dist %f type %d",
              o_new, dMinDist, getMaxTraveledDistance( o_new ),
-             UnknownPlayers[j].getRelativeDistance(), 
+             UnknownPlayers[j].getRelativeDistance(),
              UnknownPlayers[j].getType() );
 
     // if player found and in tolerated distance update player
@@ -2528,7 +2530,7 @@ void WorldModel::mapUnknownPlayers( Time time)
         UnknownPlayers[j].setHeteroPlayerType(
                                   Opponents[index].getHeteroPlayerType( ) );
         Opponents[index] = UnknownPlayers[j];
-        Log.log( 464, "map to known opponent %d (time %d)", 
+        Log.log( 464, "map to known opponent %d (time %d)",
 		 index + 1, UnknownPlayers[j].getTimeLastSeen().getTime() );
       }
     }
@@ -2563,14 +2565,14 @@ void WorldModel::mapUnknownPlayers( Time time)
       {
         Log.log( 464, "couldn't find empty spot for unk. opponent" );
         if( Log.isInLogLevel( 464 ) )
-          show( OBJECT_SET_PLAYERS, Log.getOutputStream() );       
+          show( OBJECT_SET_PLAYERS, Log.getOutputStream() );
 //        if( getRelativeDistance( OBJECT_BALL ) < 3.0 )
-//        cerr << getPlayerNumber() << ", " << 
+//        cerr << getPlayerNumber() << ", " <<
 //          getCurrentCycle() << " couldn't find empty spot" << endl;
       }
     }
     else if( UnknownPlayers[j].getType() == OBJECT_PLAYER_UNKNOWN &&
-         ( UnknownPlayers[j].getRelativeDistance() < SS->getVisibleDistance() 
+         ( UnknownPlayers[j].getRelativeDistance() < SS->getVisibleDistance()
            || ( dMinDist - getMaxTraveledDistance( o_new ) ) > 10   ) )
     {
       o_new = getFirstEmptySpotInSet( OBJECT_SET_OPPONENTS );
@@ -2611,7 +2613,7 @@ bool WorldModel::updateSSToHeteroPlayerType( int iIndex )
   SS->setExtraStamina  ( pt[iIndex].dExtraStamina   );
   SS->setEffortMax     ( pt[iIndex].dEffortMax      );
   SS->setEffortMin     ( pt[iIndex].dEffortMin      );
-  
+
   return true;
 }
 
@@ -2649,9 +2651,9 @@ void WorldModel::removeGhosts( )
     ObjectT objOpp=getClosestInSetTo(OBJECT_SET_OPPONENTS,OBJECT_BALL,&dDist);
     // when opp is very close and ball is not seen (and also not felt) set it
     // at the opponent position
-    if( dDist < 2.0 && 
+    if( dDist < 2.0 &&
 	posAgent.getDistanceTo( getGlobalPosition( objOpp ) ) < 4.5  &&
-	getTimeLastSeen( objOpp ) != getTimeLastSeeMessage() ) 
+	getTimeLastSeen( objOpp ) != getTimeLastSeeMessage() )
     {
       Log.log( 556, "ball not seen, but opp close, set ball to that pos" );
       Ball.setGlobalPosition( getGlobalPosition( objOpp ),
@@ -2694,7 +2696,7 @@ void WorldModel::removeGhosts( )
        o != OBJECT_ILLEGAL;
        o = iterateObjectNext ( iIndex, OBJECT_SET_OPPONENTS ) )
   {
-    if(  fabs( getRelativeAngle( o ) ) < dAngle 
+    if(  fabs( getRelativeAngle( o ) ) < dAngle
 //          || getRelativeDistance( o ) < SS->getVisibleDistance() )
          && getTimeLastSeen( o ) != getTimeLastSeeMessage() &&
          o != getOppGoalieType() )
@@ -2704,7 +2706,7 @@ void WorldModel::removeGhosts( )
                fabs( getRelativeAngle( o ) ), dAngle,
                getTimeLastSeeMessage().getTime(),getTimeLastSeen(o).getTime());
 
-      AngDeg ang = 
+      AngDeg ang =
         SoccerTypes::getHalfViewAngleValue(agentObject.getViewAngle());
       AngDeg angOpp = (getGlobalPosition(o)-posAgent).getDirection();
       AngDeg angNeck = getAgentGlobalNeckAngle();
@@ -2735,7 +2737,7 @@ void WorldModel::removeGhosts( )
           updateObjectRelativeFromGlobal( o );
         }
         else
-          Log.log( 556, "do not reposition opp too far dist %f",  
+          Log.log( 556, "do not reposition opp too far dist %f",
                    posNew.getDistanceTo( getGlobalPosition( o ) ));
       }
       else
@@ -2745,12 +2747,12 @@ void WorldModel::removeGhosts( )
 		 fabs(getRelativeAngle(o)), dAngle  );
       }
     }
-    if( getRelativeDistance(o) < SS->getVisibleDistance( ) 
+    if( getRelativeDistance(o) < SS->getVisibleDistance( )
 	&& getTimeLastSeen( o ) != getTimeLastSeeMessage() )
     {
-      Log.log( 556, "opp %d not felt, place him outside vis. dist", o );  
+      Log.log( 556, "opp %d not felt, place him outside vis. dist", o );
       DynamicObject *obj = (DynamicObject*) getObjectPtrFromType( o );
-      VecPosition posNew = posAgent + VecPosition( SS->getVisibleDistance(), 
+      VecPosition posNew = posAgent + VecPosition( SS->getVisibleDistance(),
 			  (getGlobalPosition( o ) - getAgentGlobalPosition()).
 			  getDirection(), POLAR );
       obj->setGlobalPosition( posNew, getCurrentTime(  ));
@@ -2768,7 +2770,7 @@ void WorldModel::removeGhosts( )
        o != OBJECT_ILLEGAL;
        o = iterateObjectNext ( iIndex, OBJECT_SET_TEAMMATES ) )
   {
-    if( fabs( getRelativeAngle( o ) ) < dAngle 
+    if( fabs( getRelativeAngle( o ) ) < dAngle
 //       ||getRelativeDistance( o ) < SS->getVisibleDistance() )
            && getTimeLastSeen( o ) != getTimeLastSeeMessage() )
     {
@@ -3029,10 +3031,10 @@ ObjectT WorldModel::getMaxRangeUnknownPlayer( ObjectT obj, char* strMsg )
     l.pop_back();
     if( SoccerTypes::isKnownPlayer( o ) )      // max range is one lower
       objMax = o;
-    else if( SoccerTypes::isOpponent( o ) && 
+    else if( SoccerTypes::isOpponent( o ) &&
              SoccerTypes::isTeammate( objMax ) )
       objMax = OBJECT_OPPONENT_11;
-    else if( SoccerTypes::isTeammate( o ) && 
+    else if( SoccerTypes::isTeammate( o ) &&
              SoccerTypes::isOpponent( objMax ) )
       objMax = OBJECT_TEAMMATE_11;
 

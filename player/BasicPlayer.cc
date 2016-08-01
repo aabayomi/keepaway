@@ -273,7 +273,7 @@ SoccerCommand BasicPlayer::freezeBall( )
   WM->predictBallInfoAfterCommand( soc, &posBall, &velBall );
   if( posBall.getDistanceTo( posAgentPred ) < 0.8 * SS->getMaximalKickDist() )
     return soc;
-  Log.log( 101, "freeze ball will end up oustide -> accelerate" );
+  Log.log( 102, "freeze ball will end up oustide -> accelerate" );
   posBall = WM->getBallPos();
   // kick ball to position inside to compensate when agent is moving
   VecPosition posTo   = posAgentPred + 
@@ -340,7 +340,7 @@ SoccerCommand BasicPlayer::kickBallCloseToBody( AngDeg ang, double dKickRatio )
   if( dPower > SS->getMaxPower() && WM->getBallSpeed() > 0.1 )
   {
     Log.log( 500, "kickBallCloseToBody: cannot compensate ball speed, freeze");
-    Log.log( 101, "kickBallCloseToBody: cannot compensate ball speed, freeze");
+    Log.log( 102, "kickBallCloseToBody: cannot compensate ball speed, freeze");
     return freezeBall();
   }
   else if( dPower > SS->getMaxPower() )
@@ -349,18 +349,18 @@ SoccerCommand BasicPlayer::kickBallCloseToBody( AngDeg ang, double dKickRatio )
     {
       if( WM->getRelativeAngle( OBJECT_BALL ) > 25 )
       {
-	Log.log( 101, "dead ball situation, turn to ball" );
+	Log.log( 102, "dead ball situation, turn to ball" );
 	return turnBodyToObject( OBJECT_BALL );
       }
     }
     else
     {
-      Log.log( 101, "kickBallCloseToBody: ball has no speed, but far away" );
+      Log.log( 102, "kickBallCloseToBody: ball has no speed, but far away" );
       dPower = 100;
     }
   }
   else
-    Log.log( 101, "(kick %f %f), vecDesired (%f,%f) %f posDes(%f,%f)", 
+    Log.log( 102, "(kick %f %f), vecDesired (%f,%f) %f posDes(%f,%f)", 
 	     dPower, angActual,vecDesired.getX(), vecDesired.getY(),ang,
 	     posDesBall.getX(), posDesBall.getY() );
   return SoccerCommand( CMD_KICK, dPower, angActual );
@@ -1139,19 +1139,19 @@ SoccerCommand BasicPlayer::kickTo( VecPosition posTarget, double dEndSpeed )
       dDist -=  SS->getBallSize() + SS->getPlayerSize();
     else
       dDist +=  SS->getBallSize() + SS->getPlayerSize();
-    Log.log( 101, "kick results in collision, change velDes from (%f,%f)",
+    Log.log( 102, "kick results in collision, change velDes from (%f,%f)",
 	     velDes.getX(), velDes.getY() );
     velDes.setVecPosition( dDist, velDes.getDirection(), POLAR );
   }
 
-  Log.log( 101, "ball (%f,%f), agent (%f,%f), to (%f,%f) ang %f %f" ,
+  Log.log( 102, "ball (%f,%f), agent (%f,%f), to (%f,%f) ang %f %f" ,
           WM->getBallPos().getX(), WM->getBallPos().getY(),
           WM->getAgentGlobalPosition().getX(),
           WM->getAgentGlobalPosition().getY(),
           posTarget.getX(), posTarget.getY(),
           WM->getAgentGlobalBodyAngle(),
           WM->getAgentGlobalNeckAngle() );
-  Log.log( 101, "relpos body (%f,%f), vel. ball:(%f,%f) dist: %f (%f,%f,%f)" ,
+  Log.log( 102, "relpos body (%f,%f), vel. ball:(%f,%f) dist: %f (%f,%f,%f)" ,
           WM->getRelativeDistance( OBJECT_BALL ),
           WM->getRelativeAngle( OBJECT_BALL, true ),
            velBall.getX(), velBall.getY(),
@@ -1176,19 +1176,19 @@ SoccerCommand BasicPlayer::kickTo( VecPosition posTarget, double dEndSpeed )
     // but ball acceleration in right direction is very high
     if( dSpeedPred > PS->getPlayerWhenToKick()*SS->getBallAccelMax() )
     {
-      Log.log( 101, "pos (%f,%f) too far, but can acc ball good to %f k=%f,%f",
+      Log.log( 102, "pos (%f,%f) too far, but can acc ball good to %f k=%f,%f",
                velDes.getX(), velDes.getY(), dSpeedPred, dSpeed, tmp );
       return accelerateBallToVelocity( velDes );    // shoot nevertheless
     }
     else if( WM->getActualKickPowerRate() >
              PS->getPlayerWhenToKick() * SS->getKickPowerRate() )
     {
-      Log.log( 101, "point too far, freeze ball" ); // ball well-positioned
+      Log.log( 102, "point too far, freeze ball" ); // ball well-positioned
       return freezeBall();                          // freeze ball
     }
     else
     {
-      Log.log( 101, "point too far, reposition ball (k_r = %f)",
+      Log.log( 102, "point too far, reposition ball (k_r = %f)",
                WM->getActualKickPowerRate()/(SS->getKickPowerRate()) );
       return kickBallCloseToBody( 0 );            // else position ball better
     }
@@ -1200,12 +1200,12 @@ SoccerCommand BasicPlayer::kickTo( VecPosition posTarget, double dEndSpeed )
     if( dPower <= 1.05*SS->getMaxPower() || // with current ball speed
 	(dDistOpp < 2.0 && dPower <= 1.30*SS->getMaxPower() ) )
     {                               // 1.05 since cannot get ball fully perfect
-      Log.log( 101, "point good and can reach point %f", dPower );
+      Log.log( 102, "point good and can reach point %f", dPower );
       return accelerateBallToVelocity( velDes );  // perform shooting action
     }
     else
     {
-      Log.log( 101, "point good, but reposition ball since need %f",dPower );
+      Log.log( 102, "point good, but reposition ball since need %f",dPower );
       SoccerCommand soc = kickBallCloseToBody( 0 );
       VecPosition   posPredBall;
       WM->predictBallInfoAfterCommand( soc, &posPredBall );
@@ -1278,7 +1278,7 @@ SoccerCommand BasicPlayer::turnWithBallTo( AngDeg ang, AngDeg angKickThr,
   }
   else if( fabs( angDiff ) > angKickThr )
   {
-    Log.log( 101, "turnWithBall: kick ball close %f", ang );
+    Log.log( 102, "turnWithBall: kick ball close %f", ang );
     return kickBallCloseToBody( VecPosition::normalizeAngle( ang - angBody ) );
   }
 
@@ -1286,7 +1286,7 @@ SoccerCommand BasicPlayer::turnWithBallTo( AngDeg ang, AngDeg angKickThr,
   // doorschiet.
   if( WM->getBallSpeed() > dFreezeThr )
   {
-    Log.log( 101, "turnWithBall: freeze ball" );
+    Log.log( 102, "turnWithBall: freeze ball" );
     return freezeBall();
   }
 
@@ -1320,7 +1320,7 @@ SoccerCommand BasicPlayer::turnWithBallTo( AngDeg ang, AngDeg, double )
     if( fabs( VecPosition::normalizeAngle( angBall - angOpp ) ) < 90  )
     {
       ang = angOpp + 180;
-      Log.log( 101, "turnWithBall: kick ball away from opp at ang %f", angOpp);
+      Log.log( 102, "turnWithBall: kick ball away from opp at ang %f", angOpp);
       return kickBallCloseToBody( VecPosition::normalizeAngle( ang-angBody ));
     }
   }
@@ -1332,7 +1332,7 @@ SoccerCommand BasicPlayer::turnWithBallTo( AngDeg ang, AngDeg, double )
    ( posAgentPred.getDistanceTo(posBallPred) < 0.9*SS->getMaximalKickDist()
      && WM->getBallSpeed() < 0.1 ))
   {
-    Log.log( 101, "turnWithBall: turn since ball will be kickable in t+1" );
+    Log.log( 102, "turnWithBall: turn since ball will be kickable in t+1" );
     return soc;
   }
 
@@ -1348,19 +1348,19 @@ SoccerCommand BasicPlayer::turnWithBallTo( AngDeg ang, AngDeg, double )
   SoccerCommand socCollide = collideWithBall( );
   if( ! socCollide.isIllegal( ) )
   {
-    Log.log( 101, "turnWithBall: collide with ball" );  
+    Log.log( 102, "turnWithBall: collide with ball" );  
     return socCollide;
   }
   else if( posAgentPred.getDistanceTo(posBall) < 0.8*SS->getMaximalKickDist() 
            &&
            WM->getBallSpeed() > 0.1  )
   {
-    Log.log( 101, "turnWithBall: freeze ball" );
+    Log.log( 102, "turnWithBall: freeze ball" );
     return freezeBall();
   }
   else
   {
-    Log.log( 101, "turnWithBall: kick ball close to desired turnangle %f",ang);
+    Log.log( 102, "turnWithBall: kick ball close to desired turnangle %f",ang);
     return kickBallCloseToBody( VecPosition::normalizeAngle( ang - angBody ) );
   }
 }

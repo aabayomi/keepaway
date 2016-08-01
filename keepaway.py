@@ -32,7 +32,8 @@ def launch_player(player_type, index, options):
     # Build up the options for the player process.
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
-        i = '1',
+        # l = 101, # logger level
+        o = 'logs/{}_{}.log'.format(player_type, index),
         e = int(getattr(options, player_type + '_learn')),
         j = options.taker_count,
         k = options.keeper_count,
@@ -159,6 +160,9 @@ def launch_server(options):
     # TODO Any changes to other new defaults in rcssserver to retain benchmarks?
     server_options += [('stamina_inc_max', 3500)];
 
+    server_options += [('fullstate_l', 1)];
+    server_options += [('fullstate_r', 1)];
+
     # Synch mode. TODO What's default, and does synch offset matter when not
     # TODO in synch mode?
     server_options += [
@@ -188,7 +192,7 @@ def launch_server(options):
 
     # Build rcssserver command, and fork it off.
     # TODO Locate rcssserver executable reliably.
-    command = [relative('../rcssserver/src/rcssserver')] + server_options
+    command = ['rcssserver'] + server_options
     print command
     # print " ".join(command)
     popen = Popen(command)

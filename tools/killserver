@@ -2,3 +2,4 @@
 
 # Kill server on local machine
 kill -INT `pidof lt-rcssserver`
+kill -INT `pidof rcssserver`

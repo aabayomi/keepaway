@@ -209,7 +209,7 @@ bool SenseHandler::analyzeMessage( char *strMsg )
 {
   Log.log( 1, strMsg );
   bool bReturn = false;
-  
+
   synchronize(); //*met 8/16/05
 
   switch( strMsg[1] )
@@ -235,12 +235,12 @@ bool SenseHandler::analyzeMessage( char *strMsg )
           return analyzeSeeGlobalMessage  ( strMsg ); // (se e_g
         else if( WM->isFullStateOn( ) == false )
           return analyzeSeeMessage        ( strMsg ); // (se e
-        break;                  
-      case 'n': 
+        break;
+      case 'n':
         bReturn = analyzeSenseMessage      ( strMsg ); // (se n se
         if( WM->isFullStateOn( ) == true  )
           WM->updateAfterSenseMessage( );
-        return bReturn; 
+        return bReturn;
         break;
       case 'r': return analyzeServerParamMessage( strMsg ); // (se r ver_param
       default : break;
@@ -274,6 +274,7 @@ bool SenseHandler::analyzeMessage( char *strMsg )
     \return bool indicating whether the message was parsed correctly. */
 bool SenseHandler::analyzeSeeMessage( char *strMsg )
 {
+  Log.log( 101, "SenseHandler::analyzeSeeMessage: %s", strMsg );
   strcpy( WM->strLastSeeMessage, strMsg );
 
   Log.logWithTime( 2, " %s",strMsg );
@@ -322,7 +323,7 @@ bool SenseHandler::analyzeSeeMessage( char *strMsg )
     \return bool indicating whether the message was parsed correctly. */
 bool SenseHandler::analyzeSeeGlobalMessage( char *strMsg )
 {
-  Log.logWithTime( 2, " incoming see global message" );
+  Log.log( 101, "SenseHandler::analyzeSeeGlobalMessage: %s", strMsg );
   strcpy( WM->strLastSeeMessage, strMsg );
 
   ObjectT o;
@@ -377,15 +378,16 @@ bool SenseHandler::analyzeSeeGlobalMessage( char *strMsg )
 /*! This method parses a full state message. This message contains all
     information from the playing field without noise. It will not be used
     during real tournaments. */
-bool SenseHandler::analyzeFullStateMessage( char *strMsg )  
+bool SenseHandler::analyzeFullStateMessage( char *strMsg )
 {
+  Log.log( 101, "SenseHandler::analyzeFullStateMessage: %s", strMsg );
   Log.restartTimer( );
   Log.logWithTime( 2, " incoming fullstate message" );
-  Log.log( 4, " fullstate message: %s", strMsg );  
+  Log.log( 4, " fullstate message: %s", strMsg );
   strcpy( WM->strLastSeeMessage, strMsg );
 
   ObjectT o;
-  bool    isGoalie;  
+  bool    isGoalie;
   double  dX, dY, dVelX, dVelY;
   int     iTime;
   AngDeg  angBody, angNeck;
@@ -394,34 +396,34 @@ bool SenseHandler::analyzeFullStateMessage( char *strMsg )
   iTime = Parse::parseFirstInt( &strMsg );         // get the time
   time.updateTime( iTime );
   Log.log( 4, "fullstate time: %d", time.getTime() );
-  
+
   strMsg++;                                      // skip space
   Parse::gotoFirstOccurenceOf( ' ', &strMsg );   // skip (pmode
   strMsg++;                                      // skip space
 
   Log.log( 4, "fullstate parse ref: %s", strMsg );
-  RefereeMessageT rm = SoccerTypes::getRefereeMessageFromStr( strMsg ); 
+  RefereeMessageT rm = SoccerTypes::getRefereeMessageFromStr( strMsg );
   PlayModeT       pm = SoccerTypes::getPlayModeFromRefereeMessage( rm );
-  if( pm != PM_ILLEGAL )                                
-    WM->setPlayMode( pm );                              
-      
+  if( pm != PM_ILLEGAL )
+    WM->setPlayMode( pm );
+
   Parse::gotoFirstOccurenceOf( 'e', &strMsg );   // go to end of vmode
   strMsg++;                                      // skip 'e'
   strMsg++;                                      // skip space
 
   Log.log( 4, "fullstate parse qua: %s", strMsg );
-  ViewQualityT vq = SoccerTypes::getViewQualityFromStr( strMsg ); 
+  ViewQualityT vq = SoccerTypes::getViewQualityFromStr( strMsg );
   Parse::gotoFirstOccurenceOf( ' ', &strMsg );   // go to end of quality
-  strMsg++;                                      
-  Log.log( 4, "fullstate parse ang: %s", strMsg );  
+  strMsg++;
+  Log.log( 4, "fullstate parse ang: %s", strMsg );
   ViewAngleT   va = SoccerTypes::getViewAngleFromStr( strMsg );
 
-  Log.log( 4, "fullstate parse count: %s", strMsg );  
+  Log.log( 4, "fullstate parse count: %s", strMsg );
   WM->setNrOfCommands( CMD_KICK       , Parse::parseFirstInt( &strMsg ) );
   WM->setNrOfCommands( CMD_DASH       , Parse::parseFirstInt( &strMsg ) );
   WM->setNrOfCommands( CMD_TURN       , Parse::parseFirstInt( &strMsg ) );
   WM->setNrOfCommands( CMD_CATCH      , Parse::parseFirstInt( &strMsg ) );
-  WM->setNrOfCommands( CMD_MOVE       , Parse::parseFirstInt( &strMsg ) );  
+  WM->setNrOfCommands( CMD_MOVE       , Parse::parseFirstInt( &strMsg ) );
   WM->setNrOfCommands( CMD_TURNNECK   , Parse::parseFirstInt( &strMsg ) );
   WM->setNrOfCommands( CMD_CHANGEVIEW , Parse::parseFirstInt( &strMsg ) );
   WM->setNrOfCommands( CMD_SAY        , Parse::parseFirstInt( &strMsg ) );
@@ -432,35 +434,35 @@ bool SenseHandler::analyzeFullStateMessage( char *strMsg )
   Parse::parseFirstDouble( &strMsg ); // skip pointto info, comes later
   WM->setNrOfCommands( CMD_POINTTO    , Parse::parseFirstInt( &strMsg ) );
 
-  Parse::gotoFirstOccurenceOf( 'b', &strMsg );   // go to ball position  
-  
-  Log.log( 4, "fullstate parse ball: %s", strMsg );    
+  Parse::gotoFirstOccurenceOf( 'b', &strMsg );   // go to ball position
+
+  Log.log( 4, "fullstate parse ball: %s", strMsg );
   dX    = Parse::parseFirstDouble( &strMsg );    // parse first value
-  dY    = Parse::parseFirstDouble( &strMsg );    // parse second value  
-  dVelX = Parse::parseFirstDouble( &strMsg );    // parse third value  
-  dVelY = Parse::parseFirstDouble( &strMsg );    // parse fourth value  
-  if( WM->isBeforeKickOff() ) 
+  dY    = Parse::parseFirstDouble( &strMsg );    // parse second value
+  dVelX = Parse::parseFirstDouble( &strMsg );    // parse third value
+  dVelY = Parse::parseFirstDouble( &strMsg );    // parse fourth value
+  if( WM->isBeforeKickOff() )
     dX = dY = dVelX = dVelY = 0.0;
   if( WM->getSide() == SIDE_RIGHT )
   {
     dX    *= -1;
-    dY    *= -1;    
-    dVelX *= -1;    
-    dVelY *= -1;          
-  }  
+    dY    *= -1;
+    dVelX *= -1;
+    dVelY *= -1;
+  }
   WM->processSeeGlobalInfo( OBJECT_BALL, time, VecPosition(dX,dY),
                     VecPosition(dVelX,dVelY), -1, -1 );
   strMsg++;
   Log.log( 4, "fullstate ball: %f %f %f %f", dX, dY, dVelX, dVelY );
-    
+
   while( *strMsg != ')' )                          // " ((objname.." or ")"
   {
     dVelX = dVelY = UnknownDoubleValue;
     angBody = angNeck = UnknownAngleValue;
     strMsg += 2;          // go the start of the object name
-    Log.log( 4, "fullstate parse object: %s", strMsg );    
+    Log.log( 4, "fullstate parse object: %s", strMsg );
     // get the object type at the current position in the string
-    o = SoccerTypes::getObjectFromStr( &strMsg, &isGoalie, 
+    o = SoccerTypes::getObjectFromStr( &strMsg, &isGoalie,
                           (WM->getSide() == SIDE_LEFT ) ? "l" : "r" );
 
     dX      = Parse::parseFirstDouble( &strMsg );   // parse x position
@@ -473,11 +475,11 @@ bool SenseHandler::analyzeFullStateMessage( char *strMsg )
     if( WM->getSide() == SIDE_RIGHT )
     {
       dX    *= -1;
-      dY    *= -1;    
-      dVelX *= -1;    
-      dVelY *= -1;          
+      dY    *= -1;
+      dVelX *= -1;
+      dVelY *= -1;
       angBody = VecPosition::normalizeAngle( angBody + 180 );
-    }    
+    }
 
     double dStamina  = Parse::parseFirstDouble( &strMsg );  // get stamina
     double dEffort   = Parse::parseFirstDouble( &strMsg );  // get effort
@@ -486,20 +488,20 @@ bool SenseHandler::analyzeFullStateMessage( char *strMsg )
     // skip ending bracket of stamina and then of object information.
     Parse::gotoFirstOccurenceOf( ')', &strMsg );
     Parse::gotoFirstOccurenceOf( ')', &strMsg );
-    
+
     strMsg++;
-    strMsg++;    
+    strMsg++;
 
     Log.log( 1, "fullstate obj %d: %f %f %f %f %f %f", o, dX, dY, dVelX, dVelY,
                  angBody, angNeck );
-    // process the parsed information 
+    // process the parsed information
     if( o == WM->getAgentObjectType() )
       WM->processNewAgentInfo( vq, va, dStamina, dEffort, -1.0, -1.0, -angNeck,
                                -1,iArmMovable, iArmExpires, VecPosition(0,0));
-      
+
     WM->processSeeGlobalInfo( o, time, VecPosition(dX,dY),
                               VecPosition(dVelX,dVelY), angBody, angNeck );
-    
+
   }
   WM->setTimeLastSeeGlobalMessage( time );  // set time last see global message
   WM->setTimeLastSenseMessage( time );      // set time last see global message
@@ -516,8 +518,9 @@ bool SenseHandler::analyzeFullStateMessage( char *strMsg )
     \return bool indicating whether the message was parsed correctly. */
 bool SenseHandler::analyzeSenseMessage( char *strMsg )
 {
+  Log.log( 101, "SenseHandler::analyzeSenseMessage: %s", strMsg );
   Log.log( 999, "%s", strMsg );
-  // cerr << strMsg << endl; 
+  // cerr << strMsg << endl;
   // set the synchronization counter, this is a value [0..2] indicating the
   // section of the pattern this cycle is in. It gives an indication when new
   // visual information will arrive.
@@ -541,7 +544,7 @@ bool SenseHandler::analyzeSenseMessage( char *strMsg )
   timeNew.getTimeStopped() );
   Log.restartTimer( );
   iSimStep               = SS->getSimulatorStep()*1000;
-  iTimeSignal            = (int)(iSimStep*0.85); 
+  iTimeSignal            = (int)(iSimStep*0.85);
   Log.logWithTime ( 2, " alarm after %d", iTimeSignal );
 
   WM->setTimeLastSenseMessage( timeNew ); // set the time
@@ -603,7 +606,7 @@ bool SenseHandler::analyzeHearMessage( char *strMsg )
       SoccerTypes::getRefereeMessageStr(rm), WM->strLastHearMessage);
       pm = SoccerTypes::getPlayModeFromRefereeMessage( rm );// get play mode
       if( pm != PM_ILLEGAL )                                // from ref msg
-        WM->setPlayMode( pm );                              // if was pm, set 
+        WM->setPlayMode( pm );                              // if was pm, set
 
       switch( rm )
       {
@@ -639,7 +642,7 @@ bool SenseHandler::analyzeHearMessage( char *strMsg )
           break;
         case REFC_PENALTY_MISS_RIGHT:
         case REFC_PENALTY_SCORE_RIGHT:
-          WM->setPlayMode( PM_FROZEN );         
+          WM->setPlayMode( PM_FROZEN );
           break;
         case REFC_TRAINING_KEEPAWAY:
 	  WM->resetEpisode();
@@ -687,11 +690,11 @@ bool SenseHandler::analyzePlayerMessage( int iTime, char *strMsg )
 
   strMsg = strtok( strMsg, "\"" );                // remove last quote
 
-  
+
 //   char buffer[256];
 //   sprintf( buffer, "from %d: ", iPlayer );
-//   LogDraw.logText( "received msg", VecPosition( -40, 26 ), 
-// 		   strcat( buffer, strMsg), 
+//   LogDraw.logText( "received msg", VecPosition( -40, 26 ),
+// 		   strcat( buffer, strMsg),
 // 		   40, COLOR_PINK );
 
   Log.log( 600, "process comm msg, time %d, %s", iTime, strMsg);
@@ -746,7 +749,7 @@ bool SenseHandler::analyzeChangePlayerTypeMessage( char *strMsg )
     ObjectT  obj   = SoccerTypes::getTeammateObjectFromIndex( iPlayer - 1 );
     Log.log( 605, "change player from message %d -> %d", obj, iType );
     WM->setHeteroPlayerType( obj, iType );
-    Log.log( 605, "changed player from message %d -> %d", obj, 
+    Log.log( 605, "changed player from message %d -> %d", obj,
               WM->getHeteroPlayerType( obj ) );
     return true;
   }
