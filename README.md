@@ -1,5 +1,7 @@
 # RoboCup Keepaway benchmark player framework
 
+[![Build Status](https://travis-ci.org/aijunbai/keepaway.svg?branch=master)](https://travis-ci.org/aijunbai/keepaway)
+
 ## Full hive mind mode: multi-agent distributed learning
 
 In a senario where A at t1 passes to B, B at t2 passes to A, A at t3 passes to C,
