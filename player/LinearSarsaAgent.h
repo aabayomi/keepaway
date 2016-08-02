@@ -17,7 +17,7 @@ private:
   std::string lockName;
 
 public:
-  FileLock(const std::string name, int ms, int max_loops = 10);
+  FileLock(const std::string name, int ms, int max_loops = 5);
   ~FileLock();
 };
 

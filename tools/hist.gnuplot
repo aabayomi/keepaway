@@ -10,12 +10,7 @@ set terminal postscript eps color solid "Helvetica" 24
 # Output file
 set output "./hist.eps"
 
-# Title
-set title ""
-
 # Appearance
-#set data style steps
-#set nokey
 set border 3
 set xtics nomirror
 set ytics nomirror
@@ -30,4 +25,6 @@ set ylabel "Occurences"
 
 # Plot Data
 plot \
-"1.out",
+"1.hist" w steps, \
+"2.hist" w steps, \
+"3.hist" w steps, \

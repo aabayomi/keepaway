@@ -19,7 +19,6 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-cat $1 | ./hist 2.0 > 1.hist
-gnuplot hist.gnuplot
-evince hist.eps
+cat $1 | ./hist 2.0 > $2.hist
+echo "\"$2.hist\" w steps, \\" >> hist.gnuplot
 

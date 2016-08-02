@@ -19,6 +19,22 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-./winsum.sh $1 &
-./hist.sh $1 &
+make clean
+make
+
+cp graph.gnuplot.template graph.gnuplot
+cp hist.gnuplot.template hist.gnuplot
+
+i="1"
+for var in "$@"; do
+    ./winsum.sh $var $i
+    ./hist.sh $var $i
+    i=`expr $i + 1`
+done
+
+gnuplot graph.gnuplot
+gnuplot hist.gnuplot
+
+evince graph.eps &
+evince hist.eps &
 

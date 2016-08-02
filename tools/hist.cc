@@ -55,7 +55,7 @@ main( int argc, char* argv[] )
 {
   char buffer[MAX_BUFFER];
   int arraySize;
-  int count;
+  double count;
   int numOut;
   double interval;
   double intStart;
@@ -65,7 +65,7 @@ main( int argc, char* argv[] )
   int i;
   int iDummy;
   char cDummy;
-  long sum=0;
+  double sum=0;
 
   if ( argc < 2 ) {
     cerr << "Usage: " << argv[ 0 ]
@@ -116,7 +116,7 @@ main( int argc, char* argv[] )
   for ( int j = 0; j < i; j++ ) {
     if ( ( current = q[j] / 10.0 ) > intEnd ) {
       cout << intStart << "\t"
-	   << count << endl;
+         << count / i << endl;
       count = 0;
       intStart = intEnd;
       intEnd += interval;
@@ -126,7 +126,7 @@ main( int argc, char* argv[] )
       count++;
   }
   cout << intStart << "\t"
-       << count << endl;
+       << count / i << endl;
 
 
   delete [] q;

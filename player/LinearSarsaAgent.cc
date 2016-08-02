@@ -35,6 +35,7 @@ FileLock::FileLock(const std::string name, int ms, int max_loops)
 FileLock::~FileLock()
 {
   Log.log(101, "FileLock::~FileLock unlink %s", lockName.c_str());
+  close(lock);
   unlink(lockName.c_str());
 }
 

@@ -9,7 +9,7 @@ fi
 LOG=""
 MONITOR=""
 
-LOG="true"
+#LOG="1"
 #MONITOR="--monitor"
 
 PORT="--port=`shuf -i 2000-65000 -n 1`"
