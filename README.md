@@ -1,8 +1,8 @@
 Full hive mind mode: multi-agent distributed learning. For example:
 In a senario where A at t1 passes to B, B at t2 passes to A, A at t3 passes to C,
 C at t4 passes to B and B at t5 recievs the ball, 
-    - single agent mode and hive mind mode learning only have 2 updates: t3 for A and t5 for B;
-    - full hive mind mode learning have 4 updates: t2 for B, t3 for A, t4 for C and t5 for B.
+- single agent mode and hive mind mode learning only have 2 updates: t3 for A and t5 for B;
+- full hive mind mode learning have 4 updates: t2 for B, t3 for A, t4 for C and t5 for B.
 
 - Aijun Bai
 
@@ -19,12 +19,14 @@ whatsoever.
 I have also modified the launch scripts to expect working with in-place builds
 of rcss tools rather than system installed ones. The latter might still work,
 but I haven't checked on that. I expect sibling dirs to keepaway called
-rcssmonitor_qt4 and rcssserver. Use the keepaway.py launch script for most
+rcssmonitor\_qt4 and rcssserver. Use the keepaway.py launch script for most
 convenience. I haven't done much to maintain the original keepaway.sh. As an
 example, to kick off with default settings and see the action, run like so (if
 your system has python and knows shebangs):
 
-  ./keepaway.py --monitor
+```
+./keepaway.py --monitor
+```
 
 The original README from Gregory Kuhlmann and Peter Stone follows. Following
 that is the original README for the learning code, including the list of
@@ -77,7 +79,8 @@ publications:
 
 Keepaway Soccer: From Machine Learning Testbed to Benchmark.
 Peter Stone, Gregory Kuhlmann, Matthew E. Taylor, and Yaxin Liu.
-In Itsuki Noda, Adam Jacoff, Ansgar Bredenfeld, and Yasutake Takahashi, editors, RoboCup-2005: Robot Soccer World Cup IX, Springer Verlag, Berlin, 2006. To appear.
+In Itsuki Noda, Adam Jacoff, Ansgar Bredenfeld, and Yasutake Takahashi, editors, 
+RoboCup-2005: Robot Soccer World Cup IX, Springer Verlag, Berlin, 2006.
 
 Reinforcement Learning for RoboCup-Soccer Keepaway.
 Peter Stone, Richard S. Sutton, and Gregory Kuhlmann.
@@ -91,13 +94,13 @@ off of this framework.
 
 The players are built upon version 3.3 of the UvA Basic team that is 
 publicly available from:
-http://staff.science.uva.nl/~jellekok/robocup/2003/index_en.html
+http://staff.science.uva.nl/~jellekok/robocup/2003/index\_en.html
 
 The communication code is based on:
 saymsglib - a library to generate and parse messages in the Coachable agent
 communication standard created by Carnegie Mellon University.  It is 
 described here:
-http://www-2.cs.cmu.edu/~robosoccer/simulator/comm_standard.html
+http://www-2.cs.cmu.edu/~robosoccer/simulator/comm\_standard.html
 
 We provide this code as-is with no support implied.
 It has been tested under Debian Linux 3.1 (testing)
@@ -117,6 +120,7 @@ Gnuplot (optional)
 
 FILES and DIRECTORIES:
 
+```
 README        - This file
 COPYING       - GNU Public License
 keepaway.sh   - script to start players
@@ -124,29 +128,40 @@ player/       - keepaway player source code
 logs/         - dir to store generated log files (initially empty)
 weights/      - dir to store learned weights (initially empty)
 tools/        - some useful utilities for keepaway experiments
+```
 
 
 INSTALLATION:
 
 In player/:
+```
 make depend
 make
+```
 
 In tools/:
+```
 make
+```
 (copy all binaries to some directory in your PATH)
 
 
 USAGE:
 
-(Modify "keepaway_dir" in keepaway.sh to match installation dir)
+(Modify "keepaway\_dir" in keepaway.sh to match installation dir)
+```
 ./keepaway.sh
+```
 
 To view players:
+```
 monitor
+```
 
 To stop:
+```
 killserver
+```
 
 
 ---------------------------------
@@ -197,13 +212,13 @@ off of this code.
 
 The players are built upon version 3.3 of the UvA Basic team that is 
 publicly available from:
-http://staff.science.uva.nl/~jellekok/robocup/2003/index_en.html
+http://staff.science.uva.nl/~jellekok/robocup/2003/index\_en.html
 
 The communication code is based on:
 saymsglib - a library to generate and parse messages in the Coachable agent
 communication standard created by Carnegie Mellon University.  It is 
 described here:
-http://www-2.cs.cmu.edu/~robosoccer/simulator/comm_standard.html
+http://www-2.cs.cmu.edu/~robosoccer/simulator/comm\_standard.html
 
 REQUIREMENTS:
 
