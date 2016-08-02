@@ -29,5 +29,5 @@ set yrange [0:]
 set ylabel "Occurences"
 
 # Plot Data
-plot "./1.hist" title 'Learned' w steps
-
+plot \
+"1.out",
