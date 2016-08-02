@@ -22,3 +22,5 @@ set -o nounset                              # Treat unset variables as an error
 cd player
 make clean
 make
+make clean
+make

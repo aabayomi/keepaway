@@ -13,6 +13,31 @@
 // If all is well, there should be no mention of anything keepaway- or soccer-
 // related in this file.
 
+extern Logger Log;
+
+#if USE_DRAW_LOG
+extern LoggerDraw LogDraw;
+#endif
+
+FileLock::FileLock(const std::string name, int ms, int max_loops)
+{
+  lockName = name + ".lock";
+  timespec sleepTime = {0, ms * 1000 * 1000};
+
+  for(int i = 0; i < max_loops; ++i) {
+    lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
+    if (lock >= 0) break;
+    Log.log(101, "FileLock::FileLock wait for %s", lockName.c_str());
+    nanosleep(&sleepTime, NULL);
+  }
+}
+
+FileLock::~FileLock()
+{
+  Log.log(101, "FileLock::~FileLock unlink %s", lockName.c_str());
+  unlink(lockName.c_str());
+}
+
 /**
  * Designed specifically to match the serialization format for collision_table.
  * See collision_table::save and collision_table::restore.
@@ -81,12 +106,6 @@ long* LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
   return reinterpret_cast<long*>(shared + 1);
 }
 
-extern Logger Log;
-
-#if USE_DRAW_LOG
-extern LoggerDraw LogDraw;
-#endif
-
 void LinearSarsaAgent::reset()
 {
   lastAction = -1;
@@ -139,7 +158,6 @@ LinearSarsaAgent::LinearSarsaAgent( int numFeatures, int numActions, bool bLearn
   float tmpf[ 2 ];
   colTab = new collision_table( RL_MEMORY_SIZE, 1 );
 
-  FileLock(string(weightsFile) + "-tiles", 1);
   GetTiles( tmp, 1, 1, tmpf, 0 );  // A dummy call to set the hashing table
   srand( time( NULL ) );
 
@@ -490,7 +508,7 @@ int LinearSarsaAgent::argmaxQ()
 
 void LinearSarsaAgent::updateWeights( double delta )
 {
-  FileLock(string(weightsFile) + "-weights", 1);
+  if (hiveMind) FileLock(string(weightsFile) + "-weights", 1);
 
   double tmp = delta * alpha / numTilings;
   for ( int i = 0; i < numNonzeroTraces; i++ ) {
@@ -504,7 +522,7 @@ void LinearSarsaAgent::updateWeights( double delta )
 
 void LinearSarsaAgent::loadTiles( double state[] ) // will change colTab->data implictly
 {
-  FileLock(string(weightsFile) + "-tiles", 1);
+  if (hiveMind) FileLock(string(weightsFile) + "-tiles", 1);
 
   int tilingsPerGroup = 32;  /* num tilings per tiling group */
   numTilings = 0;
@@ -513,8 +531,8 @@ void LinearSarsaAgent::loadTiles( double state[] ) // will change colTab->data i
   /* One tiling for each state variable */
   for ( int v = 0; v < getNumFeatures(); v++ ) {
     for ( int a = 0; a < getNumActions(); a++ ) {
-      GetTiles1( &(tiles[ a ][ numTilings ]), tilingsPerGroup, colTab,
-                 state[ v ] / tileWidths[ v ], a , v );
+      GetTiles1(&(tiles[ a ][ numTilings ]), tilingsPerGroup, colTab,
+                (float) (state[ v ] / tileWidths[ v ]), a , v );
     }
     numTilings += tilingsPerGroup;
   }

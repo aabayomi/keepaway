@@ -19,6 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
+./clear.sh
 for hive in `seq 0 2`; do
     ./train.sh $hive &
     sleep 15

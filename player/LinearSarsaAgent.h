@@ -17,20 +17,8 @@ private:
   std::string lockName;
 
 public:
-  FileLock(const std::string name, const int ms) {
-    lockName = name + ".lock";
-    timespec sleepTime = {0, ms * 1000 * 1000};
-    while (true) {
-      lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
-      if (lock >= 0) break;
-      nanosleep(&sleepTime, NULL);
-    }
-  }
-
-  ~FileLock() {
-//    std::cerr << "unlink " << lockName << std::endl;
-    unlink(lockName.c_str());
-  }
+  FileLock(const std::string name, int ms, int max_loops = 10);
+  ~FileLock();
 };
 
 class LinearSarsaAgent:public SMDPAgent
