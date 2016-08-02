@@ -28,14 +28,14 @@ public:
   }
 
   ~FileLock() {
-    // std::cerr << "unlink " << lockName << std::endl;
+//    std::cerr << "unlink " << lockName << std::endl;
     unlink(lockName.c_str());
   }
 };
 
 class LinearSarsaAgent:public SMDPAgent
 {
- protected:
+protected:
   char weightsFile[256];
   bool bLearning;
   bool bSaveWeights;
@@ -46,6 +46,7 @@ class LinearSarsaAgent:public SMDPAgent
 
   int lastAction;
   int lastActionTime;
+  bool wait4Episode; // waiting for new episode
 
   double alpha;
   double gamma;
@@ -75,7 +76,6 @@ class LinearSarsaAgent:public SMDPAgent
 
   // Value function methods for CMACs
   int  selectAction();
-  void initializeTileWidths( int numK, int numT );
   double computeQ( int a );
   int  argmaxQ();
   void updateWeights( double delta );
@@ -88,7 +88,9 @@ class LinearSarsaAgent:public SMDPAgent
   void setTrace( int f, float newTraceValue );
   void increaseMinTrace();
 
- public:
+  void reset();
+
+public:
   LinearSarsaAgent                  ( int    numFeatures,
                                       int    numActions,
                                       bool   bLearn,

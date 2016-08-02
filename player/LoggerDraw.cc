@@ -50,7 +50,7 @@ LogColor LogColor::operator *( const double& d )
 {
   return LogColor( m_r, m_g, m_b, d );
 }
-  
+
 void LogColor::operator *=( const double& d )
 {
   m_r = NORM( m_r * d );
@@ -247,12 +247,12 @@ void LoggerDraw::setSide( SideT side )
     m_mult = 1;
 }
 
-void LoggerDraw::logLine( char* label,
-			  VecPosition start, VecPosition end, int depth, 
+void LoggerDraw::logLine( const char* label,
+			  VecPosition start, VecPosition end, int depth,
 			  ColorT color, double intensity )
 {
   if ( isActive() ) {
-    LogColor logColor = 
+    LogColor logColor =
       ( color == COLOR_ILLEGAL ) ? m_color : LogColor::getColor( color, intensity );
 
     int logDepth = ( depth < 0 ) ? m_depth : depth;
@@ -265,7 +265,7 @@ void LoggerDraw::logLine( char* label,
       newLine = true;
       *m_os << endl << m_cycle << ": \"" << m_label << "\" ";
     }
-    
+
     m_os->precision( 3 );
     m_os->flags( ios::fixed );
 
@@ -276,7 +276,7 @@ void LoggerDraw::logLine( char* label,
       m_color = logColor;
       *m_os << "LINE " << m_depth << " " << m_color << " ";
     }
-    
+
     *m_os << start * m_mult << " " << end * m_mult << "; ";
   }
 }
@@ -286,7 +286,7 @@ void LoggerDraw::logText( const char* label,
 			  ColorT color, double intensity )
 {
   if ( isActive() ) {
-    LogColor logColor = 
+    LogColor logColor =
       ( color == COLOR_ILLEGAL ) ? m_color : LogColor::getColor( color, intensity );
 
     int logDepth = ( depth < 0 ) ? m_depth : depth;
@@ -299,7 +299,7 @@ void LoggerDraw::logText( const char* label,
       newLine = true;
       *m_os << endl << m_cycle << ": \"" << m_label << "\" ";
     }
-    
+
     m_os->precision( 3 );
     m_os->flags( ios::fixed );
 
@@ -310,18 +310,18 @@ void LoggerDraw::logText( const char* label,
       m_color = logColor;
       *m_os << "TEXT " << m_depth << " " << m_color << " ";
     }
-    
+
     *m_os << pos * m_mult << " \"" << escape( text ) << "\"; ";
   }
 }
 
-void LoggerDraw::logCircle( char* label,
+void LoggerDraw::logCircle( const char* label,
 			    VecPosition center, double radius,
-			    int depth, bool filled, 
+			    int depth, bool filled,
 			    ColorT color, double intensity )
 {
   if ( isActive() ) {
-    LogColor logColor = 
+    LogColor logColor =
       ( color == COLOR_ILLEGAL ) ? m_color : LogColor::getColor( color, intensity );
 
     int logDepth = ( depth < 0 ) ? m_depth : depth;
@@ -334,33 +334,33 @@ void LoggerDraw::logCircle( char* label,
       newLine = true;
       *m_os << endl << m_cycle << ": \"" << m_label << "\" ";
     }
-    
+
     m_os->precision( 3 );
     m_os->flags( ios::fixed );
 
-    LogDrawT testShape = 
+    LogDrawT testShape =
       ( filled ) ? LOG_DRAW_CIRCLE_FILLED : LOG_DRAW_CIRCLE;
     if ( newLine || m_shape != testShape || m_color != logColor ||
 	 m_depth != logDepth ) {
       m_shape = testShape;
       m_color = logColor;
       m_depth = logDepth;
-      *m_os << "CIRC" 
+      *m_os << "CIRC"
 	    << ( ( filled ) ? " FILL " : " " )
 	    << m_depth << " " << m_color << " ";
     }
-    
+
     *m_os << center * m_mult << " " << radius << "; ";
-  }  
+  }
 }
-  
-void LoggerDraw::logRectangle( char* label, 
-			       VecPosition topLeft, VecPosition bottomRight, 
-			       int depth, bool filled, 
+
+void LoggerDraw::logRectangle( const char* label,
+			       VecPosition topLeft, VecPosition bottomRight,
+			       int depth, bool filled,
 			       ColorT color, double intensity )
 {
   if ( isActive() ) {
-    LogColor logColor = 
+    LogColor logColor =
       ( color == COLOR_ILLEGAL ) ? m_color : LogColor::getColor( color, intensity );
 
     int logDepth = ( depth < 0 ) ? m_depth : depth;
@@ -373,24 +373,24 @@ void LoggerDraw::logRectangle( char* label,
       newLine = true;
       *m_os << endl << m_cycle << ": \"" << m_label << "\" ";
     }
-    
+
     m_os->precision( 3 );
     m_os->flags( ios::fixed );
 
-    LogDrawT testShape = 
+    LogDrawT testShape =
       ( filled ) ? LOG_DRAW_RECTANGLE_FILLED : LOG_DRAW_RECTANGLE;
     if ( newLine || m_shape != testShape || m_color != logColor ||
 	 m_depth != logDepth ) {
       m_shape = testShape;
       m_color = logColor;
       m_depth = logDepth;
-      *m_os << "RECT" 
+      *m_os << "RECT"
 	    << ( ( filled ) ? " FILL " : " " )
 	    << m_depth << " " << m_color << " ";
     }
-    
+
     *m_os << topLeft * m_mult << " " << bottomRight * m_mult << "; ";
-  }  
+  }
 }
 
 void LoggerDraw::setTime( int cycle )
@@ -438,7 +438,7 @@ char* LoggerDraw::escape( const char* str )
     case '\n':
       str2[ j++ ] = '\\';
       str2[ j++ ] = 'n';
-      break;      
+      break;
     default:
       str2[ j++ ] = str[ i ];
       break;

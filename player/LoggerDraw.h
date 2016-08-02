@@ -221,8 +221,8 @@ class LoggerDraw
     LOG_DRAW_RECTANGLE,
     LOG_DRAW_RECTANGLE_FILLED,
     LOG_DRAW_ILLEGAL
-  } ; 
-  
+  } ;
+
   bool     m_active;
   int      m_cycle;
   int      m_cycle_start;
@@ -238,7 +238,7 @@ class LoggerDraw
 
   void setSide( SideT side );
 
-  void logLine( char* label, 
+  void logLine( const char* label,
 		VecPosition start, VecPosition end, int depth=-1,
 		ColorT color=COLOR_ILLEGAL, double intensity=1.0 );
 
@@ -246,14 +246,14 @@ class LoggerDraw
 		VecPosition pos, const char* text, int depth=-1,
 		ColorT color=COLOR_ILLEGAL, double intensity=1.0 );
 
-  void logCircle( char* label,
-		  VecPosition center, double radius, 
+  void logCircle( const char* label,
+		  VecPosition center, double radius,
 		  int depth=-1, bool filled=false, 
 		  ColorT color=COLOR_ILLEGAL, double intensity=1.0 );
-  
-  void logRectangle( char* label,
-		     VecPosition topLeft, VecPosition bottomRight, 
-		     int depth=-1, bool filled=false, 
+
+  void logRectangle( const char* label,
+		     VecPosition topLeft, VecPosition bottomRight,
+		     int depth=-1, bool filled=false,
 		     ColorT color=COLOR_ILLEGAL, double intensity=1.0 );
 
   void setTime( int cycle );

@@ -32,7 +32,7 @@ def launch_player(player_type, index, options):
     # Build up the options for the player process.
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
-        # l = 101, # logger level
+        l = options.log_level, # log level
         o = 'logs/{}_{}.log'.format(player_type, index),
         e = int(getattr(options, player_type + '_learn')),
         j = options.taker_count,
@@ -94,7 +94,7 @@ def launch_monitor(options):
     monitor_options = [('server-port', options.port)]
     monitor_options = [
         '--%s=%s' % option for option in monitor_options]
-    command = [relative('../rcssmonitor_qt4/src/rcssmonitor')] + monitor_options
+    command = ['rcssmonitor'] + monitor_options
     # print command
     # print " ".join(command)
     Popen(command)
@@ -326,6 +326,10 @@ def parse_options(args = None, **defaults):
         # TODO Nicer syntax for extensions?
         #type = 'choice', choices = ['hand', 'learned'],
         help = "The policy for the takers to follow.")
+    parser.add_option(
+        '--log-level', type = 'int', default = 0,
+        help = "Text log level.")
+
     options = parser.parse_args(args)[0]
     # Set coach_port and online_coach_port here, if not set previously.
     # This will allow them to be based on the args-given port.

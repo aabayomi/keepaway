@@ -19,6 +19,5 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-rm -fr Q hive-Q logs *.lock core
+rm -fr hive-*-Q logs/ *.lock core
 mkdir logs
-
