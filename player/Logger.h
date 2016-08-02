@@ -65,6 +65,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
+#define PRINT_VALUE(x) \
+  do { \
+  std::cerr << #x " = '" << x << "'" << std::endl; \
+  } while(0)
+
+
 #define MAX_LOG_LINE 3072 /*!< maximum size of a log message */
 #define MAX_HEADER   128  /*!< maximum size of the header    */
 

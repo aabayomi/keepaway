@@ -13,3 +13,4 @@ hive-*-Q
 tools/*.out
 tools/*.hist
 tools/*.eps
+console.log

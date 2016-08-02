@@ -123,7 +123,7 @@ bool Logger::log( int iLevel, const char *str, ... )
     if( vsnprintf( m_buf, MAX_LOG_LINE-1, str, ap ) == -1 )
       cerr << "Logger::log, buffer is too small!\n" ;
     va_end(ap);
-    *m_os << m_strHeader << m_buf << "\n";
+    *m_os << m_strHeader << m_buf << endl;
     return true;
   }
 
@@ -338,7 +338,7 @@ void Logger::showLogLevels( ostream &os )
   set<int>::iterator itr;
   for (itr = m_setLogLevels.begin() ; itr != m_setLogLevels.end() ; itr++)
     os << *itr << " " ;
-  os << "\n";
+  os << endl;
 }
 /*****************************************************************************/
 /********************** CLASS TIMING *****************************************/
@@ -373,7 +373,7 @@ double Timing::getTimeDifference( struct timeval tv1, struct timeval tv2 )
 void Timing::printTimeDiffWithText( ostream &os, char *str, int iFactor )
 {
   // set the with to 6 and fill remaining places with '0'.
-  os <<setw(6)<< setfill('0')<< getElapsedTime()*iFactor << ":" << str << "\n";
+  os <<setw(6)<< setfill('0')<< getElapsedTime()*iFactor << ":" << str << endl;
 }
 
 /*! This method returns the time (in seconds) since the last time the timer

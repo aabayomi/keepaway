@@ -30,5 +30,5 @@ ulimit -c unlimited
 
 ./keepaway.py --keeper-learn --keeper-policy=learn \
     --keeper-output=$QFILE --keeper-input=$QFILE \
-    $HIVE $SYNC $MONITOR $LOG $PORT
+    $HIVE $SYNC $MONITOR $LOG $PORT 2>&1 | tee console.log
 

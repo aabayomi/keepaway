@@ -5,10 +5,11 @@
 ## Full hive mind mode: multi-agent distributed learning
 
 In a senario where A at t1 passes to B, B at t2 passes to A, A at t3 passes to C,
-C at t4 passes to B and B at t5 recievs the ball, original single agent mode and 
-hive mind mode learning only have 2 updates: t1-t3 for A and it2-t5 for B; the new 
-full hive mind mode learning has 4 updates: t1-t2 for B, t2-t3 for A, t3-t4 for C 
-and t4-t5 for B.
+C at t4 passes to B and B at t5 recievs the ball, the original single agent learning 
+or hive mind learning have only 2 updates: t1-t3 for A and it2-t5 for B; the new 
+full hive mind learning has 4 updates: t1-t2 for B, t2-t3 for A, t3-t4 for C 
+and t4-t5 for B. Weights as well as traces are shared for this purpose. Global 
+optimality can be ensured with fixed opponents.
 
 - Aijun Bai
 
@@ -26,7 +27,7 @@ whatsoever.
 I have also modified the launch scripts to expect working with in-place builds
 of rcss tools rather than system installed ones. The latter might still work,
 but I haven't checked on that. I expect sibling dirs to keepaway called
-rcssmonitor\_qt4 and rcssserver. Use the keepaway.py launch script for most
+rcssmonitor_qt4 and rcssserver. Use the keepaway.py launch script for most
 convenience. I haven't done much to maintain the original keepaway.sh. As an
 example, to kick off with default settings and see the action, run like so (if
 your system has python and knows shebangs):
@@ -100,13 +101,13 @@ off of this framework.
 
 The players are built upon version 3.3 of the UvA Basic team that is 
 publicly available from:
-http://staff.science.uva.nl/~jellekok/robocup/2003/index\_en.html
+http://staff.science.uva.nl/~jellekok/robocup/2003/index_en.html
 
 The communication code is based on:
 saymsglib - a library to generate and parse messages in the Coachable agent
 communication standard created by Carnegie Mellon University.  It is 
 described here:
-http://www-2.cs.cmu.edu/~robosoccer/simulator/comm\_standard.html
+http://www-2.cs.cmu.edu/~robosoccer/simulator/comm_standard.html
 
 We provide this code as-is with no support implied.
 It has been tested under Debian Linux 3.1 (testing)
@@ -154,7 +155,7 @@ make
 
 USAGE:
 
-(Modify "keepaway\_dir" in keepaway.sh to match installation dir)
+(Modify "keepaway_dir" in keepaway.sh to match installation dir)
 ```
 ./keepaway.sh
 ```
@@ -218,13 +219,13 @@ off of this code.
 
 The players are built upon version 3.3 of the UvA Basic team that is 
 publicly available from:
-http://staff.science.uva.nl/~jellekok/robocup/2003/index\_en.html
+http://staff.science.uva.nl/~jellekok/robocup/2003/index_en.html
 
 The communication code is based on:
 saymsglib - a library to generate and parse messages in the Coachable agent
 communication standard created by Carnegie Mellon University.  It is 
 described here:
-http://www-2.cs.cmu.edu/~robosoccer/simulator/comm\_standard.html
+http://www-2.cs.cmu.edu/~robosoccer/simulator/comm_standard.html
 
 REQUIREMENTS:
 

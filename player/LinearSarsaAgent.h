@@ -17,7 +17,7 @@ private:
   std::string lockName;
 
 public:
-  FileLock(const std::string name, int ms, int max_loops = 5);
+  FileLock(const std::string name, int ms, int max_loops = 100);
   ~FileLock();
 };
 
@@ -51,10 +51,15 @@ protected:
   int numTilings;
 
   double minimumTrace;
-  double traces[ RL_MEMORY_SIZE ];
-  int nonzeroTraces[ RL_MAX_NONZERO_TRACES ];
   int numNonzeroTraces;
-  int nonzeroTracesInverse[ RL_MEMORY_SIZE ];
+
+  double* traces;
+  int* nonzeroTraces;
+  int* nonzeroTracesInverse;
+
+  double tracesRaw[ RL_MEMORY_SIZE ];
+  int nonzeroTracesRaw[ RL_MAX_NONZERO_TRACES ];
+  int nonzeroTracesInverseRaw[ RL_MEMORY_SIZE ];
 
   collision_table *colTab;
 
@@ -77,6 +82,8 @@ protected:
   void increaseMinTrace();
 
   void reset();
+
+  size_t mapSize();
 
 public:
   LinearSarsaAgent                  ( int    numFeatures,

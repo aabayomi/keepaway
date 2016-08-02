@@ -23,7 +23,7 @@ class collision_table {
 public:
 	collision_table(int,int);
 	~collision_table();
-	long m;
+	const long m;
 	long *data;
 	int safe;
 	long calls;

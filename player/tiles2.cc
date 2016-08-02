@@ -1,22 +1,22 @@
 /*
 External documentation and recommendations on the use of this code is
 available at http://rlai.net.
- 
-This is an implementation of grid-style tile codings, based originally on 
-the UNH CMAC code (see http://www.ece.unh.edu/robots/cmac.htm). 
+
+This is an implementation of grid-style tile codings, based originally on
+the UNH CMAC code (see http://www.ece.unh.edu/robots/cmac.htm).
 Here we provide a procedure, "GetTiles", that maps floating-point and integer
 variables to a list of tiles. This function is memoryless and requires no
 setup. We assume that hashing colisions are to be ignored. There may be
 duplicates in the list of tiles, but this is unlikely if memory-size is
-large. 
- 
+large.
+
 The floating-point input variables will be gridded at unit intervals, so generalization
-will be by 1 in each direction, and any scaling will have 
+will be by 1 in each direction, and any scaling will have
 to be done externally before calling tiles.  There is no generalization
 across integer values.
- 
-It is recommended by the UNH folks that num-tilings be a power of 2, e.g., 16. 
- 
+
+It is recommended by the UNH folks that num-tilings be a power of 2, e.g., 16.
+
 We assume the existence of a function "rand()" that produces successive
 random integers, of which we use only the low-order bytes.
 */
@@ -125,7 +125,7 @@ void GetTiles(
 
 
 /* hash_UNH
-   Takes an array of integers and returns the corresponding tile after hashing 
+   Takes an array of integers and returns the corresponding tile after hashing
 */
 
 
@@ -172,7 +172,7 @@ int hash_UNH(int *ints, int num_ints, long m, int increment)
 int hash(int *ints, int num_ints, collision_table *ct);
 
 /* hash
-   Takes an array of integers and returns the corresponding tile after hashing 
+   Takes an array of integers and returns the corresponding tile after hashing
 */
 int hash(int *ints, int num_ints, collision_table *ct)
 {
@@ -226,7 +226,7 @@ void collision_table::reset()
     collisions = 0;
 }
 
-collision_table::collision_table(int size, int safety)
+collision_table::collision_table(int size, int safety): m(size)
 {
     int tmp = size;
     while (tmp > 2)
@@ -239,7 +239,6 @@ collision_table::collision_table(int size, int safety)
         tmp /= 2;
     }
     data = new long[size];
-    m = size;
     safe = safety;
     reset();
 }
@@ -282,7 +281,7 @@ void collision_table::restore(int file)
 void collision_table::save(char *filename) {
  write(open(filename, O_BINARY | O_CREAT | O_WRONLY);
 };
-    
+
 void collision_table::restore(char *filename) {
  read(open(filename, O_BINARY | O_CREAT | O_WRONLY);
 }

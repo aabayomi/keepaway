@@ -19,6 +19,6 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-cat $1 | ./hist 2.0 > $2.hist
+cat $1 | ./hist 5.0 > $2.hist
 echo "\"$2.hist\" w steps, \\" >> hist.gnuplot
 
