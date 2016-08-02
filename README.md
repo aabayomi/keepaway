@@ -1,11 +1,16 @@
-Full hive mind mode: multi-agent distributed learning. For example:
+# RoboCup Keepaway benchmark player framework
+
+## Full hive mind mode: multi-agent distributed learning
+
 In a senario where A at t1 passes to B, B at t2 passes to A, A at t3 passes to C,
-C at t4 passes to B and B at t5 recievs the ball, 
-- single agent mode and hive mind mode learning only have 2 updates: t3 for A and t5 for B;
-- full hive mind mode learning have 4 updates: t2 for B, t3 for A, t4 for C and t5 for B.
+C at t4 passes to B and B at t5 recievs the ball, original single agent mode and 
+hive mind mode learning only have 2 updates: t1-t3 for A and it2-t5 for B; the new 
+full hive mind mode learning has 4 updates: t1-t2 for B, t2-t3 for A, t3-t4 for C 
+and t4-t5 for B.
 
 - Aijun Bai
 
+## Old READMEs
 
 This project is intended as a public but unofficial repository for updates to
 the Keepaway benchmark player framework created at UT Austin by Gregory
@@ -47,7 +52,6 @@ library code for agent behavior, thus avoiding the need to change the original
 code. See the "ext=" hackery in main.cc for more details.
 
 - Tom Palmer
-
 
 -------------------
 README for Keepaway
