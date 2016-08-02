@@ -110,22 +110,22 @@ public:
   // method to analyze incoming messages
   bool    analyzeMessage                ( char *strMsg               );
   bool    analyzeSeeGlobalMessage       ( char *strMsg               );
-  bool    analyzeFullStateMessage       ( char *strMsg               );  
+  bool    analyzeFullStateMessage       ( char *strMsg               );
   bool    analyzeSeeMessage             ( char *strMsg               );
   bool    analyzeSenseMessage           ( char *strMsg               );
   bool    analyzeInitMessage            ( char *strMsg               );
   bool    analyzeHearMessage            ( char *strMsg               );
   bool    analyzePlayerMessage          ( int  iTime  , char *strMsg );
-  bool    analyzeCoachMessage           ( char *strMsg               );  
+  bool    analyzeCoachMessage           ( char *strMsg               );
   bool    analyzeTrainerMessage         ( char *strMsg               );
   bool    analyzeChangePlayerTypeMessage( char *strMsg               );
   bool    analyzeServerParamMessage     ( char *strMsg               );
   bool    analyzeCheckBall              ( char *strMsg               );
   bool    analyzePlayerTypeMessage      ( char *strMsg               );
   bool    analyzePlayerParamMessage     ( char *strMsg               );
-	
+
   // utility functions
-  bool    readServerParam               ( char *strParam, 
+  bool    readServerParam               ( char *strParam,
                                           char *strMsg               );
   bool synchronize( ); //*met 8/16/05
 };

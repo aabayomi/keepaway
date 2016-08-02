@@ -284,7 +284,7 @@ SoccerCommand KeepawayPlayer::keeper()
   SoccerCommand soc;
 
   if ( WM->isNewEpisode() ) {
-    SA->endEpisode( WM->keeperReward() );
+    SA->endEpisode( WM->getCurrentCycle(), WM->keeperReward() );
     WM->setNewEpisode( false );
     WM->setLastAction( UnknownIntValue );
     m_timeStartEpisode = WM->getCurrentTime();
@@ -359,7 +359,7 @@ SoccerCommand KeepawayPlayer::keeperWithBall()
   if ( WM->keeperStateVars( state ) > 0 ) { // if we can calculate state vars
     // Call startEpisode() on the first SMDP step
     if ( WM->getTimeLastAction() == UnknownTime ) {
-      action = SA->startEpisode( state );
+      action = SA->startEpisode( WM->getCurrentCycle(), state );
     }
     else if ( WM->getTimeLastAction() == WM->getCurrentCycle() - 1 &&
               WM->getLastAction() > 0 ) {   // if we were in the middle of a pass last cycle
@@ -367,7 +367,7 @@ SoccerCommand KeepawayPlayer::keeperWithBall()
       action = WM->getLastAction();         // then we follow through with it: keepon
     }
     else { // Call step() on all but first SMDP step
-      action = SA->step( WM->keeperReward(), state );
+      action = SA->step( WM->getCurrentCycle(), WM->keeperReward(), state );
     }
     WM->setLastAction( action );
   }
@@ -418,7 +418,7 @@ SoccerCommand KeepawayPlayer::keeperSupport( ObjectT fastest )
   int iCycles = WM->predictNrCyclesToObject( fastest, OBJECT_BALL );
   VecPosition posPassFrom =
       WM->predictPosAfterNrCycles( OBJECT_BALL, iCycles );
-  LogDraw.logCircle( "BallPredict", posPassFrom, 1, 70, true, COLOR_BROWN );
+//  LogDraw.logCircle( "BallPredict", posPassFrom, 1, 70, true, COLOR_BROWN );
   soc = getOpenForPassFromInRectangle( WM->getKeepawayRect(), posPassFrom );
 
   ObjectT lookObject = chooseLookObject( 0.97 );
@@ -459,8 +459,8 @@ SoccerCommand KeepawayPlayer::taker()
 {
   SoccerCommand soc;
 
-  LogDraw.logCircle( "ball pos", WM->getBallPos(),
-                     1.1, 11, false, COLOR_RED, WM->getConfidence( OBJECT_BALL ) );
+//  LogDraw.logCircle( "ball pos", WM->getBallPos(),
+//                     1.1, 11, false, COLOR_RED, WM->getConfidence( OBJECT_BALL ) );
 
   // If we don't know where the ball is, search for it.
   if ( WM->getConfidence( OBJECT_BALL ) <

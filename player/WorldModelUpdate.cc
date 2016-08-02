@@ -1850,14 +1850,14 @@ bool WorldModel::calculateStateAgent2( VecPosition *posGlobal,
       // calculate the position using the two flags
       pos = calculatePosAgentWith2Flags( obj1, obj2 );
 
-      if ( obj1 == obj2 ) {
-	LogDraw.logCircle( "pos agent two flags", pos,
-			   0.2, 99, true, COLOR_RED );
-      }
-      else {
-	LogDraw.logCircle( "pos agent two flags", pos,
-			   0.2, 12, true, COLOR_BLUE );
-      }
+//      if ( obj1 == obj2 ) {
+//	LogDraw.logCircle( "pos agent two flags", pos,
+//			   0.2, 99, true, COLOR_RED );
+//      }
+//      else {
+//	LogDraw.logCircle( "pos agent two flags", pos,
+//			   0.2, 12, true, COLOR_BLUE );
+//      }
 
       // get distance range from which perceived value can originate from
       // calculate variance (=weighted factor) based on the distance to the

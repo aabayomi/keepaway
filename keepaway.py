@@ -32,7 +32,7 @@ def launch_player(player_type, index, options):
     # Build up the options for the player process.
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
-        l = 101, # logger level
+        # l = 101, # logger level
         o = 'logs/{}_{}.log'.format(player_type, index),
         e = int(getattr(options, player_type + '_learn')),
         j = options.taker_count,
@@ -66,9 +66,8 @@ def launch_player(player_type, index, options):
     # TODO However, for my own input, I don't want independent files. Hrmm.
     put_player_file('f', player_type + '_output')
     put_player_file('w', player_type + '_input')
-    if getattr(options, player_type + '_hive', False):
-        # Hive mind!
-        player_options.update(hive = 1)
+    # Hive mind!
+    player_options.update(hive = getattr(options, player_type + '_hive', 0))
 
     # Change the dict to a sorted list of args.
     player_options = player_options.items()
@@ -78,8 +77,11 @@ def launch_player(player_type, index, options):
     player_options = list(chain(*player_options))
 
     # Build keepaway_player command, and fork it off.
-    # TODO Always assume keepaway_player is here?
-    command = [relative('./player/keepaway_player')] + player_options
+    if False and player_type == 'keeper' and index == 0:
+        command = ['valgrind', relative('./player/keepaway_player')] + player_options
+    else:
+        command = [relative('./player/keepaway_player')] + player_options
+
     #print command
     print " ".join(command)
     popen = Popen(command)
@@ -248,8 +250,8 @@ def parse_options(args = None, **defaults):
         '--keeper-count', type = 'int', default = 3,
         help = "Number of keepers.")
     parser.add_option(
-        '--keeper-hive', action = 'store_true', default = False,
-        help = "Turn hive mind on for keepers (when using standard learner).")
+        '--keeper-hive', type = 'int', default = 0,
+        help = "Turn hive mind mode on for keepers (when using standard learner).")
     parser.add_option(
         '--keeper-input',
         help = "Input (file) name for keeper policy agent.")

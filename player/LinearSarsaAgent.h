@@ -41,11 +41,11 @@ class LinearSarsaAgent:public SMDPAgent
   bool bSaveWeights;
 
   /// Hive mind indicator and file descriptor.
-  bool hiveMind;
+  int hiveMind; // 0: hive mind, 1: full hive mind
   int hiveFile;
 
-  int epochNum;
   int lastAction;
+  int lastActionTime;
 
   double alpha;
   double gamma;
@@ -57,12 +57,12 @@ class LinearSarsaAgent:public SMDPAgent
 
   double* weights;
   double weightsRaw[ RL_MEMORY_SIZE ];
-  double traces[ RL_MEMORY_SIZE ];
 
   int tiles[ MAX_ACTIONS ][ RL_MAX_NUM_TILINGS ];
   int numTilings;
 
   double minimumTrace;
+  double traces[ RL_MEMORY_SIZE ];
   int nonzeroTraces[ RL_MAX_NONZERO_TRACES ];
   int numNonzeroTraces;
   int nonzeroTracesInverse[ RL_MEMORY_SIZE ];
@@ -95,18 +95,20 @@ class LinearSarsaAgent:public SMDPAgent
                                       double widths[],
                                       char   *loadWeightsFile,
                                       char   *saveWeightsFile,
-                                      bool   hiveMind);
+                                      int    hiveMind);
 
   // Support for extra modes and/or analysis.
   double getQ(int action);
   void setEpsilon(double epsilon);
 
   // SMDP Sarsa implementation
-  int  startEpisode( double state[] );
-  int  step( double reward, double state[] );
-  void endEpisode( double reward );
+  int  startEpisode( int current_time, double state[] );
+  int  step( int current_time, double reward, double state[] );
+  void endEpisode( int current_time, double reward );
   void setParams(int iCutoffEpisodes, int iStopLearningEpisodes);
   void shutDown();
+
+  long* loadSharedData(collision_table *colTab, double *weights);
 } ;
 
 #endif

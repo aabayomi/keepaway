@@ -1,10 +1,10 @@
 #!/bin/bash
 
 HIVE=""
-HIVE="--keeper-hive"
+HIVE="--keeper-hive $1"
 
-MONITOR=""
 MONITOR="--monitor"
+MONITOR=""
 
 FILEPERPLAYER="--file-per-player"
 FILEPERPLAYER=""
@@ -32,6 +32,5 @@ if [ ! -z $MONITOR ]; then
     SYNC=""
 fi
 
-./build.sh
 ./keepaway.py --keeper-learn --keeper-policy=learn --keeper-output=$FILE --keeper-input=$FILE $HIVE $SYNC $MONITOR $FILEPERPLAYER $LOG $PORT
 

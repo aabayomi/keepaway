@@ -215,7 +215,7 @@ private:
   int           m_iCycleInMsg;          /*!< cycle contained in message      */
   Time          m_timePlayerMsg;        /*!< time corresponding to player msg*/
   int           m_iMessageSender;       /*!< player who send message         */
-  char          m_strCommunicate[MAX_SAY_MSG];/*!< string for communicating  */
+  char          m_strCommunicate[MAX_SAY_MSG+1];/*!< string for communicating  */
 
   // attention to
   ObjectT       m_objFocus;             /*!< object to which is focused.     */
@@ -232,10 +232,10 @@ private:
 
   // heterogeneous player information
   set<ObjectT>  m_setSubstitutedOpp;    /*!< Set of substituted opp players. */
-  
+
   // upcoming view angle/quality
   SoccerCommand m_changeViewCommand;    /*!< last sent change_view command   */
-  
+
   // side of penalty shootout
   SideT         m_sidePenalty;
 
@@ -251,7 +251,7 @@ private:
 
   // keepaway region
   Rect          m_keepawayRect;
-  double        m_moveSpeed; 
+  double        m_moveSpeed;
 
 public:
 
@@ -320,7 +320,7 @@ public:
   bool          setCheckBallStatus         ( BallStatusT    bs          );
   bool          getRecvThink               (                            );
   char*         getCommunicationString     (                            );
-  bool          setCommunicationString     ( char*          srt         );
+  bool          setCommunicationString     ( const char*          srt         );
   ObjectT       getObjectFocus             (                            );
   bool          setObjectFocus             ( ObjectT        obj         );
 
@@ -350,7 +350,7 @@ public:
   VecPosition   getAgentGlobalPosition     (                            )const;
   bool          setAgentViewAngle          ( ViewAngleT     va          ) ;
   ViewAngleT    getAgentViewAngle          (                            )const;
-  bool          setAgentViewQuality        ( ViewQualityT   vq          ) ;  
+  bool          setAgentViewQuality        ( ViewQualityT   vq          ) ;
   ViewQualityT  getAgentViewQuality        (                            )const;
   double        getAgentViewFrequency      ( ViewAngleT     va = VA_ILLEGAL,
                                              ViewQualityT   vq = VQ_ILLEGAL  );
@@ -408,7 +408,7 @@ public:
   PlayerT       getPlayerType              ( ObjectT        o =OBJECT_ILLEGAL);
   bool          isInPlayerSet              ( ObjectT        o,
 					     PlayerSetT     ps               );
-                                               
+
   // get method for information about goals
   VecPosition   getPosOpponentGoal         (                                 );
   VecPosition   getPosOwnGoal              (                                 );
@@ -484,8 +484,8 @@ public:
                                              AngDeg         angSpeed,
                                              AngDeg         angHeadAngle,
                                              int            iTackleExpires,
-                                             int            iArmMovable, 
-                                             int            iArmExpires, 
+                                             int            iArmMovable,
+                                             int            iArmExpires,
                                              VecPosition    posArm           );
  void           processNewObjectInfo       ( ObjectT        o,
                                              Time           time,
@@ -740,7 +740,7 @@ public:
                                              AngDeg         ang,
                                              double         dDist = 4.0      );
   bool          coordinateWith             ( ObjectT        obj              );
-                                             
+
   // method that return the closest or fastest player to a certain pos orobject
   bool          sortClosestTo              ( ObjectT        objs[],
 					     int            numObjs,
@@ -823,7 +823,7 @@ public:
   bool          isInField                  ( VecPosition    pos,
                                              double         dMargin = 1      );
   bool          isBeforeGoal               ( VecPosition    pos              );
-                                             
+
   // strategic positioning
   VecPosition   getStrategicPosition      ( ObjectT        obj,
 					    FormationT     ft = FT_ILLEGAL   );
@@ -871,12 +871,12 @@ public:
   void          setNumKeepers              ( int            iNum             );
   int           getNumTakers               (                                 );
   void          setNumTakers               ( int            iNum             );
-  double        congestion                 ( VecPosition    pos, 
-					     bool           considerMe = false ); 
+  double        congestion                 ( VecPosition    pos,
+					     bool           considerMe = false );
   void          resetEpisode               (                                 );
   void          setNewEpisode              ( bool           bNewEp           );
   bool          isNewEpisode               (                                 );
-  
+
   void          setLastAction              ( int            iAction          );
   int           getLastAction              (                                 );
   int           getTimeLastAction          (                                 );
@@ -923,19 +923,19 @@ public:
   // methods that deal with debugging
   void          logObjectInformation       ( int            iLogLevel,
                                              ObjectT        o                );
-  
+
   // specific static variables
   int m_iMultX;                     /*!< This variable denotes with which value
                                          the x coordinates of the draw
                                          information should be multiplied in
-                                         order to convert the coordinates to 
+                                         order to convert the coordinates to
                                          the coordinate system of the monitor*/
   int m_iMultY;                     /*!< This variable denotes with which value
                                          the y coordinates of the draw
                                          information should be multiplied in
-                                         order to convert the coordinates to 
+                                         order to convert the coordinates to
                                          the coordinate system of the monitor*/
-                                         
+
   bool           isFeatureRelevant        ( FeatureT        type             );
   Feature        getFeature               ( FeatureT        type             );
   bool           setFeature               ( FeatureT        type,

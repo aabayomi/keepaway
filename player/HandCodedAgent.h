@@ -42,7 +42,7 @@ class HandCodedAgent:public SMDPAgent
   int alwaysHold();
   int random();
   int handCoded( double state[] );
-  
+
   char policy[256];
 
  public:
@@ -51,9 +51,9 @@ class HandCodedAgent:public SMDPAgent
 				    char   *strPolicy,
 				    WorldModel *ws );
 
-  int  startEpisode( double state[] );
-  int  step( double reward, double state[] );
-  void endEpisode( double reward );
+  int  startEpisode( int current_time, double state[] );
+  int  step( int current_time, double reward, double state[] );
+  void endEpisode( int current_time, double reward );
   void setParams(int iCutoffEpisodes, int iStopLearningEpisodes){exit(1);} //*met 8/16/05
 } ;
 

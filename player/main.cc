@@ -1,10 +1,10 @@
 /*
-Copyright (c) 2004, Gregory Kuhlmann, Peter Stone 
-University of Texas at Austin               
+Copyright (c) 2004, Gregory Kuhlmann, Peter Stone
+University of Texas at Austin
 All right reserved
 
-Based On:     
-         
+Based On:
+
 Copyright (c) 2000-2003, Jelle Kok, University of Amsterdam
 All rights reserved.
 
@@ -109,7 +109,7 @@ int main( int argc, char * argv[] )
   bool     bLearn                            = false;
   char     loadWeightsFile[256]              = "";
   char     saveWeightsFile[256]              = "";
-  bool     hiveMind                          = false;
+  int      hiveMind                          = 0;
   bool     bInfo                             = false;
   bool     bSuppliedLogFile                  = false;
   bool     bSuppliedLogDrawFile              = false;
@@ -166,7 +166,7 @@ int main( int argc, char * argv[] )
           else if (strlen(argv[i]) > 2 && argv[i][2] == 'i')
           {
             str = &argv[i+1][0];
-            hiveMind = (Parse::parseFirstInt( &str ) == 1 ) ? true : false;
+            hiveMind = Parse::parseFirstInt( &str );
           }
           else
             strcpy( strHost, argv[i+1] );
@@ -253,12 +253,12 @@ int main( int argc, char * argv[] )
   if( bInfo == true )
   {
     cout << "team         : "  << strTeamName    << endl <<
-            "port         : "  << iPort          << endl <<
-            "host         : "  << strHost        << endl <<
-            "version      : "  << dVersion       << endl <<
-            "mode         : "  << iMode          << endl <<
-            "playernr     : "  << iNr            << endl <<
-            "reconnect    : "  << iReconnect     << endl ;
+         "port         : "  << iPort          << endl <<
+         "host         : "  << strHost        << endl <<
+         "version      : "  << dVersion       << endl <<
+         "mode         : "  << iMode          << endl <<
+         "playernr     : "  << iNr            << endl <<
+         "reconnect    : "  << iReconnect     << endl ;
     Log.showLogLevels( cout );
   }
   if( bSuppliedLogFile == true )
@@ -273,7 +273,7 @@ int main( int argc, char * argv[] )
   Log.restartTimer( );
 
   //Formations fs( strFormations, (FormationT)cs.getInitialFormation(), iNr-1 );
-                                               // read formations file
+  // read formations file
   WorldModel wm( &ss, &cs, NULL );              // create worldmodel
   Connection c( strHost, iPort, MAX_MSG );     // make connection with server
   ActHandler a( &c, &wm, &ss );                // link actHandler and worldmodel
@@ -284,7 +284,7 @@ int main( int argc, char * argv[] )
   double ranges[ MAX_STATE_VARS ];
   double minValues[ MAX_STATE_VARS ];
   double resolutions[ MAX_STATE_VARS ];
-  int numFeatures = wm.keeperStateRangesAndResolutions( ranges, minValues, resolutions, 
+  int numFeatures = wm.keeperStateRangesAndResolutions( ranges, minValues, resolutions,
                                                         iNumKeepers, iNumTakers );
   int numActions = iNumKeepers;
 
@@ -292,8 +292,8 @@ int main( int argc, char * argv[] )
     // (l)earned
     // or "learned!" -> Don't explore at all.
     LinearSarsaAgent* linearSarsaAgent = new LinearSarsaAgent(
-      numFeatures, numActions, bLearn, resolutions,
-      loadWeightsFile, saveWeightsFile, hiveMind
+        numFeatures, numActions, bLearn, resolutions,
+        loadWeightsFile, saveWeightsFile, hiveMind
     );
     // Check for pure exploitation mode.
     size_t length = strlen(strPolicy);
@@ -310,7 +310,7 @@ int main( int argc, char * argv[] )
     // above.
     // Added WorldModel for agents needing richer/relational representation!
     typedef SMDPAgent* (*CreateAgent)(
-      WorldModel&, int, int, bool, double*, char*, char*, bool
+        WorldModel&, int, int, bool, double*, char*, char*, bool
     );
     CreateAgent createAgent = NULL;
 #ifdef WIN32
@@ -325,7 +325,7 @@ int main( int argc, char * argv[] )
     }
     // Find the createAgent function.
     createAgent =
-      reinterpret_cast<CreateAgent>(dlsym(extension, "createAgent"));
+        reinterpret_cast<CreateAgent>(dlsym(extension, "createAgent"));
     if (!createAgent) {
       cerr << "Failed to find createAgent in " << extensionName << endl;
       cerr << dlerror() << endl;
@@ -333,8 +333,8 @@ int main( int argc, char * argv[] )
     }
 #endif
     sa = createAgent(
-      wm, numFeatures, numActions, bLearn, resolutions,
-      loadWeightsFile, saveWeightsFile, hiveMind
+        wm, numFeatures, numActions, bLearn, resolutions,
+        loadWeightsFile, saveWeightsFile, hiveMind
     );
   } else {
     // (ha)nd (ho)ld (r)andom
@@ -346,7 +346,7 @@ int main( int argc, char * argv[] )
     cerr << "No agent!" << endl;
     return EXIT_FAILURE;
   }
-  KeepawayPlayer bp( sa, &a, &wm, &ss, &cs, strTeamName, 
+  KeepawayPlayer bp( sa, &a, &wm, &ss, &cs, strTeamName,
                      iNumKeepers, iNumTakers, dVersion, iReconnect );
 
 #ifdef WIN32
@@ -373,27 +373,27 @@ int main( int argc, char * argv[] )
 void printOptions( )
 {
   cout << "Command options:"                                         << endl <<
-   " a file                - write drawing log info to "             << endl <<
-   " c(lientconf) file     - use file as client conf file"           << endl <<
-   " d(rawloglevel) int[..int] - level(s) of drawing debug info"     << endl <<
-   " e(nable) learning 0/1  - turn learning on/off"                  << endl << 
-   " f save weights file   - use file to save weights"               << endl <<
-   " h(ost) hostname       - host to connect with"                   << endl <<
-   " he(lp)                - print this information"                 << endl <<
-   " hi(ve) 0/1            - use mmap to hive mind the team"         << endl <<
-   " i(nfo) 0/1            - print variables used to start"          << endl <<
-   " j takers  int         - number of takers"                       << endl <<
-   " k(eepers) int         - number of keepers"                      << endl <<
-   " l(oglevel) int[..int] - level of debug info"                    << endl <<
-   " m(ode) int            - which mode to start up with"            << endl <<
-   " n(umber) int          - player number in formation"             << endl <<
-   " o(utput) file         - write log info to (screen is default)"  << endl <<
-   " p(ort)                - port number to connect with"            << endl <<
-   " q policy name         - policy to play with"                    << endl <<
-   " r(econnect) int       - reconnect as player nr"                 << endl <<
-   " s(erverconf) file     - use file as server conf file"           << endl <<
-   " t(eamname) name       - name of your team"                      << endl <<
-   " w(eights) file        - use file to load weights"               << endl <<
-   " x exit after running for this many episodes"                    << endl <<
-   " y enable learning after not learning for this many episodes"    << endl;
+       " a file                - write drawing log info to "             << endl <<
+       " c(lientconf) file     - use file as client conf file"           << endl <<
+       " d(rawloglevel) int[..int] - level(s) of drawing debug info"     << endl <<
+       " e(nable) learning 0/1  - turn learning on/off"                  << endl <<
+       " f save weights file   - use file to save weights"               << endl <<
+       " h(ost) hostname       - host to connect with"                   << endl <<
+       " he(lp)                - print this information"                 << endl <<
+       " hi(ve) 0/1            - use mmap to hive mind the team"         << endl <<
+       " i(nfo) 0/1            - print variables used to start"          << endl <<
+       " j takers  int         - number of takers"                       << endl <<
+       " k(eepers) int         - number of keepers"                      << endl <<
+       " l(oglevel) int[..int] - level of debug info"                    << endl <<
+       " m(ode) int            - which mode to start up with"            << endl <<
+       " n(umber) int          - player number in formation"             << endl <<
+       " o(utput) file         - write log info to (screen is default)"  << endl <<
+       " p(ort)                - port number to connect with"            << endl <<
+       " q policy name         - policy to play with"                    << endl <<
+       " r(econnect) int       - reconnect as player nr"                 << endl <<
+       " s(erverconf) file     - use file as server conf file"           << endl <<
+       " t(eamname) name       - name of your team"                      << endl <<
+       " w(eights) file        - use file to load weights"               << endl <<
+       " x exit after running for this many episodes"                    << endl <<
+       " y enable learning after not learning for this many episodes"    << endl;
 }

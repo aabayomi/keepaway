@@ -109,7 +109,7 @@ bool Logger::log( int iLevel, string str)
    \param str character string with (possible) format specifiers
    \param ... variables that define the values of the specifiers.
    \return bool indicating whether the message was logged or not. */
-bool Logger::log( int iLevel, char *str, ... )
+bool Logger::log( int iLevel, const char *str, ... )
 {
   if( isInLogLevel( iLevel ) )
   {
@@ -141,7 +141,7 @@ bool Logger::log( int iLevel, char *str, ... )
    \param str character string with (possible) format specifiers
    \param ... variables that define the values of the specifiers.
    \return bool indicating whether the message was logged or not. */
-bool Logger::logWithTime( int iLevel, char *str, ... )
+bool Logger::logWithTime( int iLevel, const char *str, ... )
 {
   if( isInLogLevel( iLevel ) )
   {
@@ -179,7 +179,7 @@ bool Logger::logWithTime( int iLevel, char *str, ... )
  \param str character string with (possible) format specifiers
  \param ... variables that define the values of the specifiers.
  \return bool indicating whether the message was logged or not. */
-bool Logger::logFromSignal( int iLevel, char   *str, ...        )
+bool Logger::logFromSignal( int iLevel, const char   *str, ...        )
 {
   char buf[MAX_LOG_LINE];
   if( isInLogLevel( iLevel ) )
@@ -210,7 +210,7 @@ bool Logger::logFromSignal( int iLevel, char   *str, ...        )
 
 /*! This method actually writes the string that was created with
  *  logFromSignal to the specified output stream.
- \return bool indicating whether the message was logged or not. */ 
+ \return bool indicating whether the message was logged or not. */
 bool Logger::logSignal( )
 {
   if( ! m_strSignal.empty() )
@@ -364,7 +364,7 @@ double Timing::getTimeDifference( struct timeval tv1, struct timeval tv2 )
 
 /*! This method prints the time in seconds that elapsed since
     the timer was restarted. It is possible to multiply this time with a
-    factor, such that it can be used for different quantity values. In the 
+    factor, such that it can be used for different quantity values. In the
     default case this value is 1000 with the effect that the resulting value
     resembles miliseconds.
     \param os output stream to which output should be written.

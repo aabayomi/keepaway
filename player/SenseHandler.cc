@@ -274,7 +274,7 @@ bool SenseHandler::analyzeMessage( char *strMsg )
     \return bool indicating whether the message was parsed correctly. */
 bool SenseHandler::analyzeSeeMessage( char *strMsg )
 {
-  Log.log( 101, "SenseHandler::analyzeSeeMessage: %s", strMsg );
+//  Log.log( 101, "SenseHandler::analyzeSeeMessage: %s", strMsg );
   strcpy( WM->strLastSeeMessage, strMsg );
 
   Log.logWithTime( 2, " %s",strMsg );
@@ -323,7 +323,7 @@ bool SenseHandler::analyzeSeeMessage( char *strMsg )
     \return bool indicating whether the message was parsed correctly. */
 bool SenseHandler::analyzeSeeGlobalMessage( char *strMsg )
 {
-  Log.log( 101, "SenseHandler::analyzeSeeGlobalMessage: %s", strMsg );
+//  Log.log( 101, "SenseHandler::analyzeSeeGlobalMessage: %s", strMsg );
   strcpy( WM->strLastSeeMessage, strMsg );
 
   ObjectT o;
@@ -380,7 +380,7 @@ bool SenseHandler::analyzeSeeGlobalMessage( char *strMsg )
     during real tournaments. */
 bool SenseHandler::analyzeFullStateMessage( char *strMsg )
 {
-  Log.log( 101, "SenseHandler::analyzeFullStateMessage: %s", strMsg );
+//  Log.log( 101, "SenseHandler::analyzeFullStateMessage: %s", strMsg );
   Log.restartTimer( );
   Log.logWithTime( 2, " incoming fullstate message" );
   Log.log( 4, " fullstate message: %s", strMsg );
@@ -518,7 +518,7 @@ bool SenseHandler::analyzeFullStateMessage( char *strMsg )
     \return bool indicating whether the message was parsed correctly. */
 bool SenseHandler::analyzeSenseMessage( char *strMsg )
 {
-  Log.log( 101, "SenseHandler::analyzeSenseMessage: %s", strMsg );
+//  Log.log( 101, "SenseHandler::analyzeSenseMessage: %s", strMsg );
   Log.log( 999, "%s", strMsg );
   // cerr << strMsg << endl;
   // set the synchronization counter, this is a value [0..2] indicating the

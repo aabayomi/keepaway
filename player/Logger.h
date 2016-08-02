@@ -82,7 +82,7 @@ class Timing
 #else
   struct timeval time1;          /*!< Time the timer has last been restarted.*/
 #endif
-  
+
 public:
   // methods to restart the timer, get the elapsed time and print messages
 #ifdef WIN32
@@ -122,7 +122,7 @@ class Logger
   char     m_buf[MAX_LOG_LINE];    /*!< buffer needed by different methods   */
   set<int> m_setLogLevels;         /*!< set that contains all log levels     */
 
-  pthread_mutex_t mutex_stream; 
+  pthread_mutex_t mutex_stream;
   char     m_strHeader[MAX_HEADER];/*!< header string printed before msg     */
   ostream* m_os;                   /*!< output stream to print messages to   */
   string   m_strSignal;            /*!< temporary string for other messages  */
@@ -132,11 +132,11 @@ public:
 
   // different methods associated with logging messages
   bool     log              ( int         iLevel, string str              );
-  bool     log              ( int         i,      char   *str, ...        );
-  bool     logWithTime      ( int         iLevel, char   *str, ...        );
-  bool     logFromSignal    ( int         iLevel, char   *str, ...        );
+  bool     log              ( int         i,      const char   *str, ...        );
+  bool     logWithTime      ( int         iLevel, const char   *str, ...        );
+  bool     logFromSignal    ( int         iLevel, const char   *str, ...        );
   bool     logSignal        (                                             );
-  
+
   void     restartTimer     (                                             );
   Timing   getTiming        (                                             );
   bool     isInLogLevel     ( int         iLevel                          );

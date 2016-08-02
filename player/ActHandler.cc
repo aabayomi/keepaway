@@ -157,8 +157,9 @@ bool ActHandler::sendCommands( )
         m_queueMultipleCommands[i].commandType <<  endl;
   }
 
-  char strComm[MAX_SAY_MSG];
+  char strComm[MAX_SAY_MSG+1];
   strcpy( strComm, WM->getCommunicationString() );
+  strComm[MAX_SAY_MSG] = '\0';
   if( strlen( strComm ) != 0 )
   {
     sprintf( &strCommand[strlen(strCommand)], "(say \"%s\")", strComm );

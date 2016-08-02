@@ -584,9 +584,10 @@ bool WorldModel::setObjectFocus( ObjectT obj )
     during the creation of the action. When the ActHandler sends its actions,
     it sends this string to the server.
     \return communication string. */
-bool WorldModel::setCommunicationString( char *str )
+bool WorldModel::setCommunicationString( const char *str )
 {
   strncpy( m_strCommunicate, str, MAX_SAY_MSG );
+  m_strCommunicate[MAX_SAY_MSG] = '\0';
   LogDraw.logText( "comm string", VecPosition( -40, 20 ),
 		   str, 40, COLOR_SADDLE_BROWN );
   return true;

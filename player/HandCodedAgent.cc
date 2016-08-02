@@ -42,12 +42,12 @@ HandCodedAgent::HandCodedAgent( int numFeatures, int numActions,
 }
 
 
-int HandCodedAgent::startEpisode( double state[] )
+int HandCodedAgent::startEpisode( int current_time, double state[] )
 {
-  return step( 0, state );
+  return step( current_time, 0, state );
 }
 
-int HandCodedAgent::step( double reward, double state[] )
+int HandCodedAgent::step( int current_time, double reward, double state[] )
 {
   if ( policy[0] == 'r' ) {      // (r)andom
     return random();
@@ -60,7 +60,7 @@ int HandCodedAgent::step( double reward, double state[] )
   }
 }
 
-void HandCodedAgent::endEpisode( double reward )
+void HandCodedAgent::endEpisode( int current_time, double reward )
 {
   // Do nothing
 }
@@ -123,7 +123,7 @@ int HandCodedAgent::handCoded( double state[] )
   for ( int i=1; i<numK; i++ )
     scores[i] = dist_weight * nearest_Opp_dist_K[i] +
       nearest_Opp_ang_K[i];
-  
+
   // Get MAX
   int best = 0;
   for ( int i=1; i<numK; i++ )

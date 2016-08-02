@@ -1,9 +1,9 @@
 #!/bin/bash - 
 #===============================================================================
 #
-#          FILE: clear.sh
+#          FILE: run.sh
 # 
-#         USAGE: ./clear.sh 
+#         USAGE: ./run.sh 
 # 
 #   DESCRIPTION: 
 # 
@@ -13,12 +13,16 @@
 #         NOTES: ---
 #        AUTHOR: YOUR NAME (), 
 #  ORGANIZATION: 
-#       CREATED: 08/01/2016 14:44
+#       CREATED: 08/01/2016 18:59
 #      REVISION:  ---
 #===============================================================================
 
 set -o nounset                              # Treat unset variables as an error
 
-rm -fr Q hive-Q logs *.lock core
-mkdir logs
+ulimit -c unlimited
+./build.sh
+
+for h in `seq 0 2`; do
+    ./train.sh $h
+done
 
