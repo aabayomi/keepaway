@@ -161,8 +161,8 @@ def launch_server(options):
     # TODO Any changes to other new defaults in rcssserver to retain benchmarks?
     server_options += [('stamina_inc_max', 3500)];
 
-    server_options += [('fullstate_l', 1)];
-    server_options += [('fullstate_r', 1)];
+    server_options += [('fullstate_l', options.fullstate)];
+    server_options += [('fullstate_r', options.fullstate)];
 
     # Synch mode. TODO What's default, and does synch offset matter when not
     # TODO in synch mode?
@@ -328,6 +328,9 @@ def parse_options(args = None, **defaults):
     parser.add_option(
         '--log-level', type = 'int', default = 0,
         help = "Text log level.")
+    parser.add_option(
+        '--fullstate', action = 'store_true', default = False,
+        help = "Use fullstate information for left and right.")
 
     options = parser.parse_args(args)[0]
     # Set coach_port and online_coach_port here, if not set previously.
