@@ -26,6 +26,4 @@ set ylabel "Episode Duration (seconds)"
 
 # Plot Data
 plot \
-"1.out", \
-"2.out", \
-"3.out", \
+"example.out", \

@@ -267,7 +267,7 @@ def parse_options(args = None, **defaults):
         # TODO Nicer syntax for extensions?
         #type = 'choice', choices = ['hand', 'hold', 'learned', 'rand'],
         default = 'rand',
-        help = "The policy for the keepers to follow.")
+        help = "The policy for the keepers to follow: hand, hold, learned or rand")
     parser.add_option(
         "--label", default = "",
         help = "Prefix to the extension for log files.")

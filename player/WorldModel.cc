@@ -306,7 +306,7 @@ bool WorldModel::setTimeLastSeeMessage( Time time )
 #else
     pthread_mutex_lock  ( &mutex_newInfo );
     bNewInfo            = true;
-    Log.log( 101, "WorldModel::setTimeLastSeeMessage" );
+    //Log.log( 101, "WorldModel::setTimeLastSeeMessage" );
     pthread_cond_signal ( &cond_newInfo );
     pthread_mutex_unlock( &mutex_newInfo );
 #endif
@@ -341,7 +341,7 @@ Time WorldModel::getTimeLastRecvSenseMessage( ) const
     \return true when update was succesful */
 bool WorldModel::setTimeLastSenseMessage( Time time )
 {
-  Log.log( 101, "WorldModel::setTimeLastSenseMessage" );
+  //Log.log( 101, "WorldModel::setTimeLastSenseMessage" );
 
   timeLastRecvSenseMessage = time;
   if( SS->getSynchMode() == false )
@@ -2121,7 +2121,7 @@ void WorldModel::show( ObjectT o, ostream &os )
     \return true when new info has arrived, false if server is dead */
 bool WorldModel::waitForNewInformation( )
 {
-  Log.log( 101, "WorldModel::waitForNewInformation" );
+  //Log.log( 101, "WorldModel::waitForNewInformation" );
 
   bool bReturn = true;
   if( bNewInfo == false ) // there hasn't arrived any information yet

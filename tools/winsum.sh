@@ -22,4 +22,3 @@ set -o nounset                              # Treat unset variables as an error
 cat $1 | ./winsum 1000 0.01 > $2.out
 echo "\"$2.out\", \\" >> graph.gnuplot
 
-

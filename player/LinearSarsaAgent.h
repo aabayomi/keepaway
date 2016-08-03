@@ -70,7 +70,7 @@ protected:
   // Value function methods for CMACs
   int  selectAction();
   double computeQ( int a );
-  int  argmaxQ();
+  int  argmaxQ() const;
   void updateWeights( double delta );
   virtual void loadTiles( double state[] );
 

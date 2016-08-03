@@ -25,6 +25,4 @@ set ylabel "Occurences"
 
 # Plot Data
 plot \
-"1.hist" w steps, \
-"2.hist" w steps, \
-"3.hist" w steps, \
+"example.hist" w steps, \

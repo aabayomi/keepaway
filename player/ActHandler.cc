@@ -137,7 +137,7 @@ bool ActHandler::sendCommands( )
   bool bReturn = m_queueOneCycleCommand.getCommandString( strCommand, SS );
 
   if( bReturn == false )
-    cerr << WM->getCurrentCycle() << ", " <<  WM->getPlayerNumber() << " " 
+    cerr << WM->getCurrentCycle() << ", " <<  WM->getPlayerNumber() << " "
          << "Acthandler::failed to create primary command string" << endl;
 
   if( strCommand[0] == '\0' )
@@ -172,7 +172,7 @@ bool ActHandler::sendCommands( )
     timeLastSent        = WM->getCurrentTime();
     LogDraw.logText( "command string", VecPosition( -25, 30 ), strCommand,
     		     2, COLOR_BLACK );
-    
+
     connection->sendMessage( strCommand );
     Log.logFromSignal( 2, " send queued action to server: %s", strCommand);
   }
@@ -298,7 +298,7 @@ bool ActHandler::sendCommandDirect( SoccerCommand soc )
 /*! This method sends a single string directly to the server.
     \param str string that should be sent to the server
     \return true when message was sent, false otherwise */
-bool ActHandler::sendMessageDirect( char * str )
+bool ActHandler::sendMessageDirect( const char * str )
 {
   bool bReturn = connection->sendMessage( str );
   Log.logFromSignal( 2, " send message to server directly: %s", str);

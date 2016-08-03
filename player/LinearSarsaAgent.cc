@@ -28,14 +28,14 @@ FileLock::FileLock(const std::string name, int ms, int max_loops)
   for(int i = 0; i < max_loops; ++i) {
     lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
     if (lock >= 0) break;
-    Log.log(101, "FileLock::FileLock wait for %s", lockName.c_str());
+    //Log.log(101, "FileLock::FileLock wait for %s", lockName.c_str());
     nanosleep(&sleepTime, NULL);
   }
 }
 
 FileLock::~FileLock()
 {
-  Log.log(101, "FileLock::~FileLock unlink %s", lockName.c_str());
+  //Log.log(101, "FileLock::~FileLock unlink %s", lockName.c_str());
   close(lock);
   unlink(lockName.c_str());
 }
@@ -180,7 +180,7 @@ int LinearSarsaAgent::startEpisode( int current_time, double state[] )
   Log.log( 101, "LinearSarsaAgent::startEpisode current_time: %d", current_time);
   if (hiveMind) loadSharedData(colTab, weights);
 
-  Log.log(101, "LinearSarsaAgent::step: numNonzeroTraces %d", numNonzeroTraces);
+  //Log.log(101, "LinearSarsaAgent::step numNonzeroTraces: %d", numNonzeroTraces);
   Log.log( 101, "LinearSarsaAgent::startEpisode wait4Episode: %d", wait4Episode);
   if (hiveMind > 1 && !wait4Episode) { // already started by another teammate
     double reward = current_time - lastActionTime;
@@ -191,7 +191,7 @@ int LinearSarsaAgent::startEpisode( int current_time, double state[] )
 
   decayTraces( 0 );
   assert(numNonzeroTraces == 0);
-  
+
   loadTiles( state );
   for ( int a = 0; a < getNumActions(); a++ ) {
     Q[ a ] = computeQ( a );
@@ -199,6 +199,15 @@ int LinearSarsaAgent::startEpisode( int current_time, double state[] )
 
   lastAction = selectAction(); // share Q[lastAction] in hive mind mode
   lastActionTime = current_time;
+
+  {
+    stringstream ss;
+    for (int a = 0; a < getNumActions(); ++a) {
+      ss << a << ":" << Q[a] << ", ";
+    }
+    Log.log(101, "LinearSarsaAgent::startEpisode Q: [%s]", ss.str().c_str());
+    Log.log(101, "LinearSarsaAgent::startEpisode action: %d", lastAction);
+  }
 
 #if USE_DRAW_LOG
   char buffer[128];
@@ -212,7 +221,7 @@ int LinearSarsaAgent::startEpisode( int current_time, double state[] )
     setTrace( tiles[ lastAction ][ j ], 1.0 );
 
   wait4Episode = false;
-  Log.log(101, "LinearSarsaAgent::step: saved numNonzeroTraces %d", numNonzeroTraces);
+  //Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
   if (hiveMind) saveWeights(weightsFile);
   return lastAction;
 }
@@ -225,7 +234,7 @@ int LinearSarsaAgent::step( int current_time, double reward, double state[] )
   Log.log( 101, "LinearSarsaAgent::step reward: %f", reward);
   if (hiveMind) loadSharedData(colTab, weights);
 
-  Log.log(101, "LinearSarsaAgent::step: numNonzeroTraces %d", numNonzeroTraces);
+  //Log.log(101, "LinearSarsaAgent::step numNonzeroTraces: %d", numNonzeroTraces);
   if (hiveMind > 1 && lastActionTime != UnknownTime && lastActionTime < current_time) {
     reward = current_time - lastActionTime;
     Log.log( 101, "LinearSarsaAgent::step hived lastActionTime: %d", lastActionTime);
@@ -240,6 +249,15 @@ int LinearSarsaAgent::step( int current_time, double reward, double state[] )
 
   lastAction = selectAction(); //a_t
   lastActionTime = current_time;
+
+  {
+    stringstream ss;
+    for (int a = 0; a < getNumActions(); ++a) {
+      ss << a << ":" << Q[a] << ", ";
+    }
+    Log.log(101, "LinearSarsaAgent::step Q: [%s]", ss.str().c_str());
+    Log.log(101, "LinearSarsaAgent::step action: %d", lastAction);
+  }
 
 #if USE_DRAW_LOG
   char buffer[128];
@@ -277,7 +295,7 @@ int LinearSarsaAgent::step( int current_time, double reward, double state[] )
   for ( int j = 0; j < numTilings; j++ )      //replace/set traces F[a]
     setTrace( tiles[ lastAction ][ j ], 1.0 );
 
-  Log.log(101, "LinearSarsaAgent::step: saved numNonzeroTraces %d", numNonzeroTraces);
+  //Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
   if (hiveMind) saveWeights(weightsFile);
   return lastAction;
 }
@@ -452,6 +470,10 @@ bool LinearSarsaAgent::loadWeights( char *filename )
     }
   } else {
     int file = open( filename, O_RDONLY );
+    if (file < 0) { 
+      cerr << "failed to open weight file: " << filename << endl; 
+      return false;
+    }
     read( file, (char *) weights, RL_MEMORY_SIZE * sizeof(double) );
     colTab->restore( file );
     close( file );
@@ -495,6 +517,10 @@ bool LinearSarsaAgent::saveWeights( char *filename )
     }
   } else {
     int file = open( filename, O_CREAT | O_WRONLY, 0664 );
+    if (file < 0) {
+      cerr << "failed to open weight file: " << filename << endl;
+      return false;
+    }
     write( file, (char *) weights, RL_MEMORY_SIZE * sizeof(double) );
     colTab->save( file );
     close( file );
@@ -514,7 +540,7 @@ double LinearSarsaAgent::computeQ( int a )
 }
 
 // Returns index (action) of largest entry in Q array, breaking ties randomly
-int LinearSarsaAgent::argmaxQ()
+int LinearSarsaAgent::argmaxQ() const
 {
   int bestAction = 0;
   double bestValue = Q[ bestAction ];

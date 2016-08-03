@@ -42,8 +42,8 @@ class SMDPAgent
 
 protected:
 
-  int getNumFeatures() { return m_numFeatures; }
-  int getNumActions()  { return m_numActions;  }
+  int getNumFeatures() const { return m_numFeatures; }
+  int getNumActions()  const { return m_numActions;  }
 
 public:
 

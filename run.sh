@@ -19,9 +19,18 @@
 
 set -o nounset                              # Treat unset variables as an error
 
+SLEEP="10"
+
 ./clear.sh
-for hive in `seq 0 2`; do
-    ./train.sh $hive &
-    sleep 15
+
+for policy in random hand hold; do
+    ./evaluate.sh $policy &
+    sleep $SLEEP
 done
 
+for hive in `seq 0 2`; do
+    ./train.sh $hive &
+    sleep $SLEEP
+done
+
+wait

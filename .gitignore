@@ -13,3 +13,4 @@ tools/*.out
 tools/*.hist
 tools/*.eps
 console.log
+hive-*-Q

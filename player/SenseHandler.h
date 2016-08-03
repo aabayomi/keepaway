@@ -125,7 +125,7 @@ public:
   bool    analyzePlayerParamMessage     ( char *strMsg               );
 
   // utility functions
-  bool    readServerParam               ( char *strParam,
+  bool    readServerParam               ( const char *strParam,
                                           char *strMsg               );
   bool synchronize( ); //*met 8/16/05
 };

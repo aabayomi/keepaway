@@ -96,7 +96,7 @@ void WorldModel::resetEpisode()
 
 void WorldModel::setNewEpisode( bool bNewEp )
 {
-  Log.log( 101, "WorldModel::setNewEpisode bNewEp: %d", bNewEp);
+  //Log.log( 101, "WorldModel::setNewEpisode bNewEp: %d", bNewEp);
   m_newEpisode = bNewEp;
 }
 
@@ -107,8 +107,8 @@ bool WorldModel::isNewEpisode()
 
 double WorldModel::keeperReward()
 {
-  Log.log( 101, "WorldModel::keeperReward getTimeLastAction: %d", getTimeLastAction());
-  Log.log( 101, "WorldModel::keeperReward getCurrentCycle: %d", getCurrentCycle());
+  //Log.log( 101, "WorldModel::keeperReward getTimeLastAction: %d", getTimeLastAction());
+  //Log.log( 101, "WorldModel::keeperReward getCurrentCycle: %d", getCurrentCycle());
   double reward = getCurrentCycle() - getTimeLastAction();
   return reward;
 }
@@ -118,8 +118,8 @@ void WorldModel::setLastAction( int iAction )
   m_lastAction = iAction;
   m_timeLastAction =
     ( iAction == UnknownIntValue ) ? UnknownTime : getCurrentCycle();
-  Log.log( 101, "WorldModel::setLastAction m_lastAction: %d", m_lastAction);
-  Log.log( 101, "WorldModel::setLastAction m_timeLastAction: %d", m_timeLastAction);
+  //Log.log( 101, "WorldModel::setLastAction m_lastAction: %d", m_lastAction);
+  //Log.log( 101, "WorldModel::setLastAction m_timeLastAction: %d", m_timeLastAction);
 }
 
 int WorldModel::getLastAction()

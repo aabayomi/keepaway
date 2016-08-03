@@ -73,10 +73,10 @@ extern Logger Log; /*!< Reference to the Logger to write log info to*/
    update its internal state based on the performed actions.
    It is possible to send more than one command to the server at each time
    step, but some type of (primary) commands can only be sent once (kick,dash,
-   move, tackle, turn and catch). Therefore internally different queues are 
-   stored. One with only one element, namely the last entered primary command. 
-   One with all the change_view commands (since these have to be sent at 
-   special times for the synchronization). And finally a separate queue 
+   move, tackle, turn and catch). Therefore internally different queues are
+   stored. One with only one element, namely the last entered primary command.
+   One with all the change_view commands (since these have to be sent at
+   special times for the synchronization). And finally a separate queue
    containing all the other commands. Each time a command is put into the queue
    that is already there, the command is updated with the new information.
    Furthermore it is also possible to directly send commands (or text strings)
@@ -109,7 +109,7 @@ public:
   bool           sendCommand      ( SoccerCommand soc          );
   bool           sendMessage      ( char          *str         );
   bool           sendCommandDirect( SoccerCommand soc          );
-  bool           sendMessageDirect( char          *str         );
+  bool           sendMessageDirect( const char          *str         );
 
 } ;
 #endif

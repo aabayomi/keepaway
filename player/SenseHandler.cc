@@ -881,7 +881,7 @@ bool SenseHandler::analyzeServerParamMessage( char *strMsg )
   return true;
 }
 
-bool SenseHandler::readServerParam( char *strParam, char *strMsg )
+bool SenseHandler::readServerParam( const char *strParam, char *strMsg )
 {
   char strFormat[128];
   char strValue[128] = "";

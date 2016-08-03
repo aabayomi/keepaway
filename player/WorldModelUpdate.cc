@@ -659,7 +659,7 @@ bool WorldModel::updateAll( )
   // call update method depending on last received message
   if( isFullStateOn( ) == true )
   {
-    Log.log( 101, "full state is on" );
+    //Log.log( 101, "full state is on" );
     updateRelativeFromGlobal();
     timeLastSenseMessage = timeLastRecvSeeMessage;
     timeLastSeeMessage   = timeLastRecvSeeMessage;

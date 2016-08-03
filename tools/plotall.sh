@@ -25,11 +25,9 @@ make
 cp graph.gnuplot.template graph.gnuplot
 cp hist.gnuplot.template hist.gnuplot
 
-i="1"
 for var in "$@"; do
-    ./winsum.sh $var $i
-    ./hist.sh $var $i
-    i=`expr $i + 1`
+    ./winsum.sh $var `basename $var .kwy`
+    ./hist.sh $var `basename $var .kwy`
 done
 
 gnuplot graph.gnuplot

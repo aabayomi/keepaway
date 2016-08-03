@@ -20,7 +20,8 @@
 set -o nounset                              # Treat unset variables as an error
 
 cd player
-make clean
-make
-make clean
-make
+
+for i in `seq 2`; do
+    make clean
+    make
+done
