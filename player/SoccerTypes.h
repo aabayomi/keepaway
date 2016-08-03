@@ -457,14 +457,14 @@ enum TiredNessT {
   TIREDNESS_AVERAGE,     /*!< average tiredness                             */
   TIREDNESS_BAD,         /*!< player starts to get tired                    */
   TIREDNESS_VERY_BAD,    /*!< player is so tired it can hardly move         */
-  TIREDNESS_TERRIBLE     /*!< player is so tired it cannot move             */ 
+  TIREDNESS_TERRIBLE     /*!< player is so tired it cannot move             */
 } ;
 
 /*! The FeaturesT enumeration contains different features that can be saved.
-    In this case, features represent specific information concerning the 
-    current state. When specific information is calculated once (e.g., the 
-    fastest opponent to the ball). This information can be stored. In the 
-    next request for this information, the stored result is immediately 
+    In this case, features represent specific information concerning the
+    current state. When specific information is calculated once (e.g., the
+    fastest opponent to the ball). This information can be stored. In the
+    next request for this information, the stored result is immediately
     returned. */
 enum FeatureT {
   FEATURE_ILLEGAL,                   /*!< illegal feature                    */
@@ -478,7 +478,7 @@ enum FeatureT {
   FEATURE_BEST_SCORING_POINT,        /*!< best scoring point in the goal     */
   MAX_FEATURES
 } ;
-  
+
 /*! The DirectionT enumeration contains the different directions */
 enum DirectionT {
   DIR_ILLEGAL,                 /*!< illegal message                          */
@@ -651,7 +651,7 @@ public:
   // standard get and set methods
   Feature(                                                                   );
   Feature(                    Time          timeSee,
-                              Time          timeSense, 
+                              Time          timeSense,
                               Time          timeHear,
                               ObjectT       object,
                               double        dInfo = UnknownDoubleValue,
@@ -730,29 +730,29 @@ class SoccerTypes
   // methods that deal with the differen play modes
   static PlayModeT       getPlayModeFromStr        ( char         *str       );
   static PlayModeT       getPlayModeFromRefereeMessage( RefereeMessageT rm   );
-  static char*           getPlayModeStr            ( PlayModeT    p          );
-  static char*           getRefereeMessageStr      ( RefereeMessageT r       );
+  static const char*           getPlayModeStr            ( PlayModeT    p          );
+  static const char*           getRefereeMessageStr      ( RefereeMessageT r       );
   static RefereeMessageT getRefereeMessageFromStr  ( char         *str       );
 
   // methods that deal with the frequency of the visual information
-  static char*           getViewAngleStr           ( ViewAngleT   v          );
+  static const char*           getViewAngleStr           ( ViewAngleT   v          );
   static ViewAngleT      getViewAngleFromStr       ( char         *str       );
   static AngDeg          getHalfViewAngleValue     ( ViewAngleT   va         );
-  static char*           getViewQualityStr         ( ViewQualityT v          );
+  static const char*           getViewQualityStr         ( ViewQualityT v          );
   static ViewQualityT    getViewQualityFromStr     ( char         *str       );
 
   // methods that deal with the commands
-  static char*           getCommandStr             ( CommandT     com        );
+  static const char*           getCommandStr             ( CommandT     com        );
   static bool            isPrimaryCommand          ( CommandT     com        );
 
   // methods that deal with the side information
-  static char*           getSideStr                ( SideT        s          );
+  static const char*           getSideStr                ( SideT        s          );
   static SideT           getSideFromStr            ( char*        str        );
 
   // methods that deal with the status of the ball.
-  static char*           getBallStatusStr          ( BallStatusT  bs         );
+  static const char*           getBallStatusStr          ( BallStatusT  bs         );
   static BallStatusT     getBallStatusFromStr      ( char         *str       );
-  
+
   static AngDeg          getAngleFromDirection     ( DirectionT   dir        );
 } ;
 

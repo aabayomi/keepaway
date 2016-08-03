@@ -1151,7 +1151,7 @@ char* SoccerTypes::getObjectStr( char* strBuf, ObjectT o,
                                  const char *strTeamName )
 {
   if( o >= OBJECT_BALL && o <=   OBJECT_FLAG_C )
-    sprintf( strBuf, ObjectNames[(int)o] );
+    sprintf( strBuf, "%s", ObjectNames[(int)o] );
   else if( isKnownPlayer( o ) && strTeamName != NULL )
     sprintf( strBuf, "(p %s %d)", strTeamName, getIndex( o ) + 1);
   else if( isKnownPlayer( o ) && isTeammate( o ) )
@@ -1804,7 +1804,7 @@ AngDeg SoccerTypes::getGlobalAngleLine( ObjectT o , SideT s )
     in the Robocup Soccer Simulation and also said by the referee.
     \param pm PlayModeT which should be converted
     \return  pointer to the string (enough memory has to be allocated) */
-char* SoccerTypes::getPlayModeStr( PlayModeT pm )
+const char* SoccerTypes::getPlayModeStr( PlayModeT pm )
 {
   switch( pm )
   {
@@ -1901,7 +1901,7 @@ PlayModeT SoccerTypes::getPlayModeFromRefereeMessage( RefereeMessageT rm )
     used in the Robocup Soccer Simulation and said by the referee.
     \param pm RefereeMessageT which should be converted
     \return  pointer to the string (enough memory should be allocated) */
-char* SoccerTypes::getRefereeMessageStr( RefereeMessageT rm )
+const char* SoccerTypes::getRefereeMessageStr( RefereeMessageT rm )
 {
   switch( rm )
   {
@@ -2077,7 +2077,7 @@ RefereeMessageT SoccerTypes::getRefereeMessageFromStr( char* str )
     in the Robocup Soccer Simulation
     \param va ViewAngleT which should be converted
     \return  pointer to the string (enough memory should be allocatd) */
-char* SoccerTypes::getViewAngleStr( ViewAngleT va )
+const char* SoccerTypes::getViewAngleStr( ViewAngleT va )
 {
   switch( va )
   {
@@ -2128,7 +2128,7 @@ AngDeg SoccerTypes::getHalfViewAngleValue( ViewAngleT va )
     in the Robocup Soccer Simulation
     \param vq ViewQualityT which should be converted
     \return  pointer to the string (enough memory should be allocated) */
-char* SoccerTypes::getViewQualityStr( ViewQualityT vq )
+const char* SoccerTypes::getViewQualityStr( ViewQualityT vq )
 {
   switch( vq )
   {
@@ -2154,7 +2154,7 @@ ViewQualityT SoccerTypes::getViewQualityFromStr( char* str )
     used in the Robocup Soccer Simulation
     \param com CommandT that should be converted
     \return  pointer to the string (enough memory should be allocated) */
-char* SoccerTypes::getCommandStr( CommandT com )
+const char* SoccerTypes::getCommandStr( CommandT com )
 {
   switch( com )
   {
@@ -2192,7 +2192,7 @@ bool SoccerTypes::isPrimaryCommand( CommandT com )
     Robocup Soccer Simulation (r or l).
     \param s SideT which should be converted
     \return pointer to the string */
-char* SoccerTypes::getSideStr( SideT s )
+const char* SoccerTypes::getSideStr( SideT s )
 {
   switch( s )
   {
@@ -2220,7 +2220,7 @@ SideT SoccerTypes::getSideFromStr( char* str )
     out_of_field).
     \param bs BallStatus which should be converted
     \return pointer to the string (enough memory should be allocated) */
-char* SoccerTypes::getBallStatusStr( BallStatusT bs )
+const char* SoccerTypes::getBallStatusStr( BallStatusT bs )
 {
   switch( bs )
   {

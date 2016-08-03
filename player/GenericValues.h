@@ -142,7 +142,7 @@ private:
 public:
 
   // constructor for the GenericValues class
-  GenericValues           ( char *strName,              int iMaxValues       );
+  GenericValues           ( const char *strName,              int iMaxValues       );
 
   // destructor for the GenericValues class
   virtual ~GenericValues  (                                                  );

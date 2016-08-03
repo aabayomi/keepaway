@@ -102,8 +102,8 @@ const char* GenericValueT::getName ( )
     the right type for this GenericValueT object.
 
     \param strValue a string denoting the value to which the variable
-    associated with this GenericValueT object must be set 
-    
+    associated with this GenericValueT object must be set
+
     \return a boolean indicating whether the update was successful */
 bool GenericValueT::setValue( const char *strValue )
 {
@@ -240,7 +240,7 @@ void GenericValueT::show( ostream& out, const char *strSeparator )
     actual generic variables)
     \param iMaxValues an integer denoting the number of generic values in the
     current collection, i.e. the maximum number that can be stored */
-GenericValues::GenericValues( char *strName, int iMaxValues )
+GenericValues::GenericValues( const char *strName, int iMaxValues )
 {
   m_iValuesTotal = 0;   // total number of values in collection is set to zero
 
