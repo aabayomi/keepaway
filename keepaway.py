@@ -105,14 +105,13 @@ def launch_server(options):
     Launches the server.
     Returns its process id.
     """
-    from socket import gethostname
     from subprocess import Popen
     from time import strftime
 
     # Some helpful vars.
-    log_name = '%s-%s' % (strftime('%Y%m%d%H%M%S'), gethostname())
+    log_name = '%s' % strftime('%Y%m%d%H%M%S')
     if options.label:
-        log_name += "." + options.label
+        log_name += "-" + options.label
 
     # Build up the server arguments. Alphabetical order follows.
     server_options = []

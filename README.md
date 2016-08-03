@@ -9,7 +9,7 @@ C at t4 passes to B and B at t5 recievs the ball, the original single agent lear
 or hive mind learning have only 2 updates: t1-t3 for A and it2-t5 for B; the new 
 full hive mind learning has 4 updates: t1-t2 for B, t2-t3 for A, t3-t4 for C 
 and t4-t5 for B. Weights as well as traces are shared for this purpose. Global 
-optimality can be ensured with fixed opponents.
+optimality can be ensured given fixed opponents.
 
 - Aijun Bai
 
