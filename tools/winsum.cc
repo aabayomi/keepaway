@@ -34,6 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <math.h>
 #include <iostream>
+#include <cstring>
 
 using namespace std;
 
@@ -41,7 +42,7 @@ int
 main( int argc, char* argv[] )
 {
   char buffer[MAX_BUFFER];
-  int windowSize;
+  long windowSize;
   int *q;       // Episode duration queue
   int sum = 0;  // Window sum of episode durations
   int i;
@@ -69,36 +70,33 @@ main( int argc, char* argv[] )
 
   windowSize = atoi( argv[ 1 ] );
   q = new int[ windowSize ];
+  memset(q, 0, sizeof(int) * windowSize);
 
   // Ignore Header
   do {
     cin.getline( buffer, MAX_BUFFER );
   } while ( buffer[ 0 ] == '#' );
 
-  for ( i = 0; i < windowSize; i++ ) {
-    if ( cin >> iDummy ) {
-      cin >> iDummy;
-      cin >> iDummy;
-      cin >> q[ i ];
-      cin >> cDummy;
-      sum += q[ i ];
-    }
-    else {
-      cerr << "Not enough data to fill window\n";
-      return 1;
-    }
-  }
+//  for ( i = 0; i < windowSize; i++ ) {
+//    if ( cin >> iDummy ) {
+//      cin >> iDummy;
+//      cin >> iDummy;
+//      cin >> q[ i ];
+//      cin >> cDummy;
+//      sum += q[ i ];
+//    }
+//    else {
+//      cerr << "Not enough data to fill window\n";
+//      return 1;
+//    }
+//  }
   
   i = 0;
   ccount = 0;
+  start = 0; 
+  prev = 0;
 
-  start = 0;
-  prev = sum;
   while ( !cin.eof() ) {
-    if ( ccount % coarse == 0 )
-      cout << start / 10.0 / 3600 << " "
-	   << prev / 10.0 / windowSize << endl;
-    
     sum -= q[ i ];
     cin >> iDummy;
     cin >> iDummy;
@@ -108,9 +106,19 @@ main( int argc, char* argv[] )
     sum += q[ i ];
     start += q[ i ];
 
-    prev = ( 1 - alpha ) * prev + alpha * sum;
+    if (prev == 0) {
+      prev = sum;
+    }
+    else {
+      prev = ( 1 - alpha ) * prev + alpha * sum;
+    }
+
     i = ( i + 1 ) % windowSize;
     ccount++;
+
+    if ( ccount % coarse == 0 )
+      cout << start / 10.0 / 3600 << " "
+	   << prev / 10.0 / min(ccount, windowSize) << endl;
   }
 
   delete [] q;

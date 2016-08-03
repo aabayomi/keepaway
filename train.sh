@@ -7,9 +7,9 @@ if [ ! -z $1 ]; then
 fi
 
 LOG=""
-MONITOR=""
-
 #LOG="1"
+
+MONITOR=""
 #MONITOR="--monitor"
 
 PORT="--port=`shuf -i 2000-65000 -n 1`"
@@ -30,5 +30,5 @@ ulimit -c unlimited
 
 ./keepaway.py --keeper-learn --keeper-policy=learn \
     --keeper-output=$QFILE --keeper-input=$QFILE \
-    $HIVE $SYNC $MONITOR $LOG $PORT 2>&1 | tee console.log
+    $HIVE $SYNC $MONITOR $LOG $PORT
 

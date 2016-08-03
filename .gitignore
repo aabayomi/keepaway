@@ -9,7 +9,6 @@
 /tools/winsum
 .idea/
 nohup.out
-hive-*-Q
 tools/*.out
 tools/*.hist
 tools/*.eps
