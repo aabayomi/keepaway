@@ -33,7 +33,8 @@ def launch_player(player_type, index, options):
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
         i = '1', # verbose
-        z = int(options.tiling_per_variable),
+        z = int(options.joint_tiling),
+        u = int(options.use_center_position),
         l = options.log_level, # log level
         o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index),
         e = int(getattr(options, player_type + '_learn')),
@@ -334,8 +335,11 @@ def parse_options(args = None, **defaults):
         '--fullstate', action = 'store_true', default = False,
         help = "Use fullstate information for left and right.")
     parser.add_option(
-        '--tiling-per-variable', action = 'store_true', default = False,
-        help = "Tiling per state variable.")
+        '--joint-tiling', action = 'store_true', default = False,
+        help = "Tiling using all state variables (not per state variable).")
+    parser.add_option(
+        '--use-center-position', action = 'store_true', default = False,
+        help = "Consider center position in state representation.")
 
     options = parser.parse_args(args)[0]
     # Set coach_port and online_coach_port here, if not set previously.

@@ -16,7 +16,7 @@ public:
 	~collision_table();
 	const long m;
 	long *data;
-	int safe;
+	const int safe;
 	long calls;
 	long clearhits;
 	long collisions;

@@ -23,11 +23,11 @@ CFLAGS_LIBS     = ${CLIBS_linux}
 #CFLAGS_LIBS    = ${CLIBS_SunOS_5}
 
 CFLAGS_DEBUG	= -g3
-CFLAGS_OPT     	= -O3
+CFLAGS_OPT     	= -O0
 CFLAGS_WARN     = -Wall
 
 OSFLAGS_SunOS_5 = -DSolaris 
-OSFLAGS_linux   = -Dlinux -rdynamic -DNDEBUG
+OSFLAGS_linux   = -Dlinux -rdynamic #-DNDEBUG
 
 CLIBS_SunOS_5   = 
 CLIBS_linux     =

@@ -115,7 +115,8 @@ int main( int argc, char * argv[] )
   bool     bSuppliedLogDrawFile              = false;
   int      iStopAfter                        = -1; //*met+1 8/16/05
   int      iStartLearningAfter               = -1;
-  bool     tilingPerVariable                 = false;
+  bool     jointTiling                       = false;
+  bool     useCenterPosition                 = false;
 
   ofstream os;
   ofstream osDraw;
@@ -233,6 +234,10 @@ int main( int argc, char * argv[] )
         case 't':                                   // teamname name
           strcpy( strTeamName, argv[i+1] );
           break;
+        case 'u':
+          str   = &argv[i+1][0];
+          useCenterPosition = Parse::parseFirstInt( &str ) == 1;
+          break;
         case 'v':                                   // version version
           str = &argv[i+1][0];
           dVersion = Parse::parseFirstDouble( &str );
@@ -250,7 +255,7 @@ int main( int argc, char * argv[] )
           break;
         case 'z':
           str   = &argv[i+1][0];
-          tilingPerVariable = Parse::parseFirstInt( &str ) == 1;
+          jointTiling = Parse::parseFirstInt( &str ) == 1;
           break;
         default:
           cerr << "(main) Unknown command option: " << argv[i] << endl;
@@ -267,9 +272,9 @@ int main( int argc, char * argv[] )
          "mode         : "  << iMode          << endl <<
          "playernr     : "  << iNr            << endl <<
          "reconnect    : "  << iReconnect     << endl <<
-         "tiling per variable: " << tilingPerVariable << endl <<
-         "hive mind mode : " << hiveMind << endl <<
-         "be learning: " << bLearn << endl;
+         "joint tiling: "   << jointTiling    << endl <<
+         "hive mind mode : " << hiveMind      << endl <<
+         "be learning: "     << bLearn << endl;
   }
 
   if(bSuppliedLogFile)
@@ -290,6 +295,8 @@ int main( int argc, char * argv[] )
   ActHandler a( &c, &wm, &ss );                // link actHandler and worldmodel
   SenseHandler s( &c, &wm, &ss, &cs );         // link senseHandler with wm
 
+  wm.useCenterPosition = useCenterPosition;
+
   SMDPAgent *sa = NULL;
 
   double ranges[ MAX_STATE_VARS ];
@@ -304,7 +311,7 @@ int main( int argc, char * argv[] )
     // or "learned!" -> Don't explore at all.
     LinearSarsaAgent* linearSarsaAgent = new LinearSarsaAgent(
         numFeatures, numActions, bLearn, resolutions,
-        loadWeightsFile, saveWeightsFile, hiveMind, tilingPerVariable
+        loadWeightsFile, saveWeightsFile, hiveMind, jointTiling
     );
     // Check for pure exploitation mode.
     size_t length = strlen(strPolicy);

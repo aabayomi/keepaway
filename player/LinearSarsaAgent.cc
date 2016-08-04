@@ -77,7 +77,7 @@ long* LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
   colTab->clearhits = shared->clearhits;
   colTab->collisions = shared->collisions;
   *const_cast<long*>(&colTab->m) = shared->m;
-  colTab->safe = shared->safe;
+  *const_cast<int*>(&colTab->safe) = shared->safe;
 
   if (hiveMind > 1) {
     memcpy(Q, shared->Q, sizeof(shared->Q));
@@ -117,10 +117,10 @@ LinearSarsaAgent::LinearSarsaAgent( int numFeatures,
                                     char *loadWeightsFile,
                                     char *saveWeightsFile,
                                     int hiveMind,
-                                    bool tilingPerVariable):
+                                    bool jointTiling):
     SMDPAgent( numFeatures, numActions ),
     hiveFile(-1),
-    tilingPerVariable(tilingPerVariable)
+    jointTiling(jointTiling)
 {
   bLearning = bLearn;
 
@@ -602,8 +602,22 @@ void LinearSarsaAgent::updateWeights( double delta )
 
 void LinearSarsaAgent::loadTiles( double state[] ) // will change colTab->data implictly
 {
-  if (tilingPerVariable) {
-    const int tilingsPerGroup = 32;
+  const int tilingsPerGroup = 32;
+
+  if (jointTiling) {
+    numTilings = tilingsPerGroup * getNumFeatures();
+
+    float state2[ MAX_STATE_VARS ];
+    for (int v = 0; v < getNumFeatures(); v++) {
+      state2[v] = (float) (state[v] / tileWidths[v]);
+    }
+
+    for (int a = 0; a < getNumActions(); a++) {
+      GetTiles(&(tiles[a][0]), numTilings, colTab,
+               state2, getNumFeatures(), a);
+    }
+  }
+  else { // tiling per state variable
     numTilings = 0;
 
     /* These are the 'tiling groups'  --  play here with representations */
@@ -614,19 +628,6 @@ void LinearSarsaAgent::loadTiles( double state[] ) // will change colTab->data i
                   (float) (state[v] / tileWidths[v]), a, v);
       }
       numTilings += tilingsPerGroup;
-    }
-  }
-  else {
-    numTilings = 32 * getNumFeatures();
-
-    float state2[ MAX_STATE_VARS ];
-    for (int v = 0; v < getNumFeatures(); v++) {
-      state2[v] = (float) (state[v] / tileWidths[v]);
-    }
-
-    for (int a = 0; a < getNumActions(); a++) {
-      GetTiles(&(tiles[a][0]), numTilings, colTab,
-                state2, getNumFeatures(), a);
     }
   }
 
@@ -660,13 +661,17 @@ void LinearSarsaAgent::clearExistentTrace( int f, int loc )
   }
 
   traces[ f ] = 0.0;
-  numNonzeroTraces--;
 
-  assert(numNonzeroTraces < RL_MAX_NONZERO_TRACES);
-  assert(numNonzeroTraces >= 0);
-  assert(nonzeroTraces[ numNonzeroTraces ] < RL_MEMORY_SIZE);
-  nonzeroTraces[ loc ] = nonzeroTraces[ numNonzeroTraces ];
-  nonzeroTracesInverse[ nonzeroTraces[ loc ] ] = loc;
+  if (numNonzeroTraces > 0) {
+    numNonzeroTraces--;
+    nonzeroTraces[loc] = nonzeroTraces[numNonzeroTraces];
+    nonzeroTracesInverse[nonzeroTraces[loc]] = loc;
+  }
+  else {
+    assert(numNonzeroTraces == 0);
+    assert(0);
+    memset(traces, 0, sizeof(double) * RL_MEMORY_SIZE);
+  }
 }
 
 // Decays all the (nonzero) traces by decay_rate, removing those below minimum_trace

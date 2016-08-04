@@ -19,7 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-WINDOW="200"
+WINDOW="100"
 ALPHA="0.01"
 COARSE="100"
 

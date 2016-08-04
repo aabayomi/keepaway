@@ -5,16 +5,18 @@ FULLSTATE=""
 MONITOR=""
 SYNCH=""
 LOG=""
-TILINGPERV=""
+LOGLEVEL="101"
+JOINTTILING=""
+USECENTERP=""
 
-while getopts  "h:l:fmsz" flag; do
+while getopts  "h:lfmszu" flag; do
     case "$flag" in
         h) HIVEMODE=$OPTARG;;
-        f) FULLSTATE="--fullstate";;
-        m) MONITOR="--monitor";;
+        f) FULLSTATE="--fullstate";; m) MONITOR="--monitor";;
         s) SYNCH="--synch-mode";;
-        l) LOG="--log-dir=logs --log-game --log-text --log-level $OPTARG";;
-        z) TILINGPERV="--tiling-per-variable";;
+        l) LOG="--log-dir=logs --log-game --log-text --log-level $LOGLEVEL";;
+        z) JOINTTILING="--joint-tiling";;
+        u) USECENTERP="--use-center-position";;
     esac
 done
 
@@ -25,13 +27,19 @@ PORT="--port=`shuf -i 2000-65000 -n 1`"
 if [ ! -z $FULLSTATE ]; then
     QFILE="${QFILE}_fs"
 else
-    QFILE="${QFILE}_!fs"
+    QFILE="${QFILE}_nfs"
 fi
 
-if [ ! -z $TILINGPERV ]; then
-    QFILE="${QFILE}_tpv"
+if [ ! -z $JOINTTILING ]; then
+    QFILE="${QFILE}_jt"
 else
-    QFILE="${QFILE}_!tpv"
+    QFILE="${QFILE}_njt"
+fi
+
+if [ ! -z $USECENTERP ]; then
+    QFILE="${QFILE}_ucp"
+else
+    QFILE="${QFILE}_nucp"
 fi
 
 ulimit -c unlimited
@@ -40,5 +48,5 @@ ulimit -c unlimited
 ./keepaway.py --keeper-learn --keeper-policy=learn \
     --keeper-output=$QFILE --keeper-input=$QFILE \
     $HIVE $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
-    $TILINGPERV --label=$QFILE
+    $JOINTTILING --label=$QFILE
 

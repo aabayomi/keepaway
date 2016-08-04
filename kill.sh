@@ -1,7 +1,9 @@
 #!/bin/bash
 
-kill -INT `pidof lt-rcssserver`
-kill -INT `pidof rcssserver`
-killall rcssserver
-killall lt-rcssserver
+for i in `seq 1 100`; do
+    kill -INT `pidof lt-rcssserver` 1>/dev/null 2>&1
+    kill -INT `pidof rcssserver` 1>/dev/null 2>&1
+    killall rcssserver 1>/dev/null 2>&1
+    killall lt-rcssserver 1>/dev/null 2>&1
+done 
 

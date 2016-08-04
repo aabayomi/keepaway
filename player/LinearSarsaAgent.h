@@ -17,7 +17,7 @@ private:
   std::string lockName;
 
 public:
-  FileLock(const std::string name, int ms, int max_loops = 100);
+  FileLock(const std::string name, int ms, int max_loops = 10);
   ~FileLock();
 };
 
@@ -27,7 +27,7 @@ protected:
   char weightsFile[256];
   bool bLearning;
   bool bSaveWeights;
-  bool tilingPerVariable;
+  bool jointTiling;
 
   /// Hive mind indicator and file descriptor.
   int hiveMind; // 0: hive mind, 1: full hive mind
@@ -94,7 +94,7 @@ public:
                                       char   *loadWeightsFile,
                                       char   *saveWeightsFile,
                                       int    hiveMind,
-                                      bool   tilingPerVariable);
+                                      bool   jointTiling);
 
   // Support for extra modes and/or analysis.
   double getQ(int action);

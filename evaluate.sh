@@ -27,7 +27,7 @@ fi
 if [ ! -z $FULLSTATE ]; then
     LABEL="${LABEL}_FS"
 else
-    LABEL="${LABEL}_!FS"
+    LABEL="${LABEL}_NFS"
 fi
 
 ulimit -c unlimited

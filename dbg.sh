@@ -6,6 +6,7 @@ while read LINE; do
         echo "b $LINE" >> .gdbinit
     fi
 done <breakpoints
+echo "c" >> .gdbinit
 
-cgdb -- ./player/keepaway_player `ps -o pid= -C keepaway_player`
+cgdb -- ./player/keepaway_player -x .gdbinit `ps -o pid= -C keepaway_player`
 
