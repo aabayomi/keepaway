@@ -33,7 +33,7 @@ def launch_player(player_type, index, options):
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
         l = options.log_level, # log level
-        o = 'logs/{}_{}.log'.format(player_type, index),
+        o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index),
         e = int(getattr(options, player_type + '_learn')),
         j = options.taker_count,
         k = options.keeper_count,

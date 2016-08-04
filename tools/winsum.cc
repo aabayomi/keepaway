@@ -116,9 +116,10 @@ main( int argc, char* argv[] )
     i = ( i + 1 ) % windowSize;
     ccount++;
 
-    if ( ccount % coarse == 0 )
-      cout << start / 10.0 / 3600 << " "
-	   << prev / 10.0 / min(ccount, windowSize) << endl;
+    if (ccount >= windowSize) {
+      if ( ccount % coarse == 0 )
+        cout << start / 10.0 / 3600 << " " << prev / 10.0 / windowSize << endl;
+    }
   }
 
   delete [] q;

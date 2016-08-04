@@ -19,9 +19,19 @@ done
 
 PORT="--port=`shuf -i 2000-65000 -n 1`"
 LABEL=$POLICY
+
 if [ $POLICY = "learn" ] && [ ! -z $QFILE ]; then
     LABEL="${LABEL}-`basename $QFILE`"
 fi
+
+if [ ! -z $FULLSTATE ]; then
+    LABEL="${LABEL}_FS"
+else
+    LABEL="${LABEL}_NFS"
+fi
+
+ulimit -c unlimited
+./build.sh
 
 ./keepaway.py --keeper-policy=$POLICY \
     --keeper-output=$QFILE --keeper-input=$QFILE \

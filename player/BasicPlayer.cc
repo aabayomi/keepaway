@@ -148,7 +148,7 @@ SoccerCommand BasicPlayer::turnNeckToPoint(VecPosition pos, SoccerCommand soc)
 
   LogDraw.logCircle( "turn neck point", WM->getBallPos(),
 		     1.2, 12, true, COLOR_BLUE, WM->getConfidence( OBJECT_BALL ) );
-  
+
 
   // predict agent information after command 'soc' is performed
   // calculate the desired global angle of the neck
@@ -197,14 +197,14 @@ SoccerCommand BasicPlayer::searchBall()
     return soc;
 
   if( WM->getCurrentTime() - timeLastSearch > 3 )
-    iSign = ( isAngInInterval( angBall, angBody, 
-			       VecPosition::normalizeAngle(angBody+180) ) ) 
+    iSign = ( isAngInInterval( angBall, angBody,
+			       VecPosition::normalizeAngle(angBody+180) ) )
       ? 1
       : -1  ;
-   
+
   //  if( iSign == -1 )
   // angBall = VecPosition::normalizeAngle( angBall + 180 );
-  
+
   soc = turnBodyToPoint( posAgent + VecPosition(1.0,
 		VecPosition::normalizeAngle(angBody+60*iSign), POLAR ) );
   Log.log( 556, "search ball: turn to %f s %d t(%d %d) %f", angBall, iSign,
@@ -228,7 +228,7 @@ SoccerCommand BasicPlayer::searchBall()
     position of 'pos' relative to the agent as input and 'iCycles'
     which denotes in how many cycles we want to reach that point.
     \param pos global position to which the agent wants to dash
-    \param iCycles desired number of cycles to reach point 'pos' 
+    \param iCycles desired number of cycles to reach point 'pos'
     \return SoccerCommand dash command to move closer to 'pos' */
 SoccerCommand BasicPlayer::dashToPoint( VecPosition pos, int iCycles )
 {
@@ -276,7 +276,7 @@ SoccerCommand BasicPlayer::freezeBall( )
   Log.log( 102, "freeze ball will end up oustide -> accelerate" );
   posBall = WM->getBallPos();
   // kick ball to position inside to compensate when agent is moving
-  VecPosition posTo   = posAgentPred + 
+  VecPosition posTo   = posAgentPred +
     VecPosition( min( 0.7 * SS->getMaximalKickDist(),
 		      posBall.getDistanceTo( posAgentPred ) - 0.1 ),
 		 (posBall-posAgentPred).getDirection(),
@@ -326,11 +326,11 @@ SoccerCommand BasicPlayer::kickBallCloseToBody( AngDeg ang, double dKickRatio )
       lineSide = Line::makeLineFromPositionAndAngle(
 	  VecPosition( 0, sign(posDesBall.getX() )* PITCH_LENGTH/2.0 ),  90 );
     VecPosition posIntersect = lineSide.getIntersection( lineBody );
-    posDesBall = posAgent + 
-      VecPosition( posIntersect.getDistanceTo( posAgent ) - 0.2, 
+    posDesBall = posAgent +
+      VecPosition( posIntersect.getDistanceTo( posAgent ) - 0.2,
 		   angGlobal, POLAR );
   }
-    
+
   VecPosition vecDesired = posDesBall - WM->getBallPos();
   VecPosition vecShoot   = vecDesired - WM->getGlobalVelocity( OBJECT_BALL );
   double      dPower     = WM->getKickPowerForSpeed( vecShoot.getMagnitude() );
@@ -360,7 +360,7 @@ SoccerCommand BasicPlayer::kickBallCloseToBody( AngDeg ang, double dKickRatio )
     }
   }
   else
-    Log.log( 102, "(kick %f %f), vecDesired (%f,%f) %f posDes(%f,%f)", 
+    Log.log( 102, "(kick %f %f), vecDesired (%f,%f) %f posDes(%f,%f)",
 	     dPower, angActual,vecDesired.getX(), vecDesired.getY(),ang,
 	     posDesBall.getX(), posDesBall.getY() );
   return SoccerCommand( CMD_KICK, dPower, angActual );
@@ -527,17 +527,17 @@ SoccerCommand BasicPlayer::directTowards( VecPosition posTurnTo,
     ang = VecPosition::normalizeAngle( angTo - angBodyAgent );
   }
   Log.log( 509, "direct towards: %d turns", iTurn );
-  posAgent = (pos    ==NULL)?WM->getAgentGlobalPosition ():*pos;  
-  velAgent = (vel    ==NULL)?WM->getAgentGlobalVelocity ():*vel;      
+  posAgent = (pos    ==NULL)?WM->getAgentGlobalPosition ():*pos;
+  velAgent = (vel    ==NULL)?WM->getAgentGlobalVelocity ():*vel;
   angBodyAgent = (angBody==NULL)?WM->getAgentGlobalBodyAngle():*angBody;
 
   switch( iTurn )
   {
     case 0:   cerr << "direct towards: 0 turns" ;
               return SoccerCommand( CMD_ILLEGAL );
-    case 1: 
+    case 1:
     case 2:   return turnBodyToPoint( posTurnTo, 2 );
-    default:  return dashToPoint( 
+    default:  return dashToPoint(
              (pos==NULL)?WM->getAgentGlobalPosition ():*pos   );  // stop
   }
 }
@@ -586,17 +586,17 @@ SoccerCommand BasicPlayer::moveToPos( VecPosition posTo, AngDeg angWhenToTurn,
 //  VecPosition posPred   = WM->predictAgentPos( 1, 0 );
   VecPosition posAgent  = WM->getAgentGlobalPosition();
   VecPosition posPred   = WM->predictFinalAgentPos();
-  
+
   AngDeg      angBody   = WM->getAgentGlobalBodyAngle();
   AngDeg      angTo     = ( posTo - posPred ).getDirection();
               angTo     = VecPosition::normalizeAngle( angTo - angBody );
   AngDeg      angBackTo = VecPosition::normalizeAngle( angTo + 180 );
-  
+
   double      dDist     = posAgent.getDistanceTo( posTo );
 
-  Log.log( 509, "moveToPos (%f,%f): body %f to %f diff %f now %f when %f", 
-          posTo.getX(), posTo.getY(), angBody, 
-           ( posTo - posPred ).getDirection(), angTo, 
+  Log.log( 509, "moveToPos (%f,%f): body %f to %f diff %f now %f when %f",
+          posTo.getX(), posTo.getY(), angBody,
+           ( posTo - posPred ).getDirection(), angTo,
            ( posTo -  WM->predictAgentPos( 1, 0 )).getDirection(),
            angWhenToTurn );
   if( bMoveBack )
@@ -625,33 +625,33 @@ SoccerCommand BasicPlayer::moveToPos( VecPosition posTo, AngDeg angWhenToTurn,
 SoccerCommand BasicPlayer::collideWithBall( )
 {
   SoccerCommand soc( CMD_ILLEGAL );
-  if( WM->getRelativeDistance( OBJECT_BALL ) > 
+  if( WM->getRelativeDistance( OBJECT_BALL ) >
       WM->getBallSpeed() + SS->getPlayerSpeedMax() )
     return soc;
-   
+
   VecPosition posBallPred  = WM->predictPosAfterNrCycles( OBJECT_BALL, 1 );
-  
+
   // first try turn
-  soc                      = turnBodyToPoint( WM->getAgentGlobalPosition() + 
+  soc                      = turnBodyToPoint( WM->getAgentGlobalPosition() +
                                               VecPosition( 1, 0, POLAR ) );
   VecPosition posAgentPred = WM->predictAgentPosAfterCommand( soc );
-  if( posAgentPred.getDistanceTo( posBallPred ) < 
+  if( posAgentPred.getDistanceTo( posBallPred ) <
       SS->getBallSize() + SS->getPlayerSize() )
   {
     Log.log( 511, "can collide with ball by turning" );
     return soc;
   }
-                               
+
   soc          = dashToPoint( posBallPred, 1 );
   posAgentPred = WM->predictAgentPosAfterCommand( soc );
-  if( posAgentPred.getDistanceTo( posBallPred ) < 
+  if( posAgentPred.getDistanceTo( posBallPred ) <
       SS->getBallSize() + SS->getPlayerSize() )
   {
     Log.log( 511, "can collide with ball by dashing %f", soc.dPower );
     return soc;
   }
-    
-  return SoccerCommand( CMD_ILLEGAL );  
+
+  return SoccerCommand( CMD_ILLEGAL );
 }
 /*! This skill enables an agent to intercept a ball which is close to him. The
     objective is to move in such a way that the ball will come within the
@@ -717,6 +717,7 @@ SoccerCommand BasicPlayer::collideWithBall( )
     cannot be performed. The close interception procedure is heavily based on
     a similar method introduced in CMU'99 by Peter Stone.
     \return command to intercept ball in two cycles, CMD_ILLEGAL otherwise */
+
 SoccerCommand BasicPlayer::interceptClose( )
 {
   FeatureT feature_type = FEATURE_INTERCEPT_CLOSE;
@@ -845,7 +846,7 @@ SoccerCommand BasicPlayer::interceptClose( )
   }
 
   if( bReady != true )
-  { 
+  {
     if( bOppClose && ! socDash1.isIllegal() )
     {
       Log.log( 508, "do dash 1x, opponent close" );
@@ -856,9 +857,9 @@ SoccerCommand BasicPlayer::interceptClose( )
       soc = turnBodyToPoint( posPred1 + VecPosition(1,dDesBody, POLAR), 1 );
       WM->predictAgentStateAfterCommand(soc, &posPred, &velMe,
                                         &angBody, &ang, &sta);
-      posBall = WM->predictPosAfterNrCycles( OBJECT_BALL, 1 );    
+      posBall = WM->predictPosAfterNrCycles( OBJECT_BALL, 1 );
       if( posPred.getDistanceTo( posBall ) < 0.8*SS->getMaximalKickDist() )
-      {    
+      {
         socTurn = soc; // we can do turn and end up ok, but can maybe improve
         ang     = VecPosition::normalizeAngle(dDesBody-angBody);
         if( fabs(ang) < angThreshold )
@@ -867,17 +868,17 @@ SoccerCommand BasicPlayer::interceptClose( )
           Log.log( 508, "turn 1x, dist %f, angle %f, opp %f",
              dDist1, angTurn, dDistOpp );
         }
-          
+
       }
-      if( socFinal.isIllegal() ) 
+      if( socFinal.isIllegal() )
       {
-        ang     = VecPosition::normalizeAngle(dDesBody-angBody);      
-        WM->predictStateAfterTurn( 
+        ang     = VecPosition::normalizeAngle(dDesBody-angBody);
+        WM->predictStateAfterTurn(
                    WM->getAngleForTurn(ang,velMe.getMagnitude()),
-                   &posPred, &velMe, &angBody, &angNeck, 
+                   &posPred, &velMe, &angBody, &angNeck,
                    WM->getAgentObjectType(),
                    &sta             );
-        posBall = WM->predictPosAfterNrCycles( OBJECT_BALL, 2 );         
+        posBall = WM->predictPosAfterNrCycles( OBJECT_BALL, 2 );
         if( posPred.getDistanceTo( posBall ) < 0.8*SS->getMaximalKickDist() )
         {
           socTurn = soc; // we can do turn and end up ok, but can maybe improve
@@ -891,10 +892,10 @@ SoccerCommand BasicPlayer::interceptClose( )
         }
       }
       if( socFinal.isIllegal() && ! socCollide.isIllegal() &&
-          fabs( angTurn ) > angThreshold ) 
+          fabs( angTurn ) > angThreshold )
       {
         Log.log( 508, "collide with ball on purpose" );
-        posBall = WM->predictPosAfterNrCycles( OBJECT_BALL, 1 );            
+        posBall = WM->predictPosAfterNrCycles( OBJECT_BALL, 1 );
         socFinal = socCollide;
       }
       if( socFinal.isIllegal() && fabs( angTurn ) > angThreshold )
@@ -914,7 +915,7 @@ SoccerCommand BasicPlayer::interceptClose( )
       {
         Log.log( 508, "can do turn" );
         socFinal = socTurn;
-      }    
+      }
       if( socFinal.isIllegal()  && ! socDash1.isIllegal() )
       {
         Log.log( 508, "do dash 1x" );
@@ -944,7 +945,7 @@ SoccerCommand BasicPlayer::interceptClose( )
   }
 
 
-  else if( socCollide.commandType != CMD_ILLEGAL && 
+  else if( socCollide.commandType != CMD_ILLEGAL &&
            fabs( angTurn ) > angThreshold )
   {
     Log.log( 508, "collide with ball on purpose" );
@@ -961,7 +962,7 @@ SoccerCommand BasicPlayer::interceptClose( )
   WM->setFeature( feature_type,
               Feature( WM->getTimeLastSeeMessage(),
                        WM->getTimeLastSenseMessage(),
-                       WM->getTimeLastHearMessage(),                       
+                       WM->getTimeLastHearMessage(),
                        OBJECT_ILLEGAL,
                        -1,
                        socFinal ) );
@@ -1069,7 +1070,7 @@ SoccerCommand BasicPlayer::interceptCloseGoalie( )
       soc = turnBodyToPoint( posBall, 2 );             // perform turn
       WM->predictAgentStateAfterCommand(soc,&posPred,&velMe,&angBody,&ang,&sta
 );
-      dPower=WM->getPowerForDash(posBall-posPred, angBody, 
+      dPower=WM->getPowerForDash(posBall-posPred, angBody,
                                  velMe, sta.getEffort());
       WM->predictStateAfterDash( dPower, &posPred, &velMe, &sta, angBody);
       if( posPred.getDistanceTo(posBall) < SS->getCatchableAreaL() )
@@ -1125,11 +1126,11 @@ SoccerCommand BasicPlayer::kickTo( VecPosition posTarget, double dEndSpeed )
   VecPosition velDes   = VecPosition(
                WM->getKickSpeedToTravel( posTraj.getMagnitude(), dEndSpeed ),
                posTraj.getDirection(),
-               POLAR                                                       ); 
+               POLAR                                                       );
   double      dPower;
   AngDeg      angActual;
 
-  if( WM->predictAgentPos(1, 0 ).getDistanceTo( posBall + velDes ) < 
+  if( WM->predictAgentPos(1, 0 ).getDistanceTo( posBall + velDes ) <
       SS->getBallSize() + SS->getPlayerSize() )
   {
     Line line = Line::makeLineFromTwoPoints( posBall, posBall + velDes );
@@ -1160,7 +1161,7 @@ SoccerCommand BasicPlayer::kickTo( VecPosition posTarget, double dEndSpeed )
 
 
   double   dDistOpp;
-  ObjectT  objOpp     = WM->getClosestInSetTo( OBJECT_SET_OPPONENTS, 
+  ObjectT  objOpp     = WM->getClosestInSetTo( OBJECT_SET_OPPONENTS,
                                                  OBJECT_BALL, &dDistOpp );
 
   if( velDes.getMagnitude() > SS->getBallSpeedMax() ) // can never reach point
@@ -1172,7 +1173,7 @@ SoccerCommand BasicPlayer::kickTo( VecPosition posTarget, double dEndSpeed )
     double   dSpeedPred = (WM->getGlobalVelocity(OBJECT_BALL)+
                            VecPosition(dSpeed,angActual, POLAR )
                           ).getMagnitude();
-  
+
     // but ball acceleration in right direction is very high
     if( dSpeedPred > PS->getPlayerWhenToKick()*SS->getBallAccelMax() )
     {
@@ -1348,10 +1349,10 @@ SoccerCommand BasicPlayer::turnWithBallTo( AngDeg ang, AngDeg, double )
   SoccerCommand socCollide = collideWithBall( );
   if( ! socCollide.isIllegal( ) )
   {
-    Log.log( 102, "turnWithBall: collide with ball" );  
+    Log.log( 102, "turnWithBall: collide with ball" );
     return socCollide;
   }
-  else if( posAgentPred.getDistanceTo(posBall) < 0.8*SS->getMaximalKickDist() 
+  else if( posAgentPred.getDistanceTo(posBall) < 0.8*SS->getMaximalKickDist()
            &&
            WM->getBallSpeed() > 0.1  )
   {
@@ -1460,7 +1461,7 @@ SoccerCommand BasicPlayer::moveToPosAlongLine( VecPosition pos, AngDeg ang,
   }
   else if(  posBall.getDistanceTo( OBJECT_BALL ) < 60 && dDiff > 0.6 )
     return dashToPoint( pos );  // move later when ball is far from pen. area.
-  else if( posBall.getDistanceTo( OBJECT_BALL ) < 30  && dDiff > 0.3 ) 
+  else if( posBall.getDistanceTo( OBJECT_BALL ) < 30  && dDiff > 0.3 )
     return dashToPoint( pos );  // move earlier when is ball near pen. area.
   else
     return SoccerCommand( CMD_ILLEGAL );
@@ -1572,10 +1573,10 @@ SoccerCommand BasicPlayer::dribble( AngDeg ang, DribbleT dribbleT )
 
   // adjust when point lies outside side of field
   // to a point that lies at distance 2.0 from the side of the field
-  if( fabs( posDribble.getY() ) > PITCH_WIDTH/2.0  - 3.0 ) 
+  if( fabs( posDribble.getY() ) > PITCH_WIDTH/2.0  - 3.0 )
     posDribble.setY( (PITCH_WIDTH/2.0  - 3.0)*sign(posDribble.getY()) );
   if( fabs( posDribble.getX() ) > PITCH_LENGTH/2.0 - 3.0 )
-    posDribble.setX( (PITCH_LENGTH/2.0  - 3.0)*sign(posDribble.getX()) );  
+    posDribble.setX( (PITCH_LENGTH/2.0  - 3.0)*sign(posDribble.getX()) );
 
   soc = kickTo( posDribble, 0.5 );
 
@@ -1757,7 +1758,7 @@ SoccerCommand BasicPlayer::outplayOpponent( ObjectT o, VecPosition pos,
                                             VecPosition *posTo )
 {
   // future: take more than one opponent into account
-  
+
   VecPosition posAgent   = WM->getAgentGlobalPosition();
   AngDeg      angBody    = WM->getAgentGlobalBodyAngle();
 
@@ -1826,7 +1827,7 @@ SoccerCommand BasicPlayer::outplayOpponent( ObjectT o, VecPosition pos,
      posShoot.getY() );
     return SoccerCommand( CMD_ILLEGAL );
   }
-  else if( WM->getNrInSetInCircle( OBJECT_SET_OPPONENTS, 
+  else if( WM->getNrInSetInCircle( OBJECT_SET_OPPONENTS,
               Circle( posShoot, posShoot.getDistanceTo( posAgent ) ) ) > 1 )
   {
     Log.log( 552, "outplay: nr of opp in circle > 1" );
@@ -1834,7 +1835,7 @@ SoccerCommand BasicPlayer::outplayOpponent( ObjectT o, VecPosition pos,
     return SoccerCommand( CMD_ILLEGAL );
   }
   else if( WM->getCurrentTime() - WM->getTimeGlobalAngles(o) < 3 )
-  {   
+  {
     double dDistOpp = posShoot.getDistanceTo( posObj ) ;
     if( fabs( VecPosition::normalizeAngle( (posShoot - posObj).getDirection() -
 					   WM->getGlobalBodyAngle(o) ) ) < 30 )
@@ -2025,17 +2026,17 @@ SoccerCommand BasicPlayer::mark( ObjectT o, double dDist, MarkT mark )
   {
     AngDeg angOpp = (WM->getGlobalPosition( o ) - posAgent).getDirection();
     AngDeg angBall = (posBall - posAgent).getDirection();
-    if( isAngInInterval( angBall, angOpp, 
+    if( isAngInInterval( angBall, angOpp,
                          VecPosition::normalizeAngle( angOpp + 180 ) ) )
       angOpp += 80;
     else
-      angOpp -= 80;       
+      angOpp -= 80;
     angOpp  = VecPosition::normalizeAngle( angOpp );
     Log.log( 513, "mark: turn body to ang %f", angOpp );
     return turnBodyToPoint( posAgent + VecPosition( 1.0, angOpp, POLAR )  );
   }
   Log.log( 513, "move to marking position" );
-  
+
   return moveToPos( posMark, 25, 3.0, false );
 }
 
@@ -2139,7 +2140,7 @@ SoccerCommand BasicPlayer::defendGoalLine( double dDist )
   // than 0.5 from desired line, adjust when angle diff > 2 with 12 degrees
   if( bBallInPen )
   {
-    Log.log( 553, "move along line, with ball in penalty area x: %f ang %f", 
+    Log.log( 553, "move along line, with ball in penalty area x: %f ang %f",
                   posDefend.getX(), angDes );
     return moveToPosAlongLine( posDefend, angDes, 3.0, iSign, 7.0, 12.0 );
   }
@@ -2239,13 +2240,13 @@ SoccerCommand BasicPlayer::interceptScoringAttempt( )
 
 /*! This method returns a command to hold the ball close to your body. When no
     opponents are close the ball is kicked in front of the body of the agent.
-    Otherwise it is kiced to that spot in the kickable distance which is 
+    Otherwise it is kiced to that spot in the kickable distance which is
     hardest for the opponent to tackle. */
 SoccerCommand BasicPlayer::holdBall( double dDistThr )
 {
   double        dDist;
   VecPosition   posAgent = WM->getAgentGlobalPosition();
-  ObjectT       objOpp   = WM->getClosestInSetTo( OBJECT_SET_OPPONENTS, 
+  ObjectT       objOpp   = WM->getClosestInSetTo( OBJECT_SET_OPPONENTS,
 						OBJECT_BALL, &dDist );
   VecPosition   posOpp   = WM->getGlobalPosition ( objOpp );
   AngDeg        angOpp   = WM->getGlobalBodyAngle( objOpp );
@@ -2269,7 +2270,7 @@ SoccerCommand BasicPlayer::holdBall( double dDistThr )
   {
     SoccerCommand soc          = turnBodyToPoint( WM->getPosOpponentGoal() );
     VecPosition   posBallPred = WM->predictPosAfterNrCycles( OBJECT_BALL, 1 );
-    VecPosition   posPred     = WM->predictAgentPosAfterCommand( soc );  
+    VecPosition   posPred     = WM->predictAgentPosAfterCommand( soc );
     if( posPred.getDistanceTo( posBallPred ) < 0.85 * SS->getMaximalKickDist() )
     {
       Log.log( 512, "hold ball: turn body to goal, ball remains still" );
@@ -2358,7 +2359,7 @@ VecPosition BasicPlayer::getInterceptionPointBall( int *iMinCyclesBall,
     posBall = WM->predictPosAfterNrCycles( OBJECT_BALL, i );
 
     // if too far away, try next cycle
-    if( posPred.getDistanceTo(posBall)/SS->getPlayerSpeedMax() > i + dMaxDist 
+    if( posPred.getDistanceTo(posBall)/SS->getPlayerSpeedMax() > i + dMaxDist
         ||
         WM->isInField( posBall ) == false )
     {
@@ -2400,9 +2401,9 @@ VecPosition BasicPlayer::getInterceptionPointBall( int *iMinCyclesBall,
        (posMe.getDistanceTo( posPred ) > posBall.getDistanceTo( posPred ) -
                                          dMaxDist) )
     {
-      Log.log( 501, "can intercept in %d cycles %d turns, ball %f best %f", 
+      Log.log( 501, "can intercept in %d cycles %d turns, ball %f best %f",
            i, iTurnTmp, posBall.getX(), dBestX );
-        
+
       if( *iMinCyclesBall == 100 ) // log first possible interception point
       {
         *iMinCyclesBall = i;
@@ -2467,7 +2468,7 @@ VecPosition BasicPlayer::getInterceptionPointBall( int *iMinCyclesBall,
 }
 
 
-/*! This method intercepts the ball at the first possible position. 
+/*! This method intercepts the ball at the first possible position.
     \param iCyclesBall is the nr of cyles after the ball is intercepted
     \param isGoalie bool to indicate that a goalie has to intercept the ball
     \return intercept position */
@@ -2671,7 +2672,7 @@ position
     \param dDist distance marking position is located from object position
     \param mark marking technique that should be used
     \return position that is the marking position. */
-VecPosition BasicPlayer::getMarkingPosition( ObjectT o, double dDist, 
+VecPosition BasicPlayer::getMarkingPosition( ObjectT o, double dDist,
                                              MarkT mark)
 {
   VecPosition pos      = WM->getGlobalPosition( o );
@@ -2726,7 +2727,7 @@ VecPosition BasicPlayer::getMarkingPosition( ObjectT o, double dDist,
   }
 
 
-  else if( socCollide.commandType != CMD_ILLEGAL && 
+  else if( socCollide.commandType != CMD_ILLEGAL &&
            fabs( angTurn ) > angThreshold )
   {
     Log.log( 508, "collide with ball on purpose" );
@@ -2741,10 +2742,10 @@ VecPosition BasicPlayer::getMarkingPosition( ObjectT o, double dDist,
   }
 */
 
-SoccerCommand BasicPlayer::getOpenForPassFromInRectangle( Rect rect, 
+SoccerCommand BasicPlayer::getOpenForPassFromInRectangle( Rect rect,
 							  VecPosition posFrom )
 {
-  VecPosition bestPoint = 
+  VecPosition bestPoint =
     leastCongestedPointForPassInRectangle( rect, posFrom );
     LogDraw.logCircle( "BestPoint", bestPoint, 1, 100, true,
   		     COLOR_TEAL );
@@ -2756,7 +2757,7 @@ SoccerCommand BasicPlayer::getOpenForPassFromInRectangle( Rect rect,
   }
   else {
     return moveToPos( bestPoint,
-		      PS->getPlayerWhenToTurnAngle() );    
+		      PS->getPlayerWhenToTurnAngle() );
   }
 }
 
@@ -2792,7 +2793,7 @@ VecPosition BasicPlayer::leastCongestedPointForPassInRectangle( Rect rect,
 {
   int x_granularity = 5; // 5 samples by 5 samples
   int y_granularity = 5;
-  
+
   double x_buffer = 0.15; // 15% border on each side
   double y_buffer = 0.15;
 
@@ -2813,7 +2814,7 @@ VecPosition BasicPlayer::leastCongestedPointForPassInRectangle( Rect rect,
       tmp = WM->congestion(point=VecPosition(x,y));
 //       LogDraw.logCircle( "congestion", point, 0.3, 1, true,
 //    			 COLOR_WHITE, tmp );
-      
+
       if ( tmp < best_congestion &&
 	   WM->getNrInSetInCone( OBJECT_SET_OPPONENTS,
 				 0.3, posFrom, point ) == 0 ) {
@@ -2827,7 +2828,7 @@ VecPosition BasicPlayer::leastCongestedPointForPassInRectangle( Rect rect,
   }
 
   if ( best_congestion == 1000 ) {
-    /* take the point out of the rectangle -- meaning no point was valid */ 
+    /* take the point out of the rectangle -- meaning no point was valid */
     best_point = rect.getPosCenter();
   }
 

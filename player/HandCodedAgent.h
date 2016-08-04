@@ -46,7 +46,7 @@ class HandCodedAgent:public SMDPAgent
   char policy[256];
 
  public:
-  HandCodedAgent                  ( int    numFeatures,
+  HandCodedAgent( int    numFeatures,
 				    int    numActions,
 				    char   *strPolicy,
 				    WorldModel *ws );
@@ -55,6 +55,6 @@ class HandCodedAgent:public SMDPAgent
   int  step( int current_time, double reward, double state[] );
   void endEpisode( int current_time, double reward );
   void setParams(int iCutoffEpisodes, int iStopLearningEpisodes){exit(1);} //*met 8/16/05
-} ;
+};
 
 #endif

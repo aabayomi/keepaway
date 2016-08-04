@@ -13,6 +13,6 @@ tools/*.out
 tools/*.hist
 tools/*.eps
 console.log
-hive-*-Q
+hive*-Q*
 *~
 tools/*.gnuplot

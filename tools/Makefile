@@ -16,4 +16,4 @@ kwyzipper: kwyzipper.cc
 	$(CC) kwyzipper.cc -o kwyzipper
 
 clean:
-	rm -f $(TARGET) *~ *.out *.hist graph.eps hist.eps
+	rm -f $(TARGET) *~ *.out *.hist graph.eps hist.eps *.gnuplot

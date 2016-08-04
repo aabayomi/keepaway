@@ -19,6 +19,10 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-cat $1 | ./winsum 1000 0.01 > $2.out
+WINDOW="200"
+ALPHA="0.01"
+COARSE="100"
+
+cat $1 | ./winsum $WINDOW $ALPHA $COARSE > $2.out
 echo "\"$2.out\" w lp lw 3, \\" >> graph.gnuplot
 

@@ -22,6 +22,8 @@ PORT="--port=`shuf -i 2000-65000 -n 1`"
 
 if [ ! -z $FULLSTATE ]; then
     QFILE="${QFILE}_fs"
+else
+    QFILE="${QFILE}_nfs"
 fi
 
 ulimit -c unlimited

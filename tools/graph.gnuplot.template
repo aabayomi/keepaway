@@ -10,6 +10,9 @@ set terminal postscript eps color solid "Helvetica" 24
 # Output file
 set output "./graph.eps"
 
+# Legend
+set key left top Left
+
 # Appearance
 set style data lines
 set border 3
@@ -18,11 +21,14 @@ set ytics nomirror
 set multiplot
 
 # Axes
-set xrange [0:]
+# set xrange [0:]
 set xlabel "Training Time (hours)"
 
-set yrange [0:]
+# set yrange [0:]
 set ylabel "Episode Duration (seconds)"
+
+# set log x
+# set log y
 
 # Plot Data
 plot \

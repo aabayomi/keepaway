@@ -631,7 +631,7 @@ void WorldModel::processQueuedCommands( SoccerCommand commands[],
     \return bool to indicate whether update succeeded. */
 bool WorldModel::updateAll( )
 {
-  Log.log( 101, "WorldModel::updateAll" );
+  //Log.log( 101, "WorldModel::updateAll" );
 
   static Timing timer;
   double dTimeSense = 0.0, dTimeSee = 0.0, dTimeComm=0.0, dTimeFastest = 0.0;

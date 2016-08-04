@@ -67,7 +67,8 @@ struct SharedData {
  * Returns the memory location after the header because that's useful for colTab
  * data array.
  */
-long* LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights) {
+long* LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
+{
   SharedData* shared =
       reinterpret_cast<SharedData*>(weights + RL_MEMORY_SIZE);
   // Do each field individually, since they don't all line up exactly for an
@@ -95,6 +96,7 @@ long* LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
          << " m: " << colTab->m << endl
          << " safe: " << colTab->safe << endl;
   }
+
   return reinterpret_cast<long*>(shared + 1);
 }
 
@@ -108,9 +110,13 @@ void LinearSarsaAgent::reset()
   memset(traces, 0, sizeof(double) * RL_MEMORY_SIZE);
 }
 
-LinearSarsaAgent::LinearSarsaAgent( int numFeatures, int numActions, bool bLearn,
+LinearSarsaAgent::LinearSarsaAgent( int numFeatures,
+                                    int numActions,
+                                    bool bLearn,
                                     double widths[],
-                                    char *loadWeightsFile, char *saveWeightsFile, int hiveMind ):
+                                    char *loadWeightsFile,
+                                    char *saveWeightsFile,
+                                    int hiveMind ):
     SMDPAgent( numFeatures, numActions ), hiveFile(-1)
 {
   bLearning = bLearn;
@@ -182,7 +188,11 @@ int LinearSarsaAgent::startEpisode( int current_time, double state[] )
 
   //Log.log(101, "LinearSarsaAgent::step numNonzeroTraces: %d", numNonzeroTraces);
   Log.log( 101, "LinearSarsaAgent::startEpisode wait4Episode: %d", wait4Episode);
-  if (hiveMind > 1 && !wait4Episode) { // already started by another teammate
+
+  if (hiveMind > 1 && !wait4Episode
+      && lastActionTime != UnknownTime
+      && lastActionTime < current_time
+      && lastAction > 0) { // already started by another teammate
     double reward = current_time - lastActionTime;
     Log.log( 101, "LinearSarsaAgent::startEpisode hived lastActionTime: %d", lastActionTime);
     Log.log( 101, "LinearSarsaAgent::startEpisode hived reward: %f", reward);
@@ -241,6 +251,7 @@ int LinearSarsaAgent::step( int current_time, double reward, double state[] )
     Log.log( 101, "LinearSarsaAgent::step hived reward: %f", reward);
   }
 
+  assert(lastAction >= 0);
   double delta = reward - Q[ lastAction ]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
   loadTiles( state ); //s_t
   for ( int a = 0; a < getNumActions(); a++ ) {
@@ -292,6 +303,7 @@ int LinearSarsaAgent::step( int current_time, double reward, double state[] )
         clearTrace( tiles[ a ][ j ] );
     }
   }
+
   for ( int j = 0; j < numTilings; j++ )      //replace/set traces F[a]
     setTrace( tiles[ lastAction ][ j ], 1.0 );
 
@@ -329,6 +341,8 @@ void LinearSarsaAgent::endEpisode( int current_time, double reward )
     /* assuming gamma = 1  -- if not,error*/
     if ( gamma != 1.0)
       cerr << "We're assuming gamma's 1" << endl;
+
+    assert(lastAction >= 0);
     double delta = reward - Q[ lastAction ];
     updateWeights( delta );
     // TODO Actually, there's still possibly risk for trouble here with multiple
@@ -399,6 +413,7 @@ int LinearSarsaAgent::selectAction()
     action = argmaxQ();
   }
 
+  assert(action >= 0);
   return action;
 }
 
@@ -470,8 +485,8 @@ bool LinearSarsaAgent::loadWeights( char *filename )
     }
   } else {
     int file = open( filename, O_RDONLY );
-    if (file < 0) { 
-      cerr << "failed to open weight file: " << filename << endl; 
+    if (file < 0) {
+      cerr << "failed to open weight file: " << filename << endl;
       return false;
     }
     read( file, (char *) weights, RL_MEMORY_SIZE * sizeof(double) );
@@ -566,6 +581,7 @@ int LinearSarsaAgent::argmaxQ() const
 void LinearSarsaAgent::updateWeights( double delta )
 {
   double tmp = delta * alpha / numTilings;
+
   for ( int i = 0; i < numNonzeroTraces; i++ ) {
     assert(i < RL_MAX_NONZERO_TRACES);
 

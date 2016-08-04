@@ -88,7 +88,7 @@ void KeepawayPlayer::mainLoop( )
 
     if( WM->updateAll( ) == true )
     {
-      Log.log( 101, "KeepawayPlayer::mainLoop: keeper/taker main loop" );
+      //Log.log( 101, "KeepawayPlayer::mainLoop: keeper/taker main loop" );
 
       timer.restartTime();
       SoccerCommand soc;
@@ -279,7 +279,7 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
 
 SoccerCommand KeepawayPlayer::keeper()
 {
-  Log.log( 101, "KeepawayPlayer::keeper: decision" );
+  //Log.log( 101, "KeepawayPlayer::keeper: decision" );
 
   SoccerCommand soc;
 

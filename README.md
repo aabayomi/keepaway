@@ -13,7 +13,24 @@ optimality can be ensured given fixed opponents.
 
 - Aijun Bai
 
-## Old READMEs
+## Usages
+
+- Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh [ -h HIVE_MODE ] [ -l LOG_LEVEL ] [ -f ] [ -m ] [ -s ]```
+ - ```[ -h HIVE_MODE ]```: set hive mind mode for ```keepaway_player```: 0 - single agent learning; 1 - single agent learning with shared weights; 2 - multi-agent distributed learning with shared weights and traces
+ - ```[ -l LOG_LEVEL ]```: set text log level for ```keepaway_player```
+ - ```[ -f ]```: turn on fullstate perception within ```rcssserver```
+ - ```[ -m ]```: launch a monitor, technically ```rcsssmonitor```
+ - ```[ -s ]```: turn on synch mode within ```rcssserver```
+
+- Evaluate a specified policy by simulation:```./evaluate.sh [ -p POLICY ] [ -q QFILE ] [ -l LOG_LEVEL ] [ -f ] [ -m ] [ -s ]```
+ - ```[ -p POLICY ]```: specify the policy to evaluate, for example: hand, hold, random or learn
+ - ```[ -q QFILE ]```: speficy the learned Q function for a learned policy
+  - ```[ -l LOG_LEVEL ]```: set text log level for ```keepaway_player```
+ - ```[ -f ]```: turn on fullstate perception within ```rcssserver```
+ - ```[ -m ]```: launch a monitor, technically ```rcsssmonitor```
+ - ```[ -s ]```: turn on synch mode within ```rcssserver```
+
+# Old READMEs
 
 This project is intended as a public but unofficial repository for updates to
 the Keepaway benchmark player framework created at UT Austin by Gregory

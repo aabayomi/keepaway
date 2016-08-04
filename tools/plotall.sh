@@ -26,8 +26,9 @@ cp graph.gnuplot.template graph.gnuplot
 cp hist.gnuplot.template hist.gnuplot
 
 for var in "$@"; do
-    ./winsum.sh $var `basename $var .kwy`
-    ./hist.sh $var `basename $var .kwy`
+    output=`echo $var | sed -e 's/-/ /g' | awk '{$1 = ""; print $0;}' | sed -e 's/ //g'`
+    ./winsum.sh $var `basename $output .kwy`
+    ./hist.sh $var `basename $output .kwy`
 done
 
 gnuplot graph.gnuplot
