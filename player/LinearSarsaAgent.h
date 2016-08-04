@@ -27,6 +27,7 @@ protected:
   char weightsFile[256];
   bool bLearning;
   bool bSaveWeights;
+  bool tilingPerVariable;
 
   /// Hive mind indicator and file descriptor.
   int hiveMind; // 0: hive mind, 1: full hive mind
@@ -92,7 +93,8 @@ public:
                                       double widths[],
                                       char   *loadWeightsFile,
                                       char   *saveWeightsFile,
-                                      int    hiveMind);
+                                      int    hiveMind,
+                                      bool   tilingPerVariable);
 
   // Support for extra modes and/or analysis.
   double getQ(int action);

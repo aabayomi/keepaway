@@ -77,7 +77,7 @@ void KeepawayPlayer::mainLoop( )
 
   // wait for new information from the server
   // cannot say bContLoop=WM->wait... since bContLoop can be changed elsewhere
-  if(  WM->waitForNewInformation() == false )
+  if(!WM->waitForNewInformation())
     bContLoop =  false;
 
   while( bContLoop )                                 // as long as server alive
@@ -86,7 +86,7 @@ void KeepawayPlayer::mainLoop( )
     Log.setHeader( WM->getCurrentCycle() );
     LogDraw.setTime( WM->getCurrentCycle() );
 
-    if( WM->updateAll( ) == true )
+    if(WM->updateAll( ))
     {
       //Log.log( 101, "KeepawayPlayer::mainLoop: keeper/taker main loop" );
 
@@ -110,12 +110,12 @@ void KeepawayPlayer::mainLoop( )
       Log.logWithTime( 3, "  determined action; waiting for new info" );
       // directly after see message, will not get better info, so send commands
       if( WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
-          (SS->getSynchMode() == true && WM->getRecvThink() == true ))
+          (SS->getSynchMode() && WM->getRecvThink() == true ))
       {
         Log.logWithTime( 3, "  send messages directly" );
         ACT->sendCommands( );
         Log.logWithTime( 3, "  sent messages directly" );
-        if( SS->getSynchMode() == true  )
+        if(SS->getSynchMode())
         {
           WM->processRecvThink( false );
           ACT->sendMessageDirect( "(done)" );
@@ -164,7 +164,7 @@ void KeepawayPlayer::mainLoop( )
 
     // wait for new information from the server cannot say
     // bContLoop=WM->wait... since bContLoop can be changed elsewhere
-    if(  WM->waitForNewInformation() == false )
+    if(!WM->waitForNewInformation())
       bContLoop =  false;
   }
 

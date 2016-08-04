@@ -116,8 +116,11 @@ LinearSarsaAgent::LinearSarsaAgent( int numFeatures,
                                     double widths[],
                                     char *loadWeightsFile,
                                     char *saveWeightsFile,
-                                    int hiveMind ):
-    SMDPAgent( numFeatures, numActions ), hiveFile(-1)
+                                    int hiveMind,
+                                    bool tilingPerVariable):
+    SMDPAgent( numFeatures, numActions ),
+    hiveFile(-1),
+    tilingPerVariable(tilingPerVariable)
 {
   bLearning = bLearn;
 
@@ -215,6 +218,7 @@ int LinearSarsaAgent::startEpisode( int current_time, double state[] )
     for (int a = 0; a < getNumActions(); ++a) {
       ss << a << ":" << Q[a] << ", ";
     }
+    Log.log(101, "LinearSarsaAgent::startEpisode numTilings: %d", numTilings);
     Log.log(101, "LinearSarsaAgent::startEpisode Q: [%s]", ss.str().c_str());
     Log.log(101, "LinearSarsaAgent::startEpisode action: %d", lastAction);
   }
@@ -231,7 +235,7 @@ int LinearSarsaAgent::startEpisode( int current_time, double state[] )
     setTrace( tiles[ lastAction ][ j ], 1.0 );
 
   wait4Episode = false;
-  //Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
+  Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
   if (hiveMind) saveWeights(weightsFile);
   return lastAction;
 }
@@ -266,6 +270,7 @@ int LinearSarsaAgent::step( int current_time, double reward, double state[] )
     for (int a = 0; a < getNumActions(); ++a) {
       ss << a << ":" << Q[a] << ", ";
     }
+    Log.log(101, "LinearSarsaAgent::step numTilings: %d", numTilings);
     Log.log(101, "LinearSarsaAgent::step Q: [%s]", ss.str().c_str());
     Log.log(101, "LinearSarsaAgent::step action: %d", lastAction);
   }
@@ -307,7 +312,7 @@ int LinearSarsaAgent::step( int current_time, double reward, double state[] )
   for ( int j = 0; j < numTilings; j++ )      //replace/set traces F[a]
     setTrace( tiles[ lastAction ][ j ], 1.0 );
 
-  //Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
+  Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
   if (hiveMind) saveWeights(weightsFile);
   return lastAction;
 }
@@ -597,18 +602,34 @@ void LinearSarsaAgent::updateWeights( double delta )
 
 void LinearSarsaAgent::loadTiles( double state[] ) // will change colTab->data implictly
 {
-  int tilingsPerGroup = 32;  /* num tilings per tiling group */
-  numTilings = 0;
+  if (tilingPerVariable) {
+    const int tilingsPerGroup = 32;
+    numTilings = 0;
 
-  /* These are the 'tiling groups'  --  play here with representations */
-  /* One tiling for each state variable */
-  for ( int v = 0; v < getNumFeatures(); v++ ) {
-    for ( int a = 0; a < getNumActions(); a++ ) {
-      GetTiles1(&(tiles[ a ][ numTilings ]), tilingsPerGroup, colTab,
-                (float) (state[ v ] / tileWidths[ v ]), a , v );
+    /* These are the 'tiling groups'  --  play here with representations */
+    /* One tiling for each state variable */
+    for (int v = 0; v < getNumFeatures(); v++) {
+      for (int a = 0; a < getNumActions(); a++) {
+        GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
+                  (float) (state[v] / tileWidths[v]), a, v);
+      }
+      numTilings += tilingsPerGroup;
     }
-    numTilings += tilingsPerGroup;
   }
+  else {
+    numTilings = 32 * getNumFeatures();
+
+    float state2[ MAX_STATE_VARS ];
+    for (int v = 0; v < getNumFeatures(); v++) {
+      state2[v] = (float) (state[v] / tileWidths[v]);
+    }
+
+    for (int a = 0; a < getNumActions(); a++) {
+      GetTiles(&(tiles[a][0]), numTilings, colTab,
+                state2, getNumFeatures(), a);
+    }
+  }
+
   if ( numTilings >= RL_MAX_NUM_TILINGS ) {
     cerr << "TOO MANY TILINGS! " << numTilings << endl;
     assert(0);

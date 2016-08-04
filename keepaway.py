@@ -32,6 +32,8 @@ def launch_player(player_type, index, options):
     # Build up the options for the player process.
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
+        i = '1', # verbose
+        z = int(options.tiling_per_variable),
         l = options.log_level, # log level
         o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index),
         e = int(getattr(options, player_type + '_learn')),
@@ -331,6 +333,9 @@ def parse_options(args = None, **defaults):
     parser.add_option(
         '--fullstate', action = 'store_true', default = False,
         help = "Use fullstate information for left and right.")
+    parser.add_option(
+        '--tiling-per-variable', action = 'store_true', default = False,
+        help = "Tiling per state variable.")
 
     options = parser.parse_args(args)[0]
     # Set coach_port and online_coach_port here, if not set previously.

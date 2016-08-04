@@ -115,6 +115,8 @@ int main( int argc, char * argv[] )
   bool     bSuppliedLogDrawFile              = false;
   int      iStopAfter                        = -1; //*met+1 8/16/05
   int      iStartLearningAfter               = -1;
+  bool     tilingPerVariable                 = false;
+
   ofstream os;
   ofstream osDraw;
 
@@ -129,6 +131,7 @@ int main( int argc, char * argv[] )
       cout << "Need argument for option: " << argv[i] << endl;
       exit( 0 );
     }
+
     // read a command option
     if( argv[i][0] == '-' && strlen( argv[i] ) > 1)
     {
@@ -143,7 +146,7 @@ int main( int argc, char * argv[] )
           bSuppliedLogDrawFile = true;
           break;
         case 'c':                                   // clientconf file
-          if( cs.readValues( argv[i+1], ":" ) == false )
+          if(!cs.readValues(argv[i + 1], ":" ))
             cerr << "Error in reading client file: " << argv[i+1] << endl;
           break;
         case 'd':
@@ -152,7 +155,7 @@ int main( int argc, char * argv[] )
           break;
         case 'e': // enable learning 0/1
           str    = &argv[i+1][0];
-          bLearn = (Parse::parseFirstInt( &str ) == 1 ) ? true : false ;
+          bLearn = Parse::parseFirstInt(&str ) == 1;
           break;
         case 'f':
           strcpy( saveWeightsFile, argv[i+1] );
@@ -173,7 +176,7 @@ int main( int argc, char * argv[] )
           break;
         case 'i':                                   // info 1 0
           str   = &argv[i+1][0];
-          bInfo = (Parse::parseFirstInt( &str ) == 1 ) ? true : false ;
+          bInfo = Parse::parseFirstInt(&str ) == 1;
           break;
         case 'j':
           str   = &argv[i+1][0];
@@ -224,7 +227,7 @@ int main( int argc, char * argv[] )
           iReconnect = Parse::parseFirstInt( &str );
           break;
         case 's':                                   // serverconf file
-          if( ss.readValues( argv[i+1], ":" ) == false )
+          if(!ss.readValues(argv[i + 1], ":" ))
             cerr << "Error in reading server file: " << argv[i+1] << endl;
           break;
         case 't':                                   // teamname name
@@ -245,12 +248,17 @@ int main( int argc, char * argv[] )
           str   = &argv[i+1][0];
           iStartLearningAfter = Parse::parseFirstInt( &str ); // initially don't learn, but turn on learning after iStartLearningAfter episodes have passed
           break;
+        case 'z':
+          str   = &argv[i+1][0];
+          tilingPerVariable = Parse::parseFirstInt( &str ) == 1;
+          break;
         default:
           cerr << "(main) Unknown command option: " << argv[i] << endl;
       }
     }
   }
-  if( bInfo == true )
+
+  if(bInfo)
   {
     cout << "team         : "  << strTeamName    << endl <<
          "port         : "  << iPort          << endl <<
@@ -258,14 +266,17 @@ int main( int argc, char * argv[] )
          "version      : "  << dVersion       << endl <<
          "mode         : "  << iMode          << endl <<
          "playernr     : "  << iNr            << endl <<
-         "reconnect    : "  << iReconnect     << endl ;
-    Log.showLogLevels( cout );
+         "reconnect    : "  << iReconnect     << endl <<
+         "tiling per variable: " << tilingPerVariable << endl <<
+         "hive mind mode : " << hiveMind << endl <<
+         "be learning: " << bLearn << endl;
   }
-  if( bSuppliedLogFile == true )
+
+  if(bSuppliedLogFile)
     Log.setOutputStream( os );                   // initialize logger
   else
     Log.setOutputStream( cout );
-  if( bSuppliedLogDrawFile == true )
+  if(bSuppliedLogDrawFile)
     LogDraw.setOutputStream( osDraw );          // initialize drawing logger
   else
     LogDraw.setOutputStream( cout );
@@ -293,7 +304,7 @@ int main( int argc, char * argv[] )
     // or "learned!" -> Don't explore at all.
     LinearSarsaAgent* linearSarsaAgent = new LinearSarsaAgent(
         numFeatures, numActions, bLearn, resolutions,
-        loadWeightsFile, saveWeightsFile, hiveMind
+        loadWeightsFile, saveWeightsFile, hiveMind, tilingPerVariable
     );
     // Check for pure exploitation mode.
     size_t length = strlen(strPolicy);
@@ -310,7 +321,7 @@ int main( int argc, char * argv[] )
     // above.
     // Added WorldModel for agents needing richer/relational representation!
     typedef SMDPAgent* (*CreateAgent)(
-        WorldModel&, int, int, bool, double*, char*, char*, bool
+        WorldModel&, int, int, bool, double*, char*, char*, int
     );
     CreateAgent createAgent = NULL;
 #ifdef WIN32
