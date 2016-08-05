@@ -19,8 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-sh kill.sh
-rm -fr hive*-Q* logs/ *.lock core core.* vgcore.* *.lock nohup.out
+rm -fr hive*-Q* logs/ *.lock core core.* vgcore.* *.lock
 
 mkdir logs
 cd player

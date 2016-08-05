@@ -140,7 +140,7 @@ int WorldModel::keeperStateVars( double state[] )
 
   VecPosition C = getKeepawayRect().getPosCenter();
 
-  double WB_dist_to_C = useCenterPosition? getGlobalPosition( PB ).getDistanceTo( C ): 0.0;
+  double WB_dist_to_C = removeCenterPosition? 0.0: getGlobalPosition( PB ).getDistanceTo( C );
 
   int numK = getNumKeepers();
   int numT = getNumTakers();
@@ -163,12 +163,12 @@ int WorldModel::keeperStateVars( double state[] )
 
   double dist_to_C_K[ numK ];
   for ( int i = 1; i < numK; i++ ) {
-    dist_to_C_K[ i ] = useCenterPosition? getGlobalPosition( K[ i ] ).getDistanceTo( C ): 0.0;
+    dist_to_C_K[ i ] = removeCenterPosition? 0.0: getGlobalPosition( K[ i ] ).getDistanceTo( C );
   }
 
   double dist_to_C_T[ numT ];
   for ( int i = 0; i < numT; i++ ) {
-    dist_to_C_T[ i ] = useCenterPosition? getGlobalPosition( T[ i ] ).getDistanceTo( C ): 0.0;
+    dist_to_C_T[ i ] = removeCenterPosition? 0.0: getGlobalPosition( T[ i ] ).getDistanceTo( C );
   }
 
   double nearest_Opp_dist_K[ numK ];

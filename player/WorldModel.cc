@@ -76,7 +76,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 WorldModel::WorldModel( ServerSettings *ss, PlayerSettings *ps,
                         Formations *fs):agentObject(  )
 {
-  useCenterPosition = false;
+  removeCenterPosition = false;
 
   dTotalVarVel   = 0.0;
   dTotalVarPos   = 0.0;

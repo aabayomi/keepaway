@@ -116,7 +116,7 @@ int main( int argc, char * argv[] )
   int      iStopAfter                        = -1; //*met+1 8/16/05
   int      iStartLearningAfter               = -1;
   bool     jointTiling                       = false;
-  bool     useCenterPosition                 = false;
+  bool     removeCenterPosition              = false;
 
   ofstream os;
   ofstream osDraw;
@@ -236,7 +236,7 @@ int main( int argc, char * argv[] )
           break;
         case 'u':
           str   = &argv[i+1][0];
-          useCenterPosition = Parse::parseFirstInt( &str ) == 1;
+          removeCenterPosition = Parse::parseFirstInt( &str ) == 1;
           break;
         case 'v':                                   // version version
           str = &argv[i+1][0];
@@ -273,6 +273,7 @@ int main( int argc, char * argv[] )
          "playernr     : "  << iNr            << endl <<
          "reconnect    : "  << iReconnect     << endl <<
          "joint tiling: "   << jointTiling    << endl <<
+         "remove center position : "   << removeCenterPosition  << endl <<
          "hive mind mode : " << hiveMind      << endl <<
          "be learning: "     << bLearn << endl;
   }
@@ -295,7 +296,7 @@ int main( int argc, char * argv[] )
   ActHandler a( &c, &wm, &ss );                // link actHandler and worldmodel
   SenseHandler s( &c, &wm, &ss, &cs );         // link senseHandler with wm
 
-  wm.useCenterPosition = useCenterPosition;
+  wm.removeCenterPosition = removeCenterPosition;
 
   SMDPAgent *sa = NULL;
 

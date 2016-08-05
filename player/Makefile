@@ -2461,7 +2461,8 @@ LinearSarsaAgent.o: LinearSarsaAgent.cc /usr/include/stdc-predef.h \
  /usr/include/c++/5/bits/locale_facets.tcc \
  /usr/include/c++/5/bits/basic_ios.tcc /usr/include/c++/5/ostream \
  /usr/include/c++/5/bits/ostream.tcc /usr/include/c++/5/bits/istream.tcc \
- /usr/include/c++/5/bits/sstream.tcc LinearSarsaAgent.h \
+ /usr/include/c++/5/bits/sstream.tcc /usr/include/c++/5/numeric \
+ /usr/include/c++/5/bits/stl_numeric.h LinearSarsaAgent.h \
  /usr/include/c++/5/iostream SMDPAgent.h tiles2.h /usr/include/libio.h \
  /usr/include/_G_config.h /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/sys_errlist.h /usr/include/unistd.h \

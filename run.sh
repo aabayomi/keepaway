@@ -34,7 +34,7 @@ for hive in `seq 0 2`; do
 done
 
 for hive in `seq 0 2`; do
-    ./train.sh -h $hive -sfu &
+    ./train.sh -h $hive -sfr &
     sleep $SLEEP
 done
 

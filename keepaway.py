@@ -34,7 +34,7 @@ def launch_player(player_type, index, options):
     player_options = dict(
         i = '1', # verbose
         z = int(options.joint_tiling),
-        u = int(options.use_center_position),
+        u = int(options.remove_center_position),
         l = options.log_level, # log level
         o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index),
         e = int(getattr(options, player_type + '_learn')),
@@ -338,8 +338,8 @@ def parse_options(args = None, **defaults):
         '--joint-tiling', action = 'store_true', default = False,
         help = "Tiling using all state variables (not per state variable).")
     parser.add_option(
-        '--use-center-position', action = 'store_true', default = False,
-        help = "Consider center position in state representation.")
+        '--remove-center-position', action = 'store_true', default = False,
+        help = "Remove center position from state representation.")
 
     options = parser.parse_args(args)[0]
     # Set coach_port and online_coach_port here, if not set previously.

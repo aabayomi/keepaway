@@ -200,6 +200,7 @@ int hash(int *ints, int num_ints, collision_table *ct)
       if (i > ct->m)
       {
         printf("\nOut of Memory");
+        break;
       }
       if (ccheck == ct->data[j])
         break;
@@ -235,6 +236,7 @@ collision_table::collision_table(int size, int safety): m(size), safe(safety)
     tmp /= 2;
   }
   data = new long[size];
+
   reset();
 }
 

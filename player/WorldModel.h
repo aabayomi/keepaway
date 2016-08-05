@@ -941,7 +941,7 @@ public:
   bool           setFeature               ( FeatureT        type,
                                             Feature         feature          );
 
-  bool useCenterPosition;
+  bool removeCenterPosition;
 };
 
 #endif

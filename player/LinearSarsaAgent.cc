@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <sstream>
+#include <numeric>
 #include "LinearSarsaAgent.h"
 #include "Logger.h"
 #include "LoggerDraw.h"
@@ -20,22 +21,20 @@ extern Logger Log;
 extern LoggerDraw LogDraw;
 #endif
 
-FileLock::FileLock(const std::string name, int ms, int max_loops)
+FileLock::FileLock(const std::string name)
 {
   lockName = name + ".lock";
-  timespec sleepTime = {0, ms * 1000 * 1000};
+  timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
 
-  for(int i = 0; i < max_loops; ++i) {
+  for(;;) {
     lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
     if (lock >= 0) break;
-    //Log.log(101, "FileLock::FileLock wait for %s", lockName.c_str());
     nanosleep(&sleepTime, NULL);
   }
 }
 
 FileLock::~FileLock()
 {
-  //Log.log(101, "FileLock::~FileLock unlink %s", lockName.c_str());
   close(lock);
   unlink(lockName.c_str());
 }
@@ -100,16 +99,6 @@ long* LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
   return reinterpret_cast<long*>(shared + 1);
 }
 
-void LinearSarsaAgent::reset()
-{
-  lastAction = -1;
-  lastActionTime = UnknownTime;
-  wait4Episode = true;
-  minimumTrace = 0.01;
-  numNonzeroTraces = 0;
-  memset(traces, 0, sizeof(double) * RL_MEMORY_SIZE);
-}
-
 LinearSarsaAgent::LinearSarsaAgent( int numFeatures,
                                     int numActions,
                                     bool bLearn,
@@ -151,7 +140,14 @@ LinearSarsaAgent::LinearSarsaAgent( int numFeatures,
   traces = tracesRaw;
   nonzeroTraces = nonzeroTracesRaw;
   nonzeroTracesInverse = nonzeroTracesInverseRaw;
-  reset();
+
+  fill(traces, traces + RL_MEMORY_SIZE, 0.0);
+
+  lastAction = -1;
+  lastActionTime = UnknownTime;
+  wait4Episode = true;
+  minimumTrace = 0.01;
+  numNonzeroTraces = 0;
 
   for ( int i = 0; i < RL_MEMORY_SIZE; i++ ) {
     weights[ i ] = 0;
@@ -168,7 +164,18 @@ LinearSarsaAgent::LinearSarsaAgent( int numFeatures,
   if ( strlen( loadWeightsFile ) > 0 )
     loadWeights( loadWeightsFile );
 
-  reset();
+  // reset in case they have been changed in loadWeights
+  lastAction = -1;
+  lastActionTime = UnknownTime;
+  wait4Episode = true;
+  minimumTrace = 0.01;
+  numNonzeroTraces = 0;
+
+//  if (accumulate(traces, traces + RL_MEMORY_SIZE, 0) != numNonzeroTraces) {
+//    PRINT_VALUE(accumulate(traces, traces + RL_MEMORY_SIZE, 0));
+//    PRINT_VALUE(numNonzeroTraces);
+//    assert(0);
+//  }
 }
 
 double LinearSarsaAgent::getQ(int action) {
@@ -184,12 +191,10 @@ void LinearSarsaAgent::setEpsilon(double epsilon) {
 
 int LinearSarsaAgent::startEpisode( int current_time, double state[] )
 {
-  FileLock lock(string(weightsFile) + "-startEpisode", 1);
+  FileLock lock(string(weightsFile) + "-startEpisode");
 
   Log.log( 101, "LinearSarsaAgent::startEpisode current_time: %d", current_time);
   if (hiveMind) loadSharedData(colTab, weights);
-
-  //Log.log(101, "LinearSarsaAgent::step numNonzeroTraces: %d", numNonzeroTraces);
   Log.log( 101, "LinearSarsaAgent::startEpisode wait4Episode: %d", wait4Episode);
 
   if (hiveMind > 1 && !wait4Episode
@@ -242,13 +247,12 @@ int LinearSarsaAgent::startEpisode( int current_time, double state[] )
 
 int LinearSarsaAgent::step( int current_time, double reward, double state[] )
 {
-  FileLock lock(string(weightsFile) + "-step", 1);
+  FileLock lock(string(weightsFile) + "-step");
 
   Log.log( 101, "LinearSarsaAgent::step current_time: %d", current_time);
   Log.log( 101, "LinearSarsaAgent::step reward: %f", reward);
   if (hiveMind) loadSharedData(colTab, weights);
 
-  //Log.log(101, "LinearSarsaAgent::step numNonzeroTraces: %d", numNonzeroTraces);
   if (hiveMind > 1 && lastActionTime != UnknownTime && lastActionTime < current_time) {
     reward = current_time - lastActionTime;
     Log.log( 101, "LinearSarsaAgent::step hived lastActionTime: %d", lastActionTime);
@@ -298,7 +302,6 @@ int LinearSarsaAgent::step( int current_time, double reward, double state[] )
   delta += Q[ lastAction ]; //delta += Q_{t-1}[s_t, a_t]
   updateWeights( delta ); //Q_t <- Q_{t-1}
   Q[ lastAction ] = computeQ( lastAction ); //need to redo because weights changed: Q_t[s_t, a_t]
-  // share Q[lastAction] in hive mind mode
 
   decayTraces( gamma * lambda );
 
@@ -319,7 +322,7 @@ int LinearSarsaAgent::step( int current_time, double reward, double state[] )
 
 void LinearSarsaAgent::endEpisode( int current_time, double reward )
 {
-  FileLock lock(string(weightsFile) + "-endEpisode", 1);
+  FileLock lock(string(weightsFile) + "-endEpisode");
 
   Log.log( 101, "LinearSarsaAgent::endEpisode current_time: %d", current_time);
   Log.log( 101, "LinearSarsaAgent::endEpisode reward: %f", reward);
@@ -430,7 +433,7 @@ bool LinearSarsaAgent::loadWeights( char *filename )
       // First, check the lock file, so we have only one initializer.
       // Later interaction should be approximately synchronized by having only
       // one active player at a time per team, but we can't assume that here.
-      FileLock lock(filename, 10);
+      FileLock lock(filename);
 
       // First, see if the file is already there.
       bool fileFound = !access(filename, F_OK);
@@ -475,16 +478,11 @@ bool LinearSarsaAgent::loadWeights( char *filename )
         nonzeroTracesInverse = reinterpret_cast<int *>(nonzeroTraces + RL_MAX_NONZERO_TRACES);
       }
 
-      if (!fileFound) {
-        // Clear out initial contents.
-        // The whole team might be doing this at the same time. Is that okay?
-        for ( int i = 0; i < RL_MEMORY_SIZE; i++ ) {
-          weights[ i ] = 0;
-          traces[ i ] = 0;
-        }
-        colTab->reset();
+      fill(traces, traces + RL_MEMORY_SIZE, 0.0);
+      colTab->reset();
 
-        // Make sure the header goes out to the file.
+      if (!fileFound) {
+        fill(weights, weights + RL_MEMORY_SIZE, 0.0);
         saveWeights(weightsFile);
       }
     }
@@ -668,9 +666,9 @@ void LinearSarsaAgent::clearExistentTrace( int f, int loc )
     nonzeroTracesInverse[nonzeroTraces[loc]] = loc;
   }
   else {
+    fill(traces, traces + RL_MEMORY_SIZE, 0.0);
     assert(numNonzeroTraces == 0);
     assert(0);
-    memset(traces, 0, sizeof(double) * RL_MEMORY_SIZE);
   }
 }
 
