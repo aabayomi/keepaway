@@ -23,11 +23,11 @@ CFLAGS_LIBS     = ${CLIBS_linux}
 #CFLAGS_LIBS    = ${CLIBS_SunOS_5}
 
 CFLAGS_DEBUG	= -g3
-CFLAGS_OPT     	= -O3
+CFLAGS_OPT     	= -O0
 CFLAGS_WARN     = -Wall
 
 OSFLAGS_SunOS_5 = -DSolaris 
-OSFLAGS_linux   = -Dlinux -rdynamic -DNDEBUG
+OSFLAGS_linux   = -Dlinux -rdynamic #-DNDEBUG
 
 CLIBS_SunOS_5   = 
 CLIBS_linux     =
@@ -2394,19 +2394,29 @@ LinearSarsaAgent.o: LinearSarsaAgent.cc /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/sys/mman.h \
  /usr/include/x86_64-linux-gnu/bits/mman.h \
- /usr/include/x86_64-linux-gnu/bits/mman-linux.h /usr/include/fcntl.h \
+ /usr/include/x86_64-linux-gnu/bits/mman-linux.h /usr/include/c++/5/cmath \
+ /usr/include/x86_64-linux-gnu/c++/5/bits/c++config.h \
+ /usr/include/x86_64-linux-gnu/c++/5/bits/os_defines.h \
+ /usr/include/x86_64-linux-gnu/c++/5/bits/cpu_defines.h \
+ /usr/include/c++/5/bits/cpp_type_traits.h \
+ /usr/include/c++/5/ext/type_traits.h /usr/include/math.h \
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+ /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
+ /usr/include/x86_64-linux-gnu/bits/huge_val.h \
+ /usr/include/x86_64-linux-gnu/bits/huge_valf.h \
+ /usr/include/x86_64-linux-gnu/bits/huge_vall.h \
+ /usr/include/x86_64-linux-gnu/bits/inf.h \
+ /usr/include/x86_64-linux-gnu/bits/nan.h \
+ /usr/include/x86_64-linux-gnu/bits/mathdef.h \
+ /usr/include/x86_64-linux-gnu/bits/mathcalls.h /usr/include/fcntl.h \
  /usr/include/x86_64-linux-gnu/bits/fcntl.h \
  /usr/include/x86_64-linux-gnu/bits/fcntl-linux.h \
  /usr/include/x86_64-linux-gnu/bits/uio.h \
  /usr/include/x86_64-linux-gnu/bits/stat.h /usr/include/c++/5/sstream \
  /usr/include/c++/5/istream /usr/include/c++/5/ios \
- /usr/include/c++/5/iosfwd \
- /usr/include/x86_64-linux-gnu/c++/5/bits/c++config.h \
- /usr/include/x86_64-linux-gnu/c++/5/bits/os_defines.h \
- /usr/include/x86_64-linux-gnu/c++/5/bits/cpu_defines.h \
- /usr/include/c++/5/bits/stringfwd.h /usr/include/c++/5/bits/memoryfwd.h \
- /usr/include/c++/5/bits/postypes.h /usr/include/c++/5/cwchar \
- /usr/include/wchar.h /usr/include/stdio.h \
+ /usr/include/c++/5/iosfwd /usr/include/c++/5/bits/stringfwd.h \
+ /usr/include/c++/5/bits/memoryfwd.h /usr/include/c++/5/bits/postypes.h \
+ /usr/include/c++/5/cwchar /usr/include/wchar.h /usr/include/stdio.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include/stdarg.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h /usr/include/c++/5/exception \
  /usr/include/c++/5/bits/atomic_lockfree_defines.h \
@@ -2414,8 +2424,6 @@ LinearSarsaAgent.o: LinearSarsaAgent.cc /usr/include/stdc-predef.h \
  /usr/include/c++/5/bits/stl_algobase.h \
  /usr/include/c++/5/bits/functexcept.h \
  /usr/include/c++/5/bits/exception_defines.h \
- /usr/include/c++/5/bits/cpp_type_traits.h \
- /usr/include/c++/5/ext/type_traits.h \
  /usr/include/c++/5/ext/numeric_traits.h \
  /usr/include/c++/5/bits/stl_pair.h /usr/include/c++/5/bits/move.h \
  /usr/include/c++/5/bits/concept_check.h \
@@ -2476,17 +2484,8 @@ LinearSarsaAgent.o: LinearSarsaAgent.cc /usr/include/stdc-predef.h \
  /usr/include/c++/5/set /usr/include/c++/5/bits/stl_tree.h \
  /usr/include/c++/5/bits/stl_set.h /usr/include/c++/5/bits/stl_multiset.h \
  /usr/include/x86_64-linux-gnu/sys/time.h LoggerDraw.h SoccerTypes.h \
- Geometry.h /usr/include/math.h \
- /usr/include/x86_64-linux-gnu/bits/math-vector.h \
- /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
- /usr/include/x86_64-linux-gnu/bits/huge_val.h \
- /usr/include/x86_64-linux-gnu/bits/huge_valf.h \
- /usr/include/x86_64-linux-gnu/bits/huge_vall.h \
- /usr/include/x86_64-linux-gnu/bits/inf.h \
- /usr/include/x86_64-linux-gnu/bits/nan.h \
- /usr/include/x86_64-linux-gnu/bits/mathdef.h \
- /usr/include/x86_64-linux-gnu/bits/mathcalls.h ServerSettings.h \
- GenericValues.h /usr/include/c++/5/cassert /usr/include/assert.h
+ Geometry.h ServerSettings.h GenericValues.h /usr/include/c++/5/cassert \
+ /usr/include/assert.h
 main.o: main.cc /usr/include/stdc-predef.h SenseHandler.h Connection.h \
  /usr/include/stdio.h /usr/include/features.h \
  /usr/include/x86_64-linux-gnu/sys/cdefs.h \

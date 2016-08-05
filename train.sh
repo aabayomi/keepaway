@@ -9,8 +9,9 @@ LOGLEVEL="101"
 JOINTTILING=""
 REMOVECENTERP=""
 GAMMA="1.0"
+BUILD="1"
 
-while getopts  "h:g:lfmsjr" flag; do
+while getopts  "b:h:g:lfmsjr" flag; do
     case "$flag" in
         h) HIVEMODE="$OPTARG";;
         f) FULLSTATE="--fullstate";; 
@@ -20,6 +21,7 @@ while getopts  "h:g:lfmsjr" flag; do
         j) JOINTTILING="--joint-tiling";;
         r) REMOVECENTERP="--remove-center-position";;
         g) GAMMA="$OPTARG";;
+        b) BUILD="$OPTARG";;
     esac
 done
 
@@ -43,9 +45,11 @@ if [ ! -z $GAMMA ]; then
     QFILE="${QFILE}_${GAMMA}"
 fi
 
-ulimit -c unlimited
-./build.sh
+if [ $BUILD = "1" ]; then
+    ./build.sh
+fi
 
+ulimit -c unlimited
 ./keepaway.py --keeper-learn --keeper-policy=learn \
     --keeper-output=$QFILE --keeper-input=$QFILE \
     $HIVE $SYNCH $MONITOR $FULLSTATE $LOG $PORT \

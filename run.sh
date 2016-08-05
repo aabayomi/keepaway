@@ -19,24 +19,28 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-SLEEP="15"
+SLEEP="10"
+FULLSTATE="-f"
+
+exec > console.log                                                              
+exec 2>&1
 
 sh clear.sh
+sh build.sh
 
-#for policy in random hand hold; do
-#    ./evaluate.sh -p $policy -s -f &
-#    sleep $SLEEP
-#done
+for policy in random hand hold; do
+    ./evaluate.sh -b 0 -p $policy -s $FULLSTATE &
+    sleep $SLEEP
+done
 
 for hive in `seq 2 2`; do
-    ./train.sh -h $hive -sf &
-    sleep $SLEEP
-
-    for lookahead in `seq 10 15 100`; do
-        gamma=`echo 1.0 - 1.0 / $lookahead | bc -l`
-        ./train.sh -h $hive -sf -g $gamma &
+    for lookahead in `seq 1 10`; do
+        gamma=`echo 1.0 - 1.0 / 2^$lookahead | bc -l`
+        ./train.sh -b 0 -h $hive -s $FULLSTATE -g $gamma &
         sleep $SLEEP
     done
+
+    ./train.sh -b 0 -h $hive -s $FULLSTATE &
 done
 
 wait
