@@ -8,16 +8,18 @@ LOG=""
 LOGLEVEL="101"
 JOINTTILING=""
 REMOVECENTERP=""
+GAMMA="1.0"
 
-while getopts  "h:lfmsjr" flag; do
+while getopts  "h:g:lfmsjr" flag; do
     case "$flag" in
-        h) HIVEMODE=$OPTARG;;
+        h) HIVEMODE="$OPTARG";;
         f) FULLSTATE="--fullstate";; 
         m) MONITOR="--monitor";;
         s) SYNCH="--synch-mode";;
         l) LOG="--log-dir=logs --log-game --log-text --log-level $LOGLEVEL";;
         j) JOINTTILING="--joint-tiling";;
         r) REMOVECENTERP="--remove-center-position";;
+        g) GAMMA="$OPTARG";;
     esac
 done
 
@@ -37,10 +39,14 @@ if [ ! -z $REMOVECENTERP ]; then
     QFILE="${QFILE}_rcp"
 fi
 
+if [ ! -z $GAMMA ]; then
+    QFILE="${QFILE}_${GAMMA}"
+fi
+
 ulimit -c unlimited
 ./build.sh
 
 ./keepaway.py --keeper-learn --keeper-policy=learn \
     --keeper-output=$QFILE --keeper-input=$QFILE \
     $HIVE $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
-    $JOINTTILING $REMOVECENTERP --label=$QFILE
+    $JOINTTILING $REMOVECENTERP --gamma=$GAMMA --label=$QFILE

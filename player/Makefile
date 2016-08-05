@@ -23,11 +23,11 @@ CFLAGS_LIBS     = ${CLIBS_linux}
 #CFLAGS_LIBS    = ${CLIBS_SunOS_5}
 
 CFLAGS_DEBUG	= -g3
-CFLAGS_OPT     	= -O0
+CFLAGS_OPT     	= -O3
 CFLAGS_WARN     = -Wall
 
 OSFLAGS_SunOS_5 = -DSolaris 
-OSFLAGS_linux   = -Dlinux -rdynamic #-DNDEBUG
+OSFLAGS_linux   = -Dlinux -rdynamic -DNDEBUG
 
 CLIBS_SunOS_5   = 
 CLIBS_linux     =
@@ -2394,13 +2394,11 @@ LinearSarsaAgent.o: LinearSarsaAgent.cc /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/sys/mman.h \
  /usr/include/x86_64-linux-gnu/bits/mman.h \
- /usr/include/x86_64-linux-gnu/bits/mman-linux.h \
- /usr/include/x86_64-linux-gnu/sys/stat.h \
- /usr/include/x86_64-linux-gnu/bits/stat.h /usr/include/fcntl.h \
+ /usr/include/x86_64-linux-gnu/bits/mman-linux.h /usr/include/fcntl.h \
  /usr/include/x86_64-linux-gnu/bits/fcntl.h \
  /usr/include/x86_64-linux-gnu/bits/fcntl-linux.h \
  /usr/include/x86_64-linux-gnu/bits/uio.h \
- /usr/include/x86_64-linux-gnu/bits/timex.h /usr/include/c++/5/sstream \
+ /usr/include/x86_64-linux-gnu/bits/stat.h /usr/include/c++/5/sstream \
  /usr/include/c++/5/istream /usr/include/c++/5/ios \
  /usr/include/c++/5/iosfwd \
  /usr/include/x86_64-linux-gnu/c++/5/bits/c++config.h \
@@ -2436,6 +2434,7 @@ LinearSarsaAgent.o: LinearSarsaAgent.cc /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/c++/5/bits/gthr-default.h \
  /usr/include/pthread.h /usr/include/sched.h \
  /usr/include/x86_64-linux-gnu/bits/sched.h \
+ /usr/include/x86_64-linux-gnu/bits/timex.h \
  /usr/include/x86_64-linux-gnu/bits/setjmp.h \
  /usr/include/x86_64-linux-gnu/c++/5/bits/atomic_word.h \
  /usr/include/c++/5/bits/locale_classes.h /usr/include/c++/5/string \
@@ -2619,8 +2618,4 @@ main.o: main.cc /usr/include/stdc-predef.h SenseHandler.h Connection.h \
  /usr/include/x86_64-linux-gnu/bits/environments.h \
  /usr/include/x86_64-linux-gnu/bits/confname.h /usr/include/getopt.h \
  Parse.h /usr/include/string.h /usr/include/dlfcn.h \
- /usr/include/x86_64-linux-gnu/bits/dlfcn.h /usr/include/c++/5/vector \
- /usr/include/c++/5/bits/stl_construct.h \
- /usr/include/c++/5/bits/stl_uninitialized.h \
- /usr/include/c++/5/bits/stl_vector.h \
- /usr/include/c++/5/bits/stl_bvector.h /usr/include/c++/5/bits/vector.tcc
+ /usr/include/x86_64-linux-gnu/bits/dlfcn.h

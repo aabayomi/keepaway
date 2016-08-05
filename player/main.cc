@@ -61,201 +61,199 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Parse.h"
 #include <string.h>   // needed for strcpy
+
 #ifdef WIN32
 #include <windows.h>  // needed for CreateThread
 #else
+
 #include <dlfcn.h>    // needed for extension loading.
-#include <pthread.h>  // needed for pthread_create
+
 #endif
-#include <stdlib.h>   // needed for exit
-#include <vector>
 
 extern Logger Log;     /*!< This is a reference to the normal Logger class   */
 extern LoggerDraw LogDraw; /*!< This is a reference to the drawing Logger class  */
 
-void printOptions( );
+void printOptions();
 
 /*! This is the main function and creates and links all the different classes.
     First it reads in all the parameters from the command prompt
     (<program name> -help) and uses these values to create the classes. After
     all the classes are linked, the mainLoop in the Player class is called. */
-int main( int argc, char * argv[] )
-{
+int main(int argc, char *argv[]) {
 
 #ifdef WIN32
   HANDLE         sense;
 #else
-  pthread_t      sense;
+  pthread_t sense;
 #endif
 
   ServerSettings ss;
   PlayerSettings cs;
 
   // define variables for command options and initialize with default values
-  char     strTeamName[MAX_TEAM_NAME_LENGTH] = "UvA_Trilearn";
-  int      iPort                             = ss.getPort();
-  int      iMinLogLevel                      ;
-  int      iMaxLogLevel                      ;
-  char     strHost[128]                      = "127.0.0.1";
+  char strTeamName[MAX_TEAM_NAME_LENGTH] = "UvA_Trilearn";
+  int iPort = ss.getPort();
+  int iMinLogLevel;
+  int iMaxLogLevel;
+  char strHost[128] = "127.0.0.1";
   // Changes recommended by celibertojr include changing dVersion to 12. See:
   // https://utlists.utexas.edu/sympa/arc/keepaway/2011-05/msg00006.html
-  double   dVersion                          = 12.0;
-  int      iMode                             = 0;
-  int      iNr                               = 2;
-  int      iReconnect                        = -1;
-  int      iNumKeepers                       = 3;
-  int      iNumTakers                        = 2;
-  char     strPolicy[128]                    = "random";
-  bool     bLearn                            = false;
-  char     loadWeightsFile[256]              = "";
-  char     saveWeightsFile[256]              = "";
-  int      hiveMind                          = 0;
-  bool     bInfo                             = false;
-  bool     bSuppliedLogFile                  = false;
-  bool     bSuppliedLogDrawFile              = false;
-  int      iStopAfter                        = -1; //*met+1 8/16/05
-  int      iStartLearningAfter               = -1;
-  bool     jointTiling                       = false;
-  bool     removeCenterPosition              = false;
+  double dVersion = 12.0;
+  int iMode = 0;
+  int iNr = 2;
+  int iReconnect = -1;
+  int iNumKeepers = 3;
+  int iNumTakers = 2;
+  char strPolicy[128] = "random";
+  bool bLearn = false;
+  char loadWeightsFile[256] = "";
+  char saveWeightsFile[256] = "";
+  int hiveMind = 0;
+  bool bInfo = false;
+  bool bSuppliedLogFile = false;
+  bool bSuppliedLogDrawFile = false;
+  int iStopAfter = -1; //*met+1 8/16/05
+  int iStartLearningAfter = -1;
+  bool jointTiling = false;
+  bool removeCenterPosition = false;
+  double gamma = 1.0;
 
   ofstream os;
   ofstream osDraw;
 
   // read in all the command options and change the associated variables
   // assume every two values supplied at prompt, form a duo
-  char * str;
-  for( int i = 1 ; i < argc ; i = i + 2  )
-  {
+  char *str;
+  for (int i = 1; i < argc; i = i + 2) {
     // help is only option that does not have to have an argument
-    if( i + 1 >= argc && strncmp( argv[i], "-help", 3 ) != 0 )
-    {
+    if (i + 1 >= argc && strncmp(argv[i], "-help", 3) != 0) {
       cout << "Need argument for option: " << argv[i] << endl;
-      exit( 0 );
+      exit(0);
     }
 
     // read a command option
-    if( argv[i][0] == '-' && strlen( argv[i] ) > 1)
-    {
-      switch( argv[i][1] )
-      {
+    if (argv[i][0] == '-' && strlen(argv[i]) > 1) {
+      switch (argv[i][1]) {
         case '?':                                   // print help
-          printOptions( );
+          printOptions();
           exit(0);
           break;
         case 'a':                                   // output file drawlog info
-          osDraw.open( argv[i+1] );
+          osDraw.open(argv[i + 1]);
           bSuppliedLogDrawFile = true;
           break;
         case 'c':                                   // clientconf file
-          if(!cs.readValues(argv[i + 1], ":" ))
-            cerr << "Error in reading client file: " << argv[i+1] << endl;
+          if (!cs.readValues(argv[i + 1], ":"))
+            cerr << "Error in reading client file: " << argv[i + 1] << endl;
           break;
         case 'd':
-          str   = &argv[i+1][0];
-          LogDraw.setActive( Parse::parseFirstInt( &str ) == 1 );
+          str = &argv[i + 1][0];
+          LogDraw.setActive(Parse::parseFirstInt(&str) == 1);
           break;
         case 'e': // enable learning 0/1
-          str    = &argv[i+1][0];
-          bLearn = Parse::parseFirstInt(&str ) == 1;
+          str = &argv[i + 1][0];
+          bLearn = Parse::parseFirstInt(&str) == 1;
           break;
         case 'f':
-          strcpy( saveWeightsFile, argv[i+1] );
+          strcpy(saveWeightsFile, argv[i + 1]);
+          break;
+        case 'g': // gamma
+          str = &argv[i + 1][0];
+          gamma = Parse::parseFirstDouble(&str);
           break;
         case 'h':                                   // host server or help
-          if( strlen( argv [i]) > 2 && argv[i][2] == 'e' )
-          {
-            printOptions( );
+          if (strlen(argv[i]) > 2 && argv[i][2] == 'e') {
+            printOptions();
             exit(0);
           }
-          else if (strlen(argv[i]) > 2 && argv[i][2] == 'i')
-          {
-            str = &argv[i+1][0];
-            hiveMind = Parse::parseFirstInt( &str );
+          else if (strlen(argv[i]) > 2 && argv[i][2] == 'i') {
+            str = &argv[i + 1][0];
+            hiveMind = Parse::parseFirstInt(&str);
           }
           else
-            strcpy( strHost, argv[i+1] );
+            strcpy(strHost, argv[i + 1]);
           break;
         case 'i':                                   // info 1 0
-          str   = &argv[i+1][0];
-          bInfo = Parse::parseFirstInt(&str ) == 1;
+          str = &argv[i + 1][0];
+          bInfo = Parse::parseFirstInt(&str) == 1;
           break;
         case 'j':
-          str   = &argv[i+1][0];
-          iNumTakers = Parse::parseFirstInt( &str );
+          str = &argv[i + 1][0];
+          iNumTakers = Parse::parseFirstInt(&str);
           break;
         case 'k':
-          str   = &argv[i+1][0];
-          iNumKeepers = Parse::parseFirstInt( &str );
+          str = &argv[i + 1][0];
+          iNumKeepers = Parse::parseFirstInt(&str);
           break;
         case 'l':                                   // loglevel int[..int]
-          str = &argv[i+1][0];
-          iMinLogLevel = Parse::parseFirstInt( &str );
-          while( iMinLogLevel != 0 )
-          {
-            if( *str == '.' || *str == '-') // '.' or '-' indicates range
+          str = &argv[i + 1][0];
+          iMinLogLevel = Parse::parseFirstInt(&str);
+          while (iMinLogLevel != 0) {
+            if (*str == '.' || *str == '-') // '.' or '-' indicates range
             {
-              *str += 1 ;
-              iMaxLogLevel = Parse::parseFirstInt( &str );
-              if( iMaxLogLevel == 0 ) iMaxLogLevel = iMinLogLevel;
-              Log.addLogRange( iMinLogLevel, iMaxLogLevel );
+              *str += 1;
+              iMaxLogLevel = Parse::parseFirstInt(&str);
+              if (iMaxLogLevel == 0) iMaxLogLevel = iMinLogLevel;
+              Log.addLogRange(iMinLogLevel, iMaxLogLevel);
             }
             else
-              Log.addLogLevel( iMinLogLevel );
-            iMinLogLevel = Parse::parseFirstInt( &str );
+              Log.addLogLevel(iMinLogLevel);
+            iMinLogLevel = Parse::parseFirstInt(&str);
           }
           break;
         case 'm':                                   // mode int
-          str = &argv[i+1][0];
-          iMode = Parse::parseFirstInt( &str );
+          str = &argv[i + 1][0];
+          iMode = Parse::parseFirstInt(&str);
           break;
         case 'n':                                   // number in formation int
-          str = &argv[i+1][0];
-          iNr = Parse::parseFirstInt( &str );
+          str = &argv[i + 1][0];
+          iNr = Parse::parseFirstInt(&str);
           break;
         case 'o':                                   // output file log info
-          os.open( argv[i+1] );
+          os.open(argv[i + 1]);
           bSuppliedLogFile = true;
           break;
         case 'p':                                   // port
-          str = &argv[i+1][0];
-          iPort = Parse::parseFirstInt( &str );
+          str = &argv[i + 1][0];
+          iPort = Parse::parseFirstInt(&str);
           break;
         case 'q':
-          strcpy( strPolicy, argv[i+1] );
+          strcpy(strPolicy, argv[i + 1]);
           break;
         case 'r':                                   // reconnect 1 0
-          str = &argv[i+1][0];
-          iReconnect = Parse::parseFirstInt( &str );
+          str = &argv[i + 1][0];
+          iReconnect = Parse::parseFirstInt(&str);
           break;
         case 's':                                   // serverconf file
-          if(!ss.readValues(argv[i + 1], ":" ))
-            cerr << "Error in reading server file: " << argv[i+1] << endl;
+          if (!ss.readValues(argv[i + 1], ":"))
+            cerr << "Error in reading server file: " << argv[i + 1] << endl;
           break;
         case 't':                                   // teamname name
-          strcpy( strTeamName, argv[i+1] );
+          strcpy(strTeamName, argv[i + 1]);
           break;
         case 'u':
-          str   = &argv[i+1][0];
-          removeCenterPosition = Parse::parseFirstInt( &str ) == 1;
+          str = &argv[i + 1][0];
+          removeCenterPosition = Parse::parseFirstInt(&str) == 1;
           break;
         case 'v':                                   // version version
-          str = &argv[i+1][0];
-          dVersion = Parse::parseFirstDouble( &str );
+          str = &argv[i + 1][0];
+          dVersion = Parse::parseFirstDouble(&str);
           break;
         case 'w':
-          strcpy( loadWeightsFile, argv[i+1] );
+          strcpy(loadWeightsFile, argv[i + 1]);
           break;
         case 'x':
-          str   = &argv[i+1][0];
-          iStopAfter = Parse::parseFirstInt( &str ); // exit after running for iStopAfter episodes
+          str = &argv[i + 1][0];
+          iStopAfter = Parse::parseFirstInt(&str); // exit after running for iStopAfter episodes
           break;
         case 'y':
-          str   = &argv[i+1][0];
-          iStartLearningAfter = Parse::parseFirstInt( &str ); // initially don't learn, but turn on learning after iStartLearningAfter episodes have passed
+          str = &argv[i + 1][0];
+          iStartLearningAfter = Parse::parseFirstInt(
+              &str); // initially don't learn, but turn on learning after iStartLearningAfter episodes have passed
           break;
         case 'z':
-          str   = &argv[i+1][0];
-          jointTiling = Parse::parseFirstInt( &str ) == 1;
+          str = &argv[i + 1][0];
+          jointTiling = Parse::parseFirstInt(&str) == 1;
           break;
         default:
           cerr << "(main) Unknown command option: " << argv[i] << endl;
@@ -263,56 +261,56 @@ int main( int argc, char * argv[] )
     }
   }
 
-  if(bInfo)
-  {
-    cout << "team         : "  << strTeamName    << endl <<
-         "port         : "  << iPort          << endl <<
-         "host         : "  << strHost        << endl <<
-         "version      : "  << dVersion       << endl <<
-         "mode         : "  << iMode          << endl <<
-         "playernr     : "  << iNr            << endl <<
-         "reconnect    : "  << iReconnect     << endl <<
-         "joint tiling: "   << jointTiling    << endl <<
-         "remove center position : "   << removeCenterPosition  << endl <<
-         "hive mind mode : " << hiveMind      << endl <<
-         "be learning: "     << bLearn << endl;
+  if (bInfo) {
+    cout << "team : " << strTeamName << endl <<
+         "port : " << iPort << endl <<
+         "host : " << strHost << endl <<
+         "version : " << dVersion << endl <<
+         "mode : " << iMode << endl <<
+         "playernr : " << iNr << endl <<
+         "reconnect : " << iReconnect << endl <<
+         "joint tiling : " << jointTiling << endl <<
+         "remove center position : " << removeCenterPosition << endl <<
+         "hive mind mode : " << hiveMind << endl <<
+         "gamma : " << gamma << endl <<
+         "be learning : " << bLearn << endl;
   }
 
-  if(bSuppliedLogFile)
-    Log.setOutputStream( os );                   // initialize logger
+  if (bSuppliedLogFile)
+    Log.setOutputStream(os);                   // initialize logger
   else
-    Log.setOutputStream( cout );
-  if(bSuppliedLogDrawFile)
-    LogDraw.setOutputStream( osDraw );          // initialize drawing logger
+    Log.setOutputStream(cout);
+  if (bSuppliedLogDrawFile)
+    LogDraw.setOutputStream(osDraw);          // initialize drawing logger
   else
-    LogDraw.setOutputStream( cout );
+    LogDraw.setOutputStream(cout);
 
-  Log.restartTimer( );
+  Log.restartTimer();
 
   //Formations fs( strFormations, (FormationT)cs.getInitialFormation(), iNr-1 );
   // read formations file
-  WorldModel wm( &ss, &cs, NULL );              // create worldmodel
-  Connection c( strHost, iPort, MAX_MSG );     // make connection with server
-  ActHandler a( &c, &wm, &ss );                // link actHandler and worldmodel
-  SenseHandler s( &c, &wm, &ss, &cs );         // link senseHandler with wm
+  WorldModel wm(&ss, &cs, NULL);              // create worldmodel
+  Connection c(strHost, iPort, MAX_MSG);     // make connection with server
+  ActHandler a(&c, &wm, &ss);                // link actHandler and worldmodel
+  SenseHandler s(&c, &wm, &ss, &cs);         // link senseHandler with wm
 
   wm.removeCenterPosition = removeCenterPosition;
 
   SMDPAgent *sa = NULL;
 
-  double ranges[ MAX_STATE_VARS ];
-  double minValues[ MAX_STATE_VARS ];
-  double resolutions[ MAX_STATE_VARS ];
-  int numFeatures = wm.keeperStateRangesAndResolutions( ranges, minValues, resolutions,
-                                                        iNumKeepers, iNumTakers );
+  double ranges[MAX_STATE_VARS];
+  double minValues[MAX_STATE_VARS];
+  double resolutions[MAX_STATE_VARS];
+  int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
+                                                       iNumKeepers, iNumTakers);
   int numActions = iNumKeepers;
 
-  if ( strlen( strPolicy ) > 0 && strPolicy[0] == 'l' ) {
+  if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
     // (l)earned
     // or "learned!" -> Don't explore at all.
-    LinearSarsaAgent* linearSarsaAgent = new LinearSarsaAgent(
+    LinearSarsaAgent *linearSarsaAgent = new LinearSarsaAgent(
         numFeatures, numActions, bLearn, resolutions,
-        loadWeightsFile, saveWeightsFile, hiveMind, jointTiling
+        loadWeightsFile, saveWeightsFile, hiveMind, jointTiling, gamma
     );
     // Check for pure exploitation mode.
     size_t length = strlen(strPolicy);
@@ -324,19 +322,19 @@ int main( int argc, char * argv[] )
   } else if (!strncmp(strPolicy, "ext=", 4)) {
     // Load extension.
     // Name should come after "ext=". Yes, this is hackish.
-    char* extensionName = strPolicy + 4;
+    char *extensionName = strPolicy + 4;
     // These parameters are based on the expected learning agent parameters
     // above.
     // Added WorldModel for agents needing richer/relational representation!
-    typedef SMDPAgent* (*CreateAgent)(
-        WorldModel&, int, int, bool, double*, char*, char*, int
+    typedef SMDPAgent *(*CreateAgent)(
+        WorldModel &, int, int, bool, double *, char *, char *, int
     );
     CreateAgent createAgent = NULL;
 #ifdef WIN32
     // TODO
 #else
     // Load the extension.
-    void* extension = dlopen(extensionName, RTLD_NOW);
+    void *extension = dlopen(extensionName, RTLD_NOW);
     if (!extension) {
       cerr << "Failed to load extension " << extensionName << endl;
       cerr << dlerror() << endl;
@@ -357,16 +355,16 @@ int main( int argc, char * argv[] )
     );
   } else {
     // (ha)nd (ho)ld (r)andom
-    sa = new HandCodedAgent( numFeatures, numActions,
-                             strPolicy, &wm );
+    sa = new HandCodedAgent(numFeatures, numActions,
+                            strPolicy, &wm);
   }
 
   if (!sa) {
     cerr << "No agent!" << endl;
     return EXIT_FAILURE;
   }
-  KeepawayPlayer bp( sa, &a, &wm, &ss, &cs, strTeamName,
-                     iNumKeepers, iNumTakers, dVersion, iReconnect );
+  KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,
+                    iNumKeepers, iNumTakers, dVersion, iReconnect);
 
 #ifdef WIN32
   DWORD id1;
@@ -377,10 +375,10 @@ int main( int argc, char * argv[] )
       return false;
   }
 #else
-  pthread_create( &sense, NULL, sense_callback  , &s); // start listening
+  pthread_create(&sense, NULL, sense_callback, &s); // start listening
 #endif
 
-  if( iMode == 0 )
+  if (iMode == 0)
     bp.mainLoop();
 
   c.disconnect();
@@ -389,30 +387,29 @@ int main( int argc, char * argv[] )
 
 /*! This function prints the command prompt options that can be supplied to the
     program. */
-void printOptions( )
-{
-  cout << "Command options:"                                         << endl <<
-       " a file                - write drawing log info to "             << endl <<
-       " c(lientconf) file     - use file as client conf file"           << endl <<
-       " d(rawloglevel) int[..int] - level(s) of drawing debug info"     << endl <<
-       " e(nable) learning 0/1  - turn learning on/off"                  << endl <<
-       " f save weights file   - use file to save weights"               << endl <<
-       " h(ost) hostname       - host to connect with"                   << endl <<
-       " he(lp)                - print this information"                 << endl <<
-       " hi(ve) 0/1            - use mmap to hive mind the team"         << endl <<
-       " i(nfo) 0/1            - print variables used to start"          << endl <<
-       " j takers  int         - number of takers"                       << endl <<
-       " k(eepers) int         - number of keepers"                      << endl <<
-       " l(oglevel) int[..int] - level of debug info"                    << endl <<
-       " m(ode) int            - which mode to start up with"            << endl <<
-       " n(umber) int          - player number in formation"             << endl <<
-       " o(utput) file         - write log info to (screen is default)"  << endl <<
-       " p(ort)                - port number to connect with"            << endl <<
-       " q policy name         - policy to play with"                    << endl <<
-       " r(econnect) int       - reconnect as player nr"                 << endl <<
-       " s(erverconf) file     - use file as server conf file"           << endl <<
-       " t(eamname) name       - name of your team"                      << endl <<
-       " w(eights) file        - use file to load weights"               << endl <<
-       " x exit after running for this many episodes"                    << endl <<
-       " y enable learning after not learning for this many episodes"    << endl;
+void printOptions() {
+  cout << "Command options:" << endl <<
+       " a file                - write drawing log info to " << endl <<
+       " c(lientconf) file     - use file as client conf file" << endl <<
+       " d(rawloglevel) int[..int] - level(s) of drawing debug info" << endl <<
+       " e(nable) learning 0/1  - turn learning on/off" << endl <<
+       " f save weights file   - use file to save weights" << endl <<
+       " h(ost) hostname       - host to connect with" << endl <<
+       " he(lp)                - print this information" << endl <<
+       " hi(ve) 0/1            - use mmap to hive mind the team" << endl <<
+       " i(nfo) 0/1            - print variables used to start" << endl <<
+       " j takers  int         - number of takers" << endl <<
+       " k(eepers) int         - number of keepers" << endl <<
+       " l(oglevel) int[..int] - level of debug info" << endl <<
+       " m(ode) int            - which mode to start up with" << endl <<
+       " n(umber) int          - player number in formation" << endl <<
+       " o(utput) file         - write log info to (screen is default)" << endl <<
+       " p(ort)                - port number to connect with" << endl <<
+       " q policy name         - policy to play with" << endl <<
+       " r(econnect) int       - reconnect as player nr" << endl <<
+       " s(erverconf) file     - use file as server conf file" << endl <<
+       " t(eamname) name       - name of your team" << endl <<
+       " w(eights) file        - use file to load weights" << endl <<
+       " x exit after running for this many episodes" << endl <<
+       " y enable learning after not learning for this many episodes" << endl;
 }

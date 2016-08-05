@@ -33,6 +33,7 @@ def launch_player(player_type, index, options):
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
         i = '1', # verbose
+        g = float(options.gamma),
         z = int(options.joint_tiling),
         u = int(options.remove_center_position),
         l = options.log_level, # log level
@@ -340,6 +341,9 @@ def parse_options(args = None, **defaults):
     parser.add_option(
         '--remove-center-position', action = 'store_true', default = False,
         help = "Remove center position from state representation.")
+    parser.add_option(
+        '--gamma', type = 'float', default = 1.0,
+        help = "Discount factor gamma.")
 
     options = parser.parse_args(args)[0]
     # Set coach_port and online_coach_port here, if not set previously.

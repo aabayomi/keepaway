@@ -28,14 +28,15 @@ sh clear.sh
 #    sleep $SLEEP
 #done
 
-for hive in `seq 0 2`; do
+for hive in `seq 2 2`; do
     ./train.sh -h $hive -sf &
     sleep $SLEEP
-done
 
-for hive in `seq 0 2`; do
-    ./train.sh -h $hive -sfr &
-    sleep $SLEEP
+    for lookahead in `seq 10 15 100`; do
+        gamma=`echo 1.0 - 1.0 / $lookahead | bc -l`
+        ./train.sh -h $hive -sf -g $gamma &
+        sleep $SLEEP
+    done
 done
 
 wait
