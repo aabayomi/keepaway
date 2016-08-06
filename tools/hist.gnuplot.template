@@ -23,7 +23,7 @@ set xrange [0:]
 set xlabel "Episode Duration (seconds)"
 
 set yrange [0:]
-set ylabel "Occurences"
+set ylabel "Frequencies"
 
 # Plot Data
 plot \

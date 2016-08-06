@@ -106,9 +106,9 @@ LinearSarsaAgent::LinearSarsaAgent(int numFeatures,
                                    bool jointTiling,
                                    double gamma) :
     SMDPAgent(numFeatures, numActions),
+    jointTiling(jointTiling),
     hiveFile(-1),
-    gamma(gamma),
-    jointTiling(jointTiling) {
+    gamma(gamma) {
   bLearning = bLearn;
 
   for (int i = 0; i < getNumFeatures(); i++) {
@@ -599,6 +599,8 @@ void LinearSarsaAgent::updateWeights(double delta) {
     }
 
     weights[f] += tmp * traces[f];
+    assert(!isnan(weights[f]));
+    assert(!isinf(weights[f]));
   }
 }
 

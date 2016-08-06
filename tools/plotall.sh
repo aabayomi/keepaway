@@ -11,7 +11,7 @@
 #  REQUIREMENTS: ---
 #          BUGS: ---
 #         NOTES: ---
-#        AUTHOR: YOUR NAME (), 
+#        AUTHOR: Aijun Bai (), 
 #  ORGANIZATION: 
 #       CREATED: 07/31/2016 00:18
 #      REVISION:  ---
@@ -26,9 +26,11 @@ cp graph.gnuplot.template graph.gnuplot
 cp hist.gnuplot.template hist.gnuplot
 
 for var in "$@"; do
-    output=`echo $var | sed -e 's/-/ /g' | awk '{$1 = ""; print $0;}' | sed -e 's/ //g'`
-    ./winsum.sh $var `basename $output .kwy`
-    ./hist.sh $var `basename $output .kwy`
+    output="`echo $var | sed -e 's/-/ /g' | awk '{$1 = ""; print $0;}' | sed -e 's/ //g'`"
+    output="`basename $output .kwy`"
+    output="`echo $output | sed -e 's/_/-/g' -e 's/-fs//g' -e 's/Q-//g'`"
+    ./winsum.sh $var $output
+    ./hist.sh $var $output
 done
 
 gnuplot graph.gnuplot

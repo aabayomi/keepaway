@@ -1,7 +1,9 @@
-Keepaway Data Analysis Tools
+# Keepaway Data Analysis Tools
 Gregory Kuhlmann, 2002
+Aijun Bai, 2016
 
 Files:
+```
   README        - This documentation file
   Makefile      - Makefile for C++ programs
   clean         - Shell script to kill players and server
@@ -11,10 +13,14 @@ Files:
   hist.gnuplot  - Gnuplot config file for creating histograms
   graph.gnuplot - Gnuplot config file for creating graphs
   example.kwy   - Example server output for keepaway learning trial
+  plotall.sh    - Plot all kwy log files using graph.gnuplot and hist.gnuplot
+```
 
 INSTALL:
+```
   make
   cp clean monitor hist winsum /some/directory/in/your/path
+```
 
 Example data analysis:
 
@@ -23,23 +29,37 @@ Example data analysis:
   for the low-pass filter (the smaller it is, the smoother
   the graph).  The output is written to "1.out"
   
+  ```
   cat example.kwy | winsum 1000 0.01 > 1.out
+  ```
 
   Now let's create a postscript figure for this plot and
   output it to "graph.eps"
 
+  ```
   gnuplot graph.gnuplot
   gv graph.eps
+  ```
 
   Generate a histogram of episode durations for example.kwy.
   We will use bins of size 2.0 seconds.  The histogram is
   written to "1.hist".
 
+  ```
   cat example.kwy | hist 2.0 > 1.hist
+  ```
 
   Now let's create a postscript figure for this histogram
   and output it to "hist.eps"
 
+  ```
   gnuplot hist.gnuplot
   gv hist.eps
+  ```
+
+  Or, use plotall.sh
+
+  ```
+  ./plotall.sh ../logs/*.kwy
+  ```
 

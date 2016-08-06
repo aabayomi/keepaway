@@ -11,7 +11,7 @@
 #  REQUIREMENTS: ---
 #          BUGS: ---
 #         NOTES: ---
-#        AUTHOR: YOUR NAME (), 
+#        AUTHOR: Aijun Bai (), 
 #  ORGANIZATION: 
 #       CREATED: 07/30/2016 22:54
 #      REVISION:  ---
@@ -22,7 +22,8 @@ set -o nounset                              # Treat unset variables as an error
 WINDOW="1000"
 ALPHA="0.01"
 COARSE="`expr $WINDOW / 10`"
+OUTPUT=$2
 
-cat $1 | ./winsum $WINDOW $ALPHA $COARSE > $2.out
-echo "\"$2.out\" w lp lw 3, \\" >> graph.gnuplot
+cat $1 | ./winsum $WINDOW $ALPHA $COARSE > $OUTPUT.out
+echo "\"$OUTPUT.out\" w lp lw 3 t \"$OUTPUT\", \\" >> graph.gnuplot
 

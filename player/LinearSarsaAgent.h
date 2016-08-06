@@ -29,7 +29,7 @@ protected:
   bool jointTiling;
 
   /// Hive mind indicator and file descriptor.
-  int hiveMind; // 0: hive mind, 1: full hive mind
+  int hiveMind; // 1: hive mind, 2: full hive mind
   int hiveFile;
 
   int lastAction;

@@ -11,7 +11,7 @@
 #  REQUIREMENTS: ---
 #          BUGS: ---
 #         NOTES: ---
-#        AUTHOR: YOUR NAME (), 
+#        AUTHOR: Aijun Bai (), 
 #  ORGANIZATION: 
 #       CREATED: 08/01/2016 14:48
 #      REVISION:  ---

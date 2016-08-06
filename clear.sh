@@ -11,7 +11,7 @@
 #  REQUIREMENTS: ---
 #          BUGS: ---
 #         NOTES: ---
-#        AUTHOR: YOUR NAME (), 
+#        AUTHOR: Aijun Bai (), 
 #  ORGANIZATION: 
 #       CREATED: 08/01/2016 14:44
 #      REVISION:  ---
@@ -19,7 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-rm -fr hive*-Q* logs/ *.lock core core.* vgcore.* *.lock
+rm -fr hive*-Q* logs/ *.lock core core.* vgcore.* *.lock Q_H*
 
 mkdir logs
 cd player

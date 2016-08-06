@@ -8,7 +8,7 @@ LOG=""
 LOGLEVEL="101"
 JOINTTILING=""
 REMOVECENTERP=""
-GAMMA="1.0"
+GAMMA="1."
 BUILD="1"
 
 while getopts  "b:h:g:lfmsjr" flag; do
@@ -20,14 +20,18 @@ while getopts  "b:h:g:lfmsjr" flag; do
         l) LOG="--log-dir=logs --log-game --log-text --log-level $LOGLEVEL";;
         j) JOINTTILING="--joint-tiling";;
         r) REMOVECENTERP="--remove-center-position";;
-        g) GAMMA="$OPTARG";;
+        g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`";;
         b) BUILD="$OPTARG";;
     esac
 done
 
 HIVE="--keeper-hive $HIVEMODE"
-QFILE="hive${HIVEMODE}-Q"
+QFILE="Q_H${HIVEMODE}"
 PORT="--port=`shuf -i 2000-65000 -n 1`"
+
+if [ ! -z $GAMMA ]; then
+    QFILE="${QFILE}_G${GAMMA}"
+fi
 
 if [ ! -z $FULLSTATE ]; then
     QFILE="${QFILE}_fs"
@@ -39,10 +43,6 @@ fi
 
 if [ ! -z $REMOVECENTERP ]; then
     QFILE="${QFILE}_rcp"
-fi
-
-if [ ! -z $GAMMA ]; then
-    QFILE="${QFILE}_${GAMMA}"
 fi
 
 if [ $BUILD = "1" ]; then

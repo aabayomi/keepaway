@@ -11,7 +11,7 @@
 #  REQUIREMENTS: ---
 #          BUGS: ---
 #         NOTES: ---
-#        AUTHOR: YOUR NAME (), 
+#        AUTHOR: Aijun Bai (), 
 #  ORGANIZATION: 
 #       CREATED: 08/01/2016 18:59
 #      REVISION:  ---
@@ -28,12 +28,7 @@ exec 2>&1
 sh clear.sh
 sh build.sh
 
-for policy in random hand hold; do
-    ./evaluate.sh -b 0 -p $policy -s $FULLSTATE &
-    sleep $SLEEP
-done
-
-for hive in `seq 2 2`; do
+for hive in `seq 1 2`; do
     for lookahead in `seq 1 10`; do
         gamma=`echo 1.0 - 1.0 / 2^$lookahead | bc -l`
         ./train.sh -b 0 -h $hive -s $FULLSTATE -g $gamma &
@@ -41,6 +36,11 @@ for hive in `seq 2 2`; do
     done
 
     ./train.sh -b 0 -h $hive -s $FULLSTATE &
+done
+
+for policy in random hand hold; do
+    sleep $SLEEP
+    ./evaluate.sh -b 0 -p $policy -s $FULLSTATE &
 done
 
 wait
