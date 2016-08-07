@@ -71,7 +71,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 extern Logger Log;     /*!< This is a reference to the normal Logger class   */
+
+#if USE_DRAW_LOG
 extern LoggerDraw LogDraw; /*!< This is a reference to the drawing Logger class  */
+#endif
 
 void printOptions();
 
@@ -148,7 +151,9 @@ int main(int argc, char *argv[]) {
           break;
         case 'd':
           str = &argv[i + 1][0];
-          LogDraw.setActive(Parse::parseFirstInt(&str) == 1);
+#if USE_DRAW_LOG
+        LogDraw.setActive(Parse::parseFirstInt(&str) == 1);
+#endif
           break;
         case 'e': // enable learning 0/1
           str = &argv[i + 1][0];
@@ -280,10 +285,13 @@ int main(int argc, char *argv[]) {
     Log.setOutputStream(os);                   // initialize logger
   else
     Log.setOutputStream(cout);
+
+#if USE_DRAW_LOG
   if (bSuppliedLogDrawFile)
     LogDraw.setOutputStream(osDraw);          // initialize drawing logger
   else
     LogDraw.setOutputStream(cout);
+#endif
 
   Log.restartTimer();
 

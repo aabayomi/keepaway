@@ -411,8 +411,11 @@ SideT WorldModel::getSide( ) const
     \return bool indicating whether update was succesful.*/
 bool WorldModel::setSide( SideT s )
 {
+#if USE_DRAW_LOG
   sideSide = s;
   LogDraw.setSide( s );
+#endif
+
   m_iMultX = (getSide() == SIDE_LEFT ) ?  1 : -1 ;    // set the draw info
   m_iMultY = (getSide() == SIDE_LEFT ) ? -1 :  1 ;    // from Logger.C
   return true;
@@ -590,8 +593,11 @@ bool WorldModel::setCommunicationString( const char *str )
 {
   strncpy( m_strCommunicate, str, MAX_SAY_MSG );
   m_strCommunicate[MAX_SAY_MSG] = '\0';
+
+#if USE_DRAW_LOG
   LogDraw.logText( "comm string", VecPosition( -40, 20 ),
 		   str, 40, COLOR_SADDLE_BROWN );
+#endif
   return true;
 }
 

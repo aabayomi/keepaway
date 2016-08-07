@@ -157,7 +157,7 @@ LinearSarsaAgent::LinearSarsaAgent(int numFeatures,
   colTab = new collision_table(RL_MEMORY_SIZE, 1);
 
   GetTiles(tmp, 1, 1, tmpf, 0);  // A dummy call to set the hashing table
-  srand(time(NULL));
+  srand((unsigned int) time(NULL));
 
   if (strlen(loadWeightsFile) > 0)
     loadWeights(loadWeightsFile);

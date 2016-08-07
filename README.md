@@ -15,17 +15,18 @@ optimality can be ensured given fixed opponents.
 
 ## Usages
 
-- Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh [-h HIVE_MODE] [-l LOG_LEVEL] [-f] [-m] [-s]```
+- Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh [-h HIVE_MODE] [-g GAMMA] [-l] [-f] [-m] [-s]```
  - ```-h HIVE_MODE```: set hive mind mode for ```keepaway_player```: 0 - single agent learning; 1 - single agent learning with shared weights; 2 - multi-agent distributed learning with shared weights and traces
- - ```-l LOG_LEVEL```: set text log level for ```keepaway_player```
+ - ```-g GAMMA```: specify the discount factor used when learning
+ - ```-l```: turn on logging for ```keepaway_player``` and ``rcssserver```
  - ```-f```: turn on fullstate perception within ```rcssserver```
  - ```-m```: launch a monitor, technically ```rcsssmonitor```
  - ```-s```: turn on synch mode within ```rcssserver```
 
-- Evaluate a specified policy by simulation:```./evaluate.sh [-p POLICY] [-q QFILE] [-l LOG_LEVEL] [-f] [-m] [-s]```
+- Evaluate a specified policy by simulation:```./evaluate.sh [-p POLICY] [-q QFILE] [-l] [-f] [-m] [-s]```
  - ```-p POLICY```: specify the policy to evaluate, for example: hand, hold, random or learn
  - ```-q QFILE```: speficy the learned Q function for a learned policy
-  - ```-l LOG_LEVEL```: set text log level for ```keepaway_player```
+  - ```-l```: turn on logging for ```keepaway_player``` and ``rcssserver```
  - ```-f```: turn on fullstate perception within ```rcssserver```
  - ```-m```: launch a monitor, technically ```rcsssmonitor```
  - ```-s```: turn on synch mode within ```rcssserver```
@@ -148,7 +149,7 @@ FILES and DIRECTORIES:
 README        - This file
 COPYING       - GNU Public License
 keepaway.sh   - script to start players
-player/       - keepaway player source code    
+player/       - keepaway player source code
 logs/         - dir to store generated log files (initially empty)
 weights/      - dir to store learned weights (initially empty)
 tools/        - some useful utilities for keepaway experiments

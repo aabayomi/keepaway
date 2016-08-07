@@ -76,8 +76,11 @@ double WorldModel::congestion( VecPosition pos, bool considerMe )
 
 void WorldModel::resetEpisode()
 {
+#if USE_DRAW_LOG
   LogDraw.logText( "episode", VecPosition( 0, 0 ), "Reset",
 		      40, COLOR_WHITE );
+#endif
+
   Ball.setTimeLastSeen( -1 );
   for ( int i = 0; i < MAX_TEAMMATES; i++ )
     Teammates[i].setTimeLastSeen( -1 );

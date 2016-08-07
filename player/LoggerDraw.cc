@@ -34,7 +34,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define NORM(x) ( ( x < 0 ) ? 0 : ( x > 1 ) ? 1 : x )
 
+#if USE_DRAW_LOG
 LoggerDraw LogDraw;
+#endif
 
 /************************ LogColor ***************************/
 

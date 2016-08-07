@@ -34,7 +34,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SayMsgEncoder.h"
 #include <cstring>
 
+#if USE_DRAW_LOG
 extern LoggerDraw LogDraw;
+#endif
 
 KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
                                 ServerSettings *ss, PlayerSettings *ps,
@@ -84,7 +86,10 @@ void KeepawayPlayer::mainLoop( )
   {
     Log.logWithTime( 3, "  start update_all" );
     Log.setHeader( WM->getCurrentCycle() );
+
+#if USE_DRAW_LOG
     LogDraw.setTime( WM->getCurrentCycle() );
+#endif
 
     if(WM->updateAll( ))
     {
@@ -125,6 +130,7 @@ void KeepawayPlayer::mainLoop( )
     else
       Log.logWithTime( 3, "  HOLE no action determined; waiting for new info");
 
+#if USE_DRAW_LOG
     int iIndex;
     double dConfThr = PS->getPlayerConfThr();
     char buffer[128];
@@ -161,6 +167,7 @@ void KeepawayPlayer::mainLoop( )
     }
 
     Log.logWithTime( 604, "time for action: %f", timer.getElapsedTime()*1000 );
+#endif
 
     // wait for new information from the server cannot say
     // bContLoop=WM->wait... since bContLoop can be changed elsewhere
@@ -241,9 +248,10 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
       }
     }
 
+#if USE_DRAW_LOG
     LogDraw.logCircle( "ball sending", posBall,
                        1.1, 90, false, COLOR_BLUE );
-
+#endif
     myencoder.add( new BallInfo( posBall.getX(), posBall.getY(),
                                  velBall.getX(), velBall.getY(), 1 - iDiff ) );
   }
@@ -290,6 +298,7 @@ SoccerCommand KeepawayPlayer::keeper()
     m_timeStartEpisode = WM->getCurrentTime();
   }
 
+#if USE_DRAW_LOG
   LogDraw.logCircle( "ball belief", WM->getBallPos(),
                      1.1, 11, false, COLOR_RED,
                      WM->getConfidence( OBJECT_BALL ) );
@@ -298,15 +307,18 @@ SoccerCommand KeepawayPlayer::keeper()
   LogDraw.logText( "ball belief", WM->getBallPos(),
                    buffer,
                    11, COLOR_RED );
+#endif
 
   // If we don't know where the ball is, search for it.
   if ( WM->getConfidence( OBJECT_BALL ) <
        PS->getBallConfThr() ) {
     ACT->putCommandInQueue( soc = searchBall() );
     ACT->putCommandInQueue( alignNeckWithBody() );
+#if USE_DRAW_LOG
     LogDraw.logText( "state", VecPosition( 25, 25 ),
                      "lost ball",
                      1, COLOR_WHITE );
+#endif
     return soc;
   }
 
@@ -324,16 +336,18 @@ SoccerCommand KeepawayPlayer::keeper()
   // If fastest, intercept the ball.
   if ( fastest == WM->getAgentObjectType() ) {
     Log.log( 100, "I am fastest to ball; can get there in %d cycles", iTmp );
+
+#if USE_DRAW_LOG
     LogDraw.logText( "state", VecPosition( 25, 25 ),
                      "fastest",
                      1, COLOR_WHITE );
-
+#endif
     ObjectT lookObject = chooseLookObject( 0.98 );
-
+#if USE_DRAW_LOG
     char buffer[128];
     LogDraw.logText( "lookObject", VecPosition( 25, -25 ),
                      SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
-
+#endif
     ACT->putCommandInQueue( soc = intercept( false ) );
     //ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
     //ACT->putCommandInQueue( turnNeckToPoint( SS->getKeepawayRect().getPosCenter(), soc ) );
@@ -343,9 +357,11 @@ SoccerCommand KeepawayPlayer::keeper()
 
   // Not fastest, get open
   Log.log( 100, "I am not fastest to ball" );
+#if USE_DRAW_LOG
   LogDraw.logText( "state", VecPosition( 25, 25 ),
                    "support",
                    1, COLOR_WHITE );
+#endif
   return keeperSupport( fastest );
 }
 
@@ -373,9 +389,11 @@ SoccerCommand KeepawayPlayer::keeperWithBall()
   }
   else { // if we don't have enough info to calculate state vars
     action = 0;  // hold ball
+#if USE_DRAW_LOG
     LogDraw.logText( "state", VecPosition( 35, 25 ),
                      "clueless",
                      1, COLOR_RED );
+#endif
   }
 
   return interpretKeeperAction( action );
@@ -387,9 +405,11 @@ SoccerCommand KeepawayPlayer::interpretKeeperAction( int action )
 
   if ( action == 0 ) { // interpret HOLD action
     ACT->putCommandInQueue( soc = holdBall() );
+#if USE_DRAW_LOG
     LogDraw.logText( "state", VecPosition( 25, 25 ),
                      "holding",
                      1, COLOR_WHITE );
+#endif
   }
   else { // interpret PASS action
     int numK = WM->getNumKeepers();
@@ -402,10 +422,13 @@ SoccerCommand KeepawayPlayer::interpretKeeperAction( int action )
     ACT->putCommandInQueue( soc = directPass( tmPos, PASS_NORMAL ) );
     // Or Fast Passing
     //ACT->putCommandInQueue( soc = directPass( tmPos, PASS_FAST ) );
+
+#if USE_DRAW_LOG
     char buffer[128];
     LogDraw.logText( "state", VecPosition( 25, 25 ),
                      SoccerTypes::getObjectStr( buffer, K[ action ] ),
                      1, COLOR_WHITE );
+#endif
   }
 
   return soc;
@@ -423,10 +446,11 @@ SoccerCommand KeepawayPlayer::keeperSupport( ObjectT fastest )
 
   ObjectT lookObject = chooseLookObject( 0.97 );
 
+#if USE_DRAW_LOG
   char buffer[128];
   LogDraw.logText( "lookObject", VecPosition( 25, -25 ),
                    SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
-
+#endif
   ACT->putCommandInQueue( soc );
   //ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
   ACT->putCommandInQueue( turnNeckToPoint( WM->getKeepawayRect().getPosCenter(), soc ) );

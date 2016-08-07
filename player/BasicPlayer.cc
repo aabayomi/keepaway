@@ -146,8 +146,10 @@ SoccerCommand BasicPlayer::turnNeckToPoint(VecPosition pos, SoccerCommand soc)
   AngDeg      angBody, angNeck, angActual;
   Stamina     sta;
 
+#if USE_DRAW_LOG
   LogDraw.logCircle( "turn neck point", WM->getBallPos(),
 		     1.2, 12, true, COLOR_BLUE, WM->getConfidence( OBJECT_BALL ) );
+#endif
 
 
   // predict agent information after command 'soc' is performed
@@ -2747,8 +2749,11 @@ SoccerCommand BasicPlayer::getOpenForPassFromInRectangle( Rect rect,
 {
   VecPosition bestPoint =
     leastCongestedPointForPassInRectangle( rect, posFrom );
+
+#if USE_DRAW_LOG
     LogDraw.logCircle( "BestPoint", bestPoint, 1, 100, true,
   		     COLOR_TEAL );
+#endif
 
   double buffer = 1.5;
 

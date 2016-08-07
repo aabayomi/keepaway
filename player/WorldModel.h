@@ -70,7 +70,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 extern Logger Log;          // defined in Logger.cc
+
+#if USE_DRAW_LOG
 extern LoggerDraw LogDraw;      // defined in LoggerDraw.cc
+#endif
 
 #ifdef WIN32
 /*! This function shall return the integral value (represented as a double)

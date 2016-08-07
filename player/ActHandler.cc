@@ -170,8 +170,11 @@ bool ActHandler::sendCommands( )
   if( strCommand[0] != '\0' )
   {
     timeLastSent        = WM->getCurrentTime();
+
+#if USE_DRAW_LOG
     LogDraw.logText( "command string", VecPosition( -25, 30 ), strCommand,
     		     2, COLOR_BLACK );
+#endif
 
     connection->sendMessage( strCommand );
     Log.logFromSignal( 2, " send queued action to server: %s", strCommand);
