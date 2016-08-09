@@ -411,8 +411,9 @@ SideT WorldModel::getSide( ) const
     \return bool indicating whether update was succesful.*/
 bool WorldModel::setSide( SideT s )
 {
-#if USE_DRAW_LOG
   sideSide = s;
+
+#if USE_DRAW_LOG
   LogDraw.setSide( s );
 #endif
 

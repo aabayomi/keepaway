@@ -444,7 +444,7 @@ SoccerCommand KeepawayPlayer::keeperSupport( ObjectT fastest )
 //  LogDraw.logCircle( "BallPredict", posPassFrom, 1, 70, true, COLOR_BROWN );
   soc = getOpenForPassFromInRectangle( WM->getKeepawayRect(), posPassFrom );
 
-  ObjectT lookObject = chooseLookObject( 0.97 );
+//  ObjectT lookObject = chooseLookObject( 0.97 );
 
 #if USE_DRAW_LOG
   char buffer[128];
@@ -452,7 +452,7 @@ SoccerCommand KeepawayPlayer::keeperSupport( ObjectT fastest )
                    SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
 #endif
   ACT->putCommandInQueue( soc );
-  //ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
+//  ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
   ACT->putCommandInQueue( turnNeckToPoint( WM->getKeepawayRect().getPosCenter(), soc ) );
 
   return soc;
