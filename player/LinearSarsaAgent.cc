@@ -237,11 +237,11 @@ int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
   return lastAction;
 }
 
-double LinearSarsaAgent::ireward(double tau, double gamma) {
+double LinearSarsaAgent::reward(double tau, double gamma) {
   double ret = tau;
 
   if (gamma < 1.0) {
-    ret = (double) ((1.0 - pow(gamma, tau)) / (1.0 - gamma));
+    ret = (1.0 - pow(gamma, tau)) / (1.0 - gamma);
   }
 
   return ret;
@@ -262,7 +262,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
     Log.log(101, "LinearSarsaAgent::step hived tau: %f", tau);
   }
 
-  double delta = ireward(tau, gamma) - Q[lastAction]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
+  double delta = reward(tau, gamma) - Q[lastAction]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
 
   loadTiles(state); //s_t
   for (int a = 0; a < getNumActions(); a++) {
@@ -307,7 +307,6 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
     PRINT_VALUE(Q[lastAction]);
   }
 
-  double old_delta = delta;
   delta += pow(gamma, tau) * Q[lastAction]; //delta += Q_{t-1}[s_t, a_t]
 
   updateWeights(delta); //Q_t <- Q_{t-1}
@@ -361,7 +360,7 @@ void LinearSarsaAgent::endEpisode(int current_time, double reward_) {
 //    if ( gamma != 1.0)
 //      cerr << "We're assuming gamma's 1" << endl;
 
-    double delta = ireward(tau, gamma) - Q[lastAction];
+    double delta = reward(tau, gamma) - Q[lastAction];
     updateWeights(delta);
   }
 

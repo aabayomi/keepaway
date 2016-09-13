@@ -17,7 +17,6 @@ private:
 
 public:
   FileLock(const std::string name);
-
   ~FileLock();
 };
 
@@ -94,7 +93,7 @@ protected:
 
   long *loadSharedData(collision_table *colTab, double *weights);
 
-  double ireward(double tau, double gamma);
+  double reward(double tau, double gamma);
 
 public:
   LinearSarsaAgent(int numFeatures,
