@@ -33,9 +33,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include "HandCodedAgent.h"
 
-HandCodedAgent::HandCodedAgent( int numFeatures, int numActions,
+HandCodedAgent::HandCodedAgent( int numFeatures,
 				char *strPolicy, WorldModel *wm ):
-  SMDPAgent( numFeatures, numActions )
+  SMDPAgent( numFeatures )
 {
   strcpy( policy, strPolicy );
   WM = wm;

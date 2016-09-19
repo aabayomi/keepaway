@@ -9,7 +9,7 @@ LOGLEVEL="101"
 JOINTTILING=""
 REMOVECENTERP=""
 GAMMA="1."
-BUILD="1"
+BUILD="release"
 
 while getopts  "b:h:g:lfmsjr" flag; do
     case "$flag" in
@@ -45,8 +45,8 @@ if [ ! -z $REMOVECENTERP ]; then
     QFILE="${QFILE}_rcp"
 fi
 
-if [ $BUILD = "1" ]; then
-    ./build.sh
+if [ $BUILD != "none" ]; then
+    make $BUILD
 fi
 
 ulimit -c unlimited

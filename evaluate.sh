@@ -6,7 +6,7 @@ MONITOR=""
 SYNCH=""
 LOG=""
 LOGLEVEL="101"
-BUILD="1"
+BUILD="release"
 
 while getopts  "b:p:q:lfms" flag; do
     case "$flag" in
@@ -31,8 +31,8 @@ if [ ! -z $FULLSTATE ]; then
     LABEL="${LABEL}_FS"
 fi
 
-if [ $BUILD = "1" ]; then
-    ./build.sh
+if [ $BUILD != "none" ]; then
+    make $BUILD
 fi
 
 ulimit -c unlimited

@@ -17,3 +17,6 @@ hive*-Q*
 *~
 tools/*.gnuplot
 breakpoints
+build/
+Debug/
+Release/

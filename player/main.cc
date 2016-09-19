@@ -266,6 +266,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  PRINT_VALUE(JointActionSpace::instance().numActions());
+
   if (bInfo) {
     cout << "team : " << strTeamName << endl <<
          "port : " << iPort << endl <<
@@ -311,13 +313,11 @@ int main(int argc, char *argv[]) {
   double resolutions[MAX_STATE_VARS];
   int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                        iNumKeepers, iNumTakers);
-  int numActions = iNumKeepers;
-
   if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
     // (l)earned
     // or "learned!" -> Don't explore at all.
     LinearSarsaAgent *linearSarsaAgent = new LinearSarsaAgent(
-        numFeatures, numActions, bLearn, resolutions,
+        numFeatures, bLearn, resolutions,
         loadWeightsFile, saveWeightsFile, hiveMind, jointTiling, gamma
     );
     // Check for pure exploitation mode.
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
     // above.
     // Added WorldModel for agents needing richer/relational representation!
     typedef SMDPAgent *(*CreateAgent)(
-        WorldModel &, int, int, bool, double *, char *, char *, int
+        WorldModel &, int, bool, double *, char *, char *, int
     );
     CreateAgent createAgent = NULL;
 #ifdef WIN32
@@ -358,12 +358,12 @@ int main(int argc, char *argv[]) {
     }
 #endif
     sa = createAgent(
-        wm, numFeatures, numActions, bLearn, resolutions,
+        wm, numFeatures, bLearn, resolutions,
         loadWeightsFile, saveWeightsFile, hiveMind
     );
   } else {
     // (ha)nd (ho)ld (r)andom
-    sa = new HandCodedAgent(numFeatures, numActions,
+    sa = new HandCodedAgent(numFeatures,
                             strPolicy, &wm);
   }
 

@@ -97,7 +97,6 @@ protected:
 
 public:
   LinearSarsaAgent(int numFeatures,
-                   int numActions,
                    bool bLearn,
                    double widths[],
                    char *loadWeightsFile,

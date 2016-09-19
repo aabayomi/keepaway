@@ -86,7 +86,6 @@ def launch_player(player_type, index, options):
     else:
         command = [relative('./player/keepaway_player')] + player_options
 
-    #print command
     print " ".join(command)
     popen = Popen(command)
     return popen.pid

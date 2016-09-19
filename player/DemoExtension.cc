@@ -8,7 +8,7 @@ namespace keepaway_demo {
 class DemoAgent: public virtual SMDPAgent {
 public:
 
-  DemoAgent(WorldModel& world, int numFeatures, int numActions);
+  DemoAgent(WorldModel& world, int numFeatures);
 
   virtual int startEpisode(int current_time, double state[]);
   virtual int step(int current_time, double reward, double state[]);
@@ -29,10 +29,10 @@ extern "C" {
 
 SMDPAgent* createAgent(
   WorldModel& world,
-  int numFeatures, int numActions, bool learning, double widths[],
+  int numFeatures, bool learning, double widths[],
   char* inputFile, char* outputFile, bool hiveMind
 ) {
-  DemoAgent* agent = new DemoAgent(world, numFeatures, numActions);
+  DemoAgent* agent = new DemoAgent(world, numFeatures);
   return agent;
 }
 
@@ -42,11 +42,11 @@ SMDPAgent* createAgent(
 namespace keepaway_demo {
 
 
-DemoAgent::DemoAgent(WorldModel& world_, int numFeatures, int numActions):
-  SMDPAgent(numFeatures, numActions), world(world_)
+DemoAgent::DemoAgent(WorldModel& world_, int numFeatures):
+  SMDPAgent(numFeatures), world(world_)
 {
   cout
-    << "DemoAgent(world, " << numFeatures << ", " << numActions << ")" << endl;
+    << "DemoAgent(world, " << numFeatures << ")" << endl;
 }
 
 

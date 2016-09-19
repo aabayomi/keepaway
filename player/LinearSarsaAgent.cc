@@ -97,7 +97,6 @@ long *LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
 }
 
 LinearSarsaAgent::LinearSarsaAgent(int numFeatures,
-                                   int numActions,
                                    bool bLearn,
                                    double widths[],
                                    char *loadWeightsFile,
@@ -105,7 +104,7 @@ LinearSarsaAgent::LinearSarsaAgent(int numFeatures,
                                    int hiveMind,
                                    bool jointTiling,
                                    double gamma) :
-    SMDPAgent(numFeatures, numActions),
+    SMDPAgent(numFeatures),
     jointTiling(jointTiling),
     hiveFile(-1),
     gamma(gamma) {

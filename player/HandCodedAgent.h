@@ -47,7 +47,6 @@ class HandCodedAgent:public SMDPAgent
 
  public:
   HandCodedAgent( int    numFeatures,
-				    int    numActions,
 				    char   *strPolicy,
 				    WorldModel *ws );
 
