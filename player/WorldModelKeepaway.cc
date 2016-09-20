@@ -29,8 +29,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <assert.h>
-
 #include "WorldModel.h"
 
 int WorldModel::getNumKeepers()
@@ -142,9 +140,8 @@ int WorldModel::keeperStateVars( double state[] )
 //    return 0;
 
   VecPosition B = getBallPos();
-  double WK1_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
-
-  bool tmControllBall = WK1_dist_to_B < getMaximalKickDist(K0);
+  double WK0_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
+  bool tmControllBall = WK0_dist_to_B < getMaximalKickDist(K0);
 
   VecPosition C = getKeepawayRect().getPosCenter();
   double WK0_dist_to_C = getGlobalPosition( K0 ).getDistanceTo( C );
@@ -215,7 +212,7 @@ int WorldModel::keeperStateVars( double state[] )
     state[ j++ ] = nearest_Opp_dist_K[ i ];
   for ( int i = 1; i < numK; i++ )
     state[ j++ ] = nearest_Opp_ang_K[ i ];
-  state[ j++ ] = tmControllBall;
+  state[j++] = tmControllBall ? 1.0 : 0.0;
 
   return j;
 }

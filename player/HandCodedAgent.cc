@@ -30,7 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <string.h>
-#include <stdlib.h>
 #include "HandCodedAgent.h"
 
 HandCodedAgent::HandCodedAgent( int numFeatures,

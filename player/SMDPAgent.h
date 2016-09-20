@@ -39,9 +39,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 #include <unordered_set>
 #include <unordered_map>
+#include "SoccerTypes.h"
 
 #define MAX_STATE_VARS         128
 #define MAX_ACTIONS            128
+
+class BasicPlayer;
 
 enum AtomicActionType {
   AAT_None,
@@ -57,21 +60,17 @@ struct AtomicAction {
   int parameter;
 
   AtomicAction(AtomicActionType t = AAT_None, int p = 0): type(t), parameter(p) { }
-  virtual std::vector<int> parameters() = 0;
+
+  virtual std::vector<int> parameters() { return {0}; }
+
+  virtual SoccerCommand execute(BasicPlayer *player) = 0;
   virtual AtomicAction *clone(int parameter) = 0;
 
-  template <class Derived>
-  AtomicAction *clone(int parameter) {
-    auto a = new Derived();
-    a->parameter = parameter;
-    return a;
-  }
-
-  static const int keepers = 3; //FIXME: assuming keepers == 3
+  static int keepers;
 };
 
 #define CLONE(cls) \
-  AtomicAction *clone(int parameter) { \
+  virtual AtomicAction *clone(int parameter) { \
     auto a = new cls(); \
     a->parameter = parameter; \
     return a; \
@@ -80,55 +79,41 @@ struct AtomicAction {
 struct Hold: public AtomicAction {
   Hold(): AtomicAction(AAT_Hold) { }
 
-  std::vector<int> parameters() {
-      return {0};
-  }
-
+  virtual SoccerCommand execute(BasicPlayer *player);
   CLONE(Hold)
 };
 
 struct PassTo: public AtomicAction {
   PassTo(): AtomicAction(AAT_PassTo) { }
 
-  std::vector<int> parameters() {
-    std::vector<int> ret;
-    for (int k = 1; k < keepers; ++k) {
-        ret.push_back(k);
-    }
-    return ret;
-  }
+  virtual std::vector<int> parameters();
 
+  virtual SoccerCommand execute(BasicPlayer *player);
   CLONE(PassTo)
 };
 
 struct Intercept: public AtomicAction {
   Intercept(): AtomicAction(AAT_Intercept) { }
 
-  std::vector<int> parameters() {
-    return {0};
-  }
-
+  virtual SoccerCommand execute(BasicPlayer *player);
   CLONE(Intercept)
 };
 
 struct Stay: public AtomicAction {
   Stay(): AtomicAction(AAT_Stay) { }
 
-  std::vector<int> parameters() {
-    return {0};
-  }
-
+  virtual SoccerCommand execute(BasicPlayer *player);
   CLONE(Stay)
 };
 
 struct Move: public AtomicAction {
   Move(): AtomicAction(AAT_Move) { }
 
-  std::vector<int> parameters() {
-    return {0, 1, 2, 3};
-  }
+  virtual std::vector<int> parameters();
 
-  CLONE(Move)
+  virtual SoccerCommand execute(BasicPlayer *player);
+
+  CLONE(Move);
 };
 
 struct JointAction {
@@ -137,7 +122,7 @@ struct JointAction {
   bool tmControllBall;
 
   JointAction(): id(0), tmControllBall(false) {
-      actions.resize(AtomicAction::keepers);
+    actions.resize((std::size_t) AtomicAction::keepers);
   }
 
   JointAction(const JointAction &ja):
@@ -157,47 +142,10 @@ struct JointAction {
 
 class JointActionSpace {
 private:
-  JointActionSpace(): count(0) {
-    std::vector<std::vector<AtomicAction*>> actions[2];
-    actions[0].resize(AtomicAction::keepers);
-    actions[1].resize(AtomicAction::keepers);
-
-    JointAction ja;
-
-    ja.tmControllBall = true;
-    actions[1][0].push_back(new Hold);
-    actions[1][0].push_back(new PassTo);
-    for (int k = 1; k < AtomicAction::keepers; ++k) {
-      actions[1][k].push_back(new Move);
-      actions[1][k].push_back(new Stay);
-    }
-    construct(true, 0, actions[1], ja);
-
-    ja.tmControllBall = false;
-    for (int k = 0; k < AtomicAction::keepers; ++k) {
-      actions[0][k].push_back(new Intercept);
-      actions[0][k].push_back(new Stay);
-    }
-    construct(false, 0, actions[0], ja);
-  }
-
+  JointActionSpace();
   void construct(
       bool tmControlBall, int k,
-      std::vector<std::vector<AtomicAction*>> &actions, JointAction &ja) {
-    if (k >= AtomicAction::keepers) {
-      ja.id = count++;
-      jointActions[tmControlBall].push_back(new JointAction(ja));
-      jaMap[ja.id] = jointActions[tmControlBall].back();
-    }
-    else {
-      for (auto a : actions[k]) {
-        for (auto pa : a->parameters()) {
-          ja.actions[k] = a->clone(pa);
-          construct(tmControlBall, k + 1, actions, ja);
-        }
-      }
-    }
-  }
+      std::vector<std::vector<AtomicAction *>> &actions, JointAction &ja);
 
 public:
   static JointActionSpace &instance() {

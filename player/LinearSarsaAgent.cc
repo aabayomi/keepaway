@@ -66,6 +66,7 @@ struct SharedData {
 long *LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights) {
   SharedData *shared =
       reinterpret_cast<SharedData *>(weights + RL_MEMORY_SIZE);
+
   // Do each field individually, since they don't all line up exactly for an
   // easy copy.
   colTab->calls = shared->calls;
@@ -301,7 +302,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
                    1, COLOR_NAVY );
 #endif
 
-  if (isnan(Q[lastAction]) || isinf(Q[lastAction])) {
+  if (std::isnan(Q[lastAction]) || std::isinf(Q[lastAction])) {
     PRINT_VALUE(lastAction);
     PRINT_VALUE(Q[lastAction]);
   }
@@ -374,7 +375,7 @@ void LinearSarsaAgent::endEpisode(int current_time, double reward_) {
   lastActionTime = UnknownTime;
 }
 
-size_t LinearSarsaAgent::mapSize() {
+size_t LinearSarsaAgent::mmapSize() {
   if (hiveMind > 1) {
     return sizeof(weightsRaw) +
            sizeof(SharedData) +
@@ -399,8 +400,8 @@ void LinearSarsaAgent::shutDown() {
   }
   // Also shut down the hive mind if needed.
   if (hiveMind) {
-    size_t mapLength = mapSize();
-    munmap(weights, mapLength);
+    size_t mmapLength = mmapSize();
+    munmap(weights, mmapLength);
     close(hiveFile);
     hiveFile = -1;
 
@@ -442,12 +443,12 @@ bool LinearSarsaAgent::loadWeights(char *filename) {
       // TODO Extract constant for permissions (0664)?
       hiveFile = open(filename, O_RDWR | O_CREAT, 0664);
 
-      size_t mapLength = mapSize();
+      size_t mmapLength = mmapSize();
 
       if (!fileFound) {
         // Make the file the right size.
         cout << "Initializing new hive file." << endl;
-        if (lseek(hiveFile, mapLength - 1, SEEK_SET) < 0) {
+        if (lseek(hiveFile, mmapLength - 1, SEEK_SET) < 0) {
           throw "failed to seek initial file size";
         }
         if (write(hiveFile, "", 1) < 0) {
@@ -457,7 +458,7 @@ bool LinearSarsaAgent::loadWeights(char *filename) {
 
       if (hiveFile < 0) throw "failed to open hive file";
       void *hiveMap =
-          mmap(NULL, mapLength, PROT_READ | PROT_WRITE, MAP_SHARED, hiveFile, 0);
+          mmap(NULL, mmapLength, PROT_READ | PROT_WRITE, MAP_SHARED, hiveFile, 0);
       if (hiveMap == MAP_FAILED) throw "failed to map hive file";
 
       // First the weights.
@@ -477,7 +478,7 @@ bool LinearSarsaAgent::loadWeights(char *filename) {
       if (hiveMind > 1) {
         traces = reinterpret_cast<double *>(colTab->data + colTab->m);
         nonzeroTraces = reinterpret_cast<int *>(traces + RL_MEMORY_SIZE);
-        nonzeroTracesInverse = reinterpret_cast<int *>(nonzeroTraces + RL_MAX_NONZERO_TRACES);
+        nonzeroTracesInverse = nonzeroTraces + RL_MAX_NONZERO_TRACES;
       }
 
       fill(traces, traces + RL_MEMORY_SIZE, 0.0);
@@ -602,8 +603,8 @@ void LinearSarsaAgent::updateWeights(double delta) {
     }
 
     weights[f] += tmp * traces[f];
-    assert(!isnan(weights[f]));
-    assert(!isinf(weights[f]));
+    assert(!std::isnan(weights[f]));
+    assert(!std::isinf(weights[f]));
   }
 }
 

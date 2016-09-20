@@ -6,9 +6,9 @@
 #include "SMDPAgent.h"
 #include "tiles2.h"
 
-#define RL_MEMORY_SIZE 1048576
-#define RL_MAX_NONZERO_TRACES 100000
-#define RL_MAX_NUM_TILINGS 6000
+#define RL_MEMORY_SIZE (2 << 20)
+#define RL_MAX_NONZERO_TRACES (2 << 17)
+#define RL_MAX_NUM_TILINGS (2 << 14)
 
 class FileLock {
 private:
@@ -89,7 +89,7 @@ protected:
 
   void increaseMinTrace();
 
-  size_t mapSize();
+  size_t mmapSize();
 
   long *loadSharedData(collision_table *colTab, double *weights);
 

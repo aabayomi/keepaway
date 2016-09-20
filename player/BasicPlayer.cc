@@ -52,7 +52,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "BasicPlayer.h"
-#include "Parse.h"        // parseFirstInt
 
 /********************** LOW-LEVEL SKILLS *************************************/
 
@@ -1494,8 +1493,11 @@ SoccerCommand BasicPlayer::intercept( bool isGoalie )
   }
   Log.log( 608, "start intercept, obj %d", WM->getAgentObjectType()  );
   soc2 = WM->predictCommandToInterceptBall( WM->getAgentObjectType(), soc );
-  if( soc2.isIllegal() )
-    return turnBodyToPoint( pos + VecPosition( 1.0, 0, POLAR ) );
+  if (soc2.isIllegal()) {
+    return moveToPos(WM->getBallPos(), 30.0);
+//    return turnBodyToPoint( pos + VecPosition( 1.0, 0, POLAR ) );
+  }
+
   return soc2;
 }
 

@@ -261,8 +261,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  PRINT_VALUE(JointActionSpace::instance().numActions());
-
   if (bInfo) {
     cout << "team : " << strTeamName << endl <<
          "port : " << iPort << endl <<
@@ -303,6 +301,10 @@ int main(int argc, char *argv[]) {
   double ranges[MAX_STATE_VARS];
   double minValues[MAX_STATE_VARS];
   double resolutions[MAX_STATE_VARS];
+
+  AtomicAction::keepers = iNumKeepers;
+  PRINT_VALUE(JointActionSpace::instance().numActions());
+
   int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                        iNumKeepers, iNumTakers);
 

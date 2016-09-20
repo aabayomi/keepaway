@@ -30,7 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "KeepawayPlayer.h"
-#include "Parse.h"
 #include "SayMsgEncoder.h"
 #include <cstring>
 
@@ -310,8 +309,7 @@ SoccerCommand KeepawayPlayer::keeper()
 #endif
 
   // If we don't know where the ball is, search for it.
-  if ( WM->getConfidence( OBJECT_BALL ) <
-       PS->getBallConfThr() ) {
+  if (WM->getConfidence(OBJECT_BALL) < PS->getBallConfThr()) {
     ACT->putCommandInQueue( soc = searchBall() );
     ACT->putCommandInQueue( alignNeckWithBody() );
 #if USE_DRAW_LOG
@@ -374,8 +372,8 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
   for ( int i = 0; i < numK; i++ )
     K[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
 
-  ObjectT K1 = WM->getClosestInSetTo( OBJECT_SET_TEAMMATES, OBJECT_BALL );
-  if ( !WM->sortClosestTo( K, numK, K1) )
+  ObjectT K0 = WM->getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
+  if (!WM->sortClosestTo(K, numK, K0))
     return interpretKeeperAction(0);
 
   int agentIdx = 0;
@@ -393,7 +391,8 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     }
     else if ( WM->getTimeLastAction() == WM->getCurrentCycle() - 1 &&
               JointActionSpace::instance().getJointAction(WM->getLastAction())->actions[agentIdx]->type == AAT_PassTo ||
-              (tmControllBall && JointActionSpace::instance().getJointAction(WM->getLastAction())->actions[agentIdx]->type == AAT_Move)) {
+              (tmControllBall &&
+               JointActionSpace::instance().getJointAction(WM->getLastAction())->actions[agentIdx]->type == AAT_Move)) {
       // if we were in the middle of a pass/move last cycle
       Log.log(101, "KeepawayPlayer::keeperWithBall Passing/Moving...: %d", WM->getLastAction());
       action = WM->getLastAction();         // then we follow through with it: keepon
@@ -451,48 +450,10 @@ SoccerCommand KeepawayPlayer::keeperWithBall()
 
 SoccerCommand KeepawayPlayer::interpretFullTeamKeeperAction( int action, int agentIdx )
 {
-  SoccerCommand soc;
-
   auto ja = JointActionSpace::instance().getJointAction(action);
   auto aa = ja->actions[agentIdx];
 
-  Log.log(101, "KeepawayPlayer::interpretFullTeamKeeperAction action: %d agentIdx: %d", action, agentIdx);
-
-  if (aa->type == AAT_PassTo) {
-    int numK = WM->getNumKeepers();
-    ObjectT K[ numK ];
-    for ( int i = 0; i < numK; i++ )
-      K[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
-    WM->sortClosestTo( K, numK, WM->getAgentObjectType() );
-    VecPosition tmPos = WM->getGlobalPosition( K[ aa->parameter ] );
-    // Normal Passing
-    ACT->putCommandInQueue( soc = directPass( tmPos, PASS_NORMAL ) );
-  }
-  else if (aa->type == AAT_Hold) {
-    ACT->putCommandInQueue( soc = holdBall() );
-  }
-  else if (aa->type == AAT_Intercept) {
-    ACT->putCommandInQueue( soc = intercept( false ) );
-    ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
-  }
-  else if (aa->type == AAT_Move) {
-    AngDeg ang2ball = (WM->getBallPos() - WM->getAgentGlobalPosition()).getDirection();
-
-    VecPosition target = WM->getAgentGlobalPosition() +
-                         VecPosition::getVecPositionFromPolar(1.0, ang2ball + aa->parameter * 90.0);
-
-    if (WM->getKeepawayRect().isInside(target)) {
-      ACT->putCommandInQueue( soc = moveToPos(target, 30.0));
-    }
-    else {
-      ACT->putCommandInQueue( soc = moveToPos(WM->getAgentGlobalPosition(), 30.0));
-    }
-  }
-  else if (aa->type == AAT_Stay) {
-    ACT->putCommandInQueue( soc = moveToPos(WM->getAgentGlobalPosition(), 30.0));
-  }
-
-  return soc;
+  return aa->execute(this);
 }
 
 SoccerCommand KeepawayPlayer::interpretKeeperAction( int action )
@@ -540,7 +501,7 @@ SoccerCommand KeepawayPlayer::keeperSupport( ObjectT fastest )
 //  LogDraw.logCircle( "BallPredict", posPassFrom, 1, 70, true, COLOR_BROWN );
   soc = getOpenForPassFromInRectangle( WM->getKeepawayRect(), posPassFrom );
 
-//  ObjectT lookObject = chooseLookObject( 0.97 );
+  ObjectT lookObject = chooseLookObject(0.97);
 
 #if USE_DRAW_LOG
   char buffer[128];
@@ -548,7 +509,7 @@ SoccerCommand KeepawayPlayer::keeperSupport( ObjectT fastest )
                    SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
 #endif
   ACT->putCommandInQueue( soc );
-//  ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
+  ACT->putCommandInQueue(turnNeckToObject(lookObject, soc));
   ACT->putCommandInQueue( turnNeckToPoint( WM->getKeepawayRect().getPosCenter(), soc ) );
 
   return soc;
@@ -598,14 +559,15 @@ SoccerCommand KeepawayPlayer::taker()
     return soc;
   }
 
-  // If not first or second closest, then mark open opponent
+  // If not first (or second) closest, then mark open opponent
   int numT = WM->getNumTakers();
   ObjectT T[ numT ];
   for ( int i = 0; i < numT; i++ )
     T[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
   WM->sortClosestTo( T, numT, OBJECT_BALL );
-  if ( numT > 2 && T[ 0 ] != WM->getAgentObjectType() &&
-       T[ 1 ] != WM->getAgentObjectType() ) {
+
+  if (numT > 1 && T[0] != WM->getAgentObjectType()
+    /*T[ 1 ] != WM->getAgentObjectType()*/ ) {
     ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS,
                                               OBJECT_BALL );
     ACT->putCommandInQueue( soc = markMostOpenOpponent( withBall ) );
@@ -617,6 +579,7 @@ SoccerCommand KeepawayPlayer::taker()
   double dDist;
   ObjectT closest = WM->getClosestInSetTo( OBJECT_SET_PLAYERS,
                                            OBJECT_BALL, &dDist );
+
   if ( SoccerTypes::isTeammate( closest ) &&
        closest != WM->getAgentObjectType() &&
        dDist < SS->getMaximalKickDist() ) {

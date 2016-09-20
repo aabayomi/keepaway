@@ -64,7 +64,7 @@ extern Logger Log; /*!< This is a reference to Logger to write log info to*/
     in which the skills are performed. */
 class BasicPlayer
 {
-protected:
+public:
   ActHandler      *ACT; /*!< ActHandler to which commands can be sent        */
   WorldModel      *WM;  /*!< WorldModel that contains information of world   */
   ServerSettings  *SS;  /*!< All parameters used by the server               */
@@ -172,8 +172,8 @@ protected:
 
   /////////////////////// KEEPAWAY SKILLS //////////////////////////////////
 
-  SoccerCommand getOpenForPassFromInRectangle( Rect        rect, 
-                                               VecPosition posFrom );
+  SoccerCommand getOpenForPassFromInRectangle(Rect rect,
+                                              VecPosition posFrom );
 
   SoccerCommand markMostOpenOpponent( ObjectT withBall );
 
