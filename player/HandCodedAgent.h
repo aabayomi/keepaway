@@ -36,11 +36,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "WorldModel.h"
 #include <cstdlib>
 
+// hand coded agent for K1
 class HandCodedAgent:public SMDPAgent
 {
   WorldModel *WM;
   int alwaysHold();
-  int random();
+  int random(double state[]);
   int handCoded( double state[] );
 
   char policy[256];

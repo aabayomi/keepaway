@@ -118,7 +118,6 @@ int main(int argc, char *argv[]) {
   int iStopAfter = -1; //*met+1 8/16/05
   int iStartLearningAfter = -1;
   bool jointTiling = false;
-  bool removeCenterPosition = false;
   double gamma = 1.0;
 
   ofstream os;
@@ -236,10 +235,6 @@ int main(int argc, char *argv[]) {
         case 't':                                   // teamname name
           strcpy(strTeamName, argv[i + 1]);
           break;
-        case 'u':
-          str = &argv[i + 1][0];
-          removeCenterPosition = Parse::parseFirstInt(&str) == 1;
-          break;
         case 'v':                                   // version version
           str = &argv[i + 1][0];
           dVersion = Parse::parseFirstDouble(&str);
@@ -277,7 +272,6 @@ int main(int argc, char *argv[]) {
          "playernr : " << iNr << endl <<
          "reconnect : " << iReconnect << endl <<
          "joint tiling : " << jointTiling << endl <<
-         "remove center position : " << removeCenterPosition << endl <<
          "hive mind mode : " << hiveMind << endl <<
          "gamma : " << gamma << endl <<
          "be learning : " << bLearn << endl;
@@ -304,8 +298,6 @@ int main(int argc, char *argv[]) {
   ActHandler a(&c, &wm, &ss);                // link actHandler and worldmodel
   SenseHandler s(&c, &wm, &ss, &cs);         // link senseHandler with wm
 
-  wm.removeCenterPosition = removeCenterPosition;
-
   SMDPAgent *sa = NULL;
 
   double ranges[MAX_STATE_VARS];
@@ -313,6 +305,7 @@ int main(int argc, char *argv[]) {
   double resolutions[MAX_STATE_VARS];
   int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                        iNumKeepers, iNumTakers);
+
   if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
     // (l)earned
     // or "learned!" -> Don't explore at all.

@@ -164,12 +164,12 @@ bool WorldModel::coordinateWith( ObjectT obj )
   if( pos.getDistanceTo( getBallPos() ) < 30.0 &&
       pos.getX() > getBallPos().getX() - 5.0 )
   {
-    Log.log( 700, "coordinate with %d %f %f (%f %f)", 
+    Log.log( 700, "coordinate with %d %f %f (%f %f)",
              obj, pos.getDistanceTo( getBallPos() ),
              pos.getX(), getBallPos().getX(), getBallPos().getY() );
     return true;
   }
-  
+
   return false;
 }
 
@@ -188,7 +188,7 @@ bool WorldModel::sortClosestTo( ObjectT objs[], int numObjs, ObjectT o,
   for ( int i = 0; i < numObjs; i++ ) {
     if ( getConfidence( objs[ i ] ) < dConfThr )
       return false;
-    myDist[ i ] = getGlobalPosition( objs[ i ] ).getDistanceTo( pos ); 
+    myDist[ i ] = getGlobalPosition( objs[ i ] ).getDistanceTo( pos );
   }
 
   // Brute force sort
@@ -203,9 +203,9 @@ bool WorldModel::sortClosestTo( ObjectT objs[], int numObjs, ObjectT o,
 	myDist[ j ] = tmpDist;
       }
     }
-  } 
+  }
 
-  if ( dDist != NULL ) 
+  if ( dDist != NULL )
     memcpy( dDist, myDist, numObjs * sizeof( double ) );
 
   return true;
@@ -431,7 +431,7 @@ ObjectT WorldModel::getSecondClosestInSetTo ( ObjectSetT set, ObjectT obj,
     \param set ObjectSetT which denotes objects taken into consideration
     \param dDist will be filled with the distance to this this object
     \return ObjectType that is second closest to the agent */
-ObjectT WorldModel::getSecondClosestRelativeInSet( ObjectSetT set, 
+ObjectT WorldModel::getSecondClosestRelativeInSet( ObjectSetT set,
                                                    double *dDist )
 {
   ObjectT     closestObject       = OBJECT_ILLEGAL;
@@ -543,7 +543,7 @@ VecPosition WorldModel::getPosClosestOpponentTo( double *dDist, ObjectT o )
   ObjectT objOpp = getClosestInSetTo( OBJECT_SET_OPPONENTS, o, dDist );
   if( objOpp == OBJECT_ILLEGAL )
     return VecPosition( UnknownDoubleValue, UnknownDoubleValue );
-    
+
   return getGlobalPosition( objOpp );
 }
 
@@ -557,14 +557,14 @@ void WorldModel::createInterceptFeatures( )
 {
   static int count = 0;
   static Time timeLastCalled(0,0);
-  
+
   if( timeLastCalled == getTimeLastSenseMessage() )
     count++;
   else
     count = 0;
-    
+
   if( count > 4 )
-    cerr << getPlayerNumber() << " called createIntercept too often: " << 
+    cerr << getPlayerNumber() << " called createIntercept too often: " <<
        count << endl;
   // we check all possible next positions of the ball and see
   // whether a player (opponent or teammate) can reach the ball at that point
@@ -652,7 +652,7 @@ void WorldModel::createInterceptFeatures( )
       // if player not set yet and either team or opp is smaller than iCycles
       // set fastest player
       if( bFinishedPlayer == false &&
-          ( min( iMinCyclesTeam, iMinCyclesOpp ) <= iCycles 
+          ( min( iMinCyclesTeam, iMinCyclesOpp ) <= iCycles
             ||
             bLastCall == true ) )
       {
@@ -666,7 +666,7 @@ void WorldModel::createInterceptFeatures( )
       }
       // if teammate not set yet and min cycles team smaller set it
       else if( bFinishedTeammates == false &&
-               (iMinCyclesTeam <= iCycles || bFinishedOpponents == true 
+               (iMinCyclesTeam <= iCycles || bFinishedOpponents == true
                 || bLastCall))
       {
         if( bFinishedOpponents == true )
@@ -696,7 +696,7 @@ void WorldModel::createInterceptFeatures( )
         ((iMinCyclesTeam <= iCycles && objFastestTeam == getAgentObjectType())
         || bFinishedOpponents == true || bLastCall ) )
       {
-        if( bFinishedOpponents == true && 
+        if( bFinishedOpponents == true &&
 	    objFastestTeam != getAgentObjectType())
           iCycles = predictNrCyclesToPoint( getAgentObjectType(), posObj );
         featLog          = FEATURE_INTERCEPT_CYCLES_ME;
@@ -832,7 +832,7 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
     iCycles++;
     iMinCycles = 100;
     posObj     = predictPosAfterNrCycles( obj, iCycles );
-    Log.log( 460, "fastest loop: %d fastest_opp %d", 
+    Log.log( 460, "fastest loop: %d fastest_opp %d",
              iCycles, iCyclesFastestOpp );
     for( ObjectT o = iterateObjectStart( iIndex, set, dConfThr );
        o != OBJECT_ILLEGAL;
@@ -843,7 +843,7 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
           getGlobalPosition(o).getDistanceTo(posObj)/SS->getPlayerSpeedMax()
               < iCycles + 1 )
       {
-        Log.log( 460, "call predictNrCyclesToPoint %d %d", 
+        Log.log( 460, "call predictNrCyclesToPoint %d %d",
                  iCycles,iMinCycles );
         iCyclesToObj = predictNrCyclesToPoint( o, posObj );
         if( iCyclesToObj < iMinCycles )
@@ -855,8 +855,8 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
     }
     iterateObjectDone( iIndex );
   }
-  
-  // opponent is faster and we haven't calculated who can go to the 
+
+  // opponent is faster and we haven't calculated who can go to the
   // interception point the fastest
   if( fastestObject == OBJECT_ILLEGAL )
     fastestObject = getFastestInSetTo(set,posObj,VecPosition(0,0),0, &iCycles);
@@ -871,7 +871,7 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
              getTime(), getTimeLastSeeMessage().getTime()  );
     setFeature( feature_type,
                 Feature( getTimeLastSeeMessage(),
-                         getTimeLastSenseMessage(), 
+                         getTimeLastSenseMessage(),
                          getTimeLastHearMessage(), fastestObject,
                          getTimeLastSeeMessage().getTime() + iCycles ) );
   }
@@ -928,7 +928,7 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, VecPosition pos,
       iMinCycles--;
     }
   }
-  
+
   if( iCyclesToIntercept != NULL )
     *iCyclesToIntercept = iCycles;
   return fastestObject;
@@ -974,11 +974,9 @@ bool WorldModel::isVisible( ObjectT o )
 {
   Object *object = getObjectPtrFromType( o );
 
-  if( object != NULL &&
-      object->getTimeLastSeen() == getTimeLastSeeMessage() )
-    return true;
+  return object != NULL &&
+    object->getTimeLastSeen() == getTimeLastSeeMessage();
 
-  return false;
 }
 
 /*! This method determines whether the ball is kicakble, i.e. the ball
@@ -989,7 +987,7 @@ bool WorldModel::isVisible( ObjectT o )
     \return bool indicating whether ball can be kicked. */
 bool WorldModel::isBallKickable()
 {
-  return getRelativeDistance( OBJECT_BALL ) < SS->getMaximalKickDist();
+  return getRelativeDistance( OBJECT_BALL ) < getMaximalKickDist(getAgentObjectType());
 }
 
 /*! This method determines whether the ball is catchable. This only applies
@@ -1094,7 +1092,7 @@ bool WorldModel::isInOwnPenaltyArea( VecPosition pos )
                               :  OBJECT_FLAG_P_R_C ;
 
   if( isPenaltyUs() || isPenaltyThem() )
-    objFlag = ( getSidePenalty() == SIDE_LEFT ) ? OBJECT_FLAG_P_L_C 
+    objFlag = ( getSidePenalty() == SIDE_LEFT ) ? OBJECT_FLAG_P_L_C
                                                 : OBJECT_FLAG_P_R_C ;
   VecPosition posFlag =SoccerTypes::getGlobalPositionFlag( objFlag, getSide());
   if( fabs(pos.getX())   > fabs(posFlag.getX()) &&
@@ -1201,7 +1199,7 @@ Time WorldModel::getTimeFromConfidence( double dConf )
 }
 
 /*! This method returns the object type of the last opponent defender. This
-    opponent resembles the offside line. 
+    opponent resembles the offside line.
     \param if non-null dX will be filled with the x position of this object
     \return object type of the last opponent defender */
 ObjectT WorldModel::getLastOpponentDefender( double *dX )
@@ -1230,7 +1228,7 @@ ObjectT WorldModel::getLastOpponentDefender( double *dX )
       }
     }
   }
-  
+
   // if highest x is outside pen_area, it cannot be the goalie (unless playing
   // Portugal ;-) ), so assume goalie is just not seen
   if( dHighestX < PENALTY_X && getOppGoalieType() == OBJECT_ILLEGAL )
@@ -1467,11 +1465,11 @@ AngDeg WorldModel::getDirectionOfWidestAngle(VecPosition posOrg, AngDeg angMin,
 /*! This method returns whether the position 'pos' is inside the playfield. */
 bool WorldModel::isInField( VecPosition pos, double dMargin )
 {
-  return Rect( 
-             VecPosition( + PITCH_LENGTH/2.0 - dMargin, 
+  return Rect(
+             VecPosition( + PITCH_LENGTH/2.0 - dMargin,
                           - PITCH_WIDTH/2.0  + dMargin ),
-             VecPosition( - PITCH_LENGTH/2.0 + dMargin, 
-                          + PITCH_WIDTH/2.0  - dMargin ) 
+             VecPosition( - PITCH_LENGTH/2.0 + dMargin,
+                          + PITCH_WIDTH/2.0  - dMargin )
              ).isInside( pos );
 }
 
@@ -1498,7 +1496,7 @@ VecPosition WorldModel::getStrategicPosition( ObjectT obj, FormationT ft )
 {
   return getStrategicPosition( SoccerTypes::getIndex( obj ), ft );
 }
-  
+
 /*! This method determine the strategic position for the specified player. This
     is done using the Formations class. In this class all information
     about the current formation, player number in formation and otheic
@@ -1526,9 +1524,9 @@ VecPosition WorldModel::getStrategicPosition( int iPlayer, FormationT ft )
   // get maximal allowed x coordinate, this is offside x coordinate
   double dMaxX = max( -0.5, getOffsideX() - 1.5 );
 
-  if( bOwnBall && 
+  if( bOwnBall &&
       getGlobalPosition(
-        SoccerTypes::getTeammateObjectFromIndex(iPlayer)).getX() 
+        SoccerTypes::getTeammateObjectFromIndex(iPlayer)).getX()
       < posBall.getX() )
     dMaxX = max( dMaxX, posBall.getX()  );
 
@@ -1558,7 +1556,7 @@ VecPosition WorldModel::getStrategicPosition( int iPlayer, FormationT ft )
     posBall.setX( PENALTY_X - 10.0 );
   else if( isFreeKickThem() )
     posBall.setX( posBall.getX() - 5.0 );
-  else if( isBallInOurPossesion() && 
+  else if( isBallInOurPossesion() &&
            !( isDeadBallUs() || isDeadBallThem() ) )
     posBall.setX( posBall.getX() + 5.0 );
   else if( posBall.getX() < - PENALTY_X + 5.0 )
@@ -1591,7 +1589,7 @@ VecPosition WorldModel::getStrategicPosition( int iPlayer, FormationT ft )
     \param dDist distance marking position is located from object
     position \param mark marking technique that should be used \return
     position that is the marking position. */
-VecPosition WorldModel::getMarkingPosition( VecPosition pos, double dDist, 
+VecPosition WorldModel::getMarkingPosition( VecPosition pos, double dDist,
 					    MarkT mark)
 {
   VecPosition posBall  = getBallPos();
@@ -1607,14 +1605,14 @@ VecPosition WorldModel::getMarkingPosition( VecPosition pos, double dDist,
       dY += ( sign( dY ) > 0   ) -5 ? : 5 ;
     posGoal.setY( dY );
   }
-      
+
   VecPosition posAgent = getAgentGlobalPosition();
   VecPosition posMark;
   AngDeg      ang, angToGoal, angToBall;
 
   if( mark == MARK_GOAL )                       // position in direction goal
-  {   
-    angToGoal = (posGoal-pos).getDirection( );    
+  {
+    angToGoal = (posGoal-pos).getDirection( );
     Line line = Line::makeLineFromTwoPoints( pos, posGoal );
 
     // we want to know when distance from ball to point p equals distance
@@ -1651,8 +1649,8 @@ VecPosition WorldModel::getMarkingPosition( VecPosition pos, double dDist,
       Log.log( 513, "set marking position at dDist %f", min(dDistAgent,7.0) );
       posMark   = pos + VecPosition( min( dDistAgent, 7.0 ), angToGoal, POLAR );
     }
-    Log.log( 513, "marking position calc (%f,%f) pos(%f,%f) calcdist %f", 
-	     posMark.getX(), posMark.getY(), pos.getX(), pos.getY(), 
+    Log.log( 513, "marking position calc (%f,%f) pos(%f,%f) calcdist %f",
+	     posMark.getX(), posMark.getY(), pos.getX(), pos.getY(),
 	     dCalcDist );
   }
   else if( mark == MARK_BALL )                  // position in direction ball
@@ -1867,10 +1865,10 @@ double WorldModel::getPowerForDash( VecPosition posRelTo, AngDeg angBody,
     \param ps player set to which the returned player must belong
     \return role number of the agent in the current formation who is closest
             to this position */
-int WorldModel::getClosestPlayerInFormationTo( VecPosition pos, 
+int WorldModel::getClosestPlayerInFormationTo( VecPosition pos,
                                                bool bIncludeGoalie,
                                                ObjectT objWithout,
-                                               PlayerSetT ps, 
+                                               PlayerSetT ps,
                                                FormationT ft )
 {
   double      dDist = 1000.0;
@@ -1883,7 +1881,7 @@ int WorldModel::getClosestPlayerInFormationTo( VecPosition pos,
       continue;
     else if( objWithout == SoccerTypes::getTeammateObjectFromIndex( i ) )
       continue;
-    else if( !SoccerTypes::isPlayerTypeInSet( 
+    else if( !SoccerTypes::isPlayerTypeInSet(
 	      formations->getPlayerType(i,ft), ps ))
       continue;
 
@@ -1918,11 +1916,11 @@ ObjectT WorldModel::getLeastConfidentInSet( ObjectSetT objectSet,
     if ( conf < dMin ) {
       dMin = conf;
       objMin = o;
-    } 
+    }
   }
 
   if ( dConf != NULL )
     *dConf = dMin;
-  
+
   return objMin;
 }

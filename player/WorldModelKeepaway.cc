@@ -137,13 +137,17 @@ int WorldModel::getTimeLastAction()
 
 int WorldModel::keeperStateVars( double state[] )
 {
-  ObjectT PB = getClosestInSetTo( OBJECT_SET_TEAMMATES, OBJECT_BALL );
-  if ( !SoccerTypes::isTeammate( PB ) )
-    return 0;
+  ObjectT K0 = getClosestInSetTo( OBJECT_SET_TEAMMATES, OBJECT_BALL );
+//  if ( !SoccerTypes::isTeammate( PB ) )
+//    return 0;
+
+  VecPosition B = getBallPos();
+  double WK1_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
+
+  bool tmControllBall = WK1_dist_to_B < getMaximalKickDist(K0);
 
   VecPosition C = getKeepawayRect().getPosCenter();
-
-  double WB_dist_to_C = removeCenterPosition? 0.0: getGlobalPosition( PB ).getDistanceTo( C );
+  double WK0_dist_to_C = getGlobalPosition( K0 ).getDistanceTo( C );
 
   int numK = getNumKeepers();
   int numT = getNumTakers();
@@ -157,25 +161,25 @@ int WorldModel::keeperStateVars( double state[] )
     T[ i ] = SoccerTypes::getOpponentObjectFromIndex( i );
 
   double WB_dist_to_K[ numK ];
-  if ( !sortClosestTo( K, numK, PB, WB_dist_to_K ) )
+  if ( !sortClosestTo( K, numK, K0, WB_dist_to_K ) )
     return 0;
 
   double WB_dist_to_T[ numT ];
-  if ( !sortClosestTo( T, numT, PB, WB_dist_to_T ) )
+  if ( !sortClosestTo( T, numT, K0, WB_dist_to_T ) )
     return 0;
 
   double dist_to_C_K[ numK ];
   for ( int i = 1; i < numK; i++ ) {
-    dist_to_C_K[ i ] = removeCenterPosition? 0.0: getGlobalPosition( K[ i ] ).getDistanceTo( C );
+    dist_to_C_K[ i ] = getGlobalPosition( K[ i ] ).getDistanceTo( C );
   }
 
   double dist_to_C_T[ numT ];
   for ( int i = 0; i < numT; i++ ) {
-    dist_to_C_T[ i ] = removeCenterPosition? 0.0: getGlobalPosition( T[ i ] ).getDistanceTo( C );
+    dist_to_C_T[ i ] = getGlobalPosition( T[ i ] ).getDistanceTo( C );
   }
 
   double nearest_Opp_dist_K[ numK ];
-  VecPosition posPB = getGlobalPosition( PB );
+  VecPosition posPB = getGlobalPosition( K0 );
   for ( int i = 1; i < numK; i++ ) {
     VecPosition pos = getGlobalPosition( K[ i ] );
     for ( int j = 0; j < numT; j++ ) {
@@ -198,7 +202,7 @@ int WorldModel::keeperStateVars( double state[] )
   }
 
   int j = 0;
-  state[ j++ ] = WB_dist_to_C;
+  state[ j++ ] = WK0_dist_to_C;
   for ( int i = 1; i < numK; i++ )
     state[ j++ ] = WB_dist_to_K[ i ];
   for ( int i = 0; i < numT; i++ )
@@ -211,6 +215,7 @@ int WorldModel::keeperStateVars( double state[] )
     state[ j++ ] = nearest_Opp_dist_K[ i ];
   for ( int i = 1; i < numK; i++ )
     state[ j++ ] = nearest_Opp_ang_K[ i ];
+  state[ j++ ] = tmControllBall;
 
   return j;
 }
@@ -279,6 +284,9 @@ int WorldModel::keeperStateRangesAndResolutions( double ranges[],
     minValues[ j ] = 0;
     resolutions[ j++ ] = 10.0;
   }
+  ranges[ j ] = 1.0;        // tmControllBall
+  minValues[ j ] = 0.0;
+  resolutions[ j++ ] = 1.0;
 
   return j;
 }

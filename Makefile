@@ -1,4 +1,4 @@
-all: release
+all: debug release
 
 release:
 	mkdir -p Release

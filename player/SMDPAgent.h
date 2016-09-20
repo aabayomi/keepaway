@@ -40,13 +40,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unordered_set>
 #include <unordered_map>
 
-#define MAX_STATE_VARS         64
+#define MAX_STATE_VARS         128
 #define MAX_ACTIONS            128
 
 enum AtomicActionType {
   AAT_None,
   AAT_Hold,
-  AAT_PassTo, // 2, 3, ..., k
+  AAT_PassTo, // 1, 2, 3, ..., k - 1
   AAT_Intercept,
   AAT_Stay,
   AAT_Move // Left, Right, In, Out
@@ -92,7 +92,7 @@ struct PassTo: public AtomicAction {
 
   std::vector<int> parameters() {
     std::vector<int> ret;
-    for (int k = 2; k <= keepers; ++k) {
+    for (int k = 1; k < keepers; ++k) {
         ret.push_back(k);
     }
     return ret;
@@ -134,17 +134,22 @@ struct Move: public AtomicAction {
 struct JointAction {
   std::vector<AtomicAction*> actions;
   int id;
+  bool tmControllBall;
 
-  JointAction(): id(0) {
+  JointAction(): id(0), tmControllBall(false) {
       actions.resize(AtomicAction::keepers);
   }
 
-  JointAction(const JointAction &ja): actions(ja.actions), id(ja.id) { }
+  JointAction(const JointAction &ja):
+      actions(ja.actions),
+      id(ja.id),
+      tmControllBall(ja.tmControllBall) { }
 
   const JointAction &operator=(const JointAction &ja) {
     if (this != &ja) {
       actions = ja.actions;
       id = ja.id;
+      tmControllBall = ja.tmControllBall;
     }
     return *this;
   }
@@ -159,16 +164,16 @@ private:
 
     JointAction ja;
 
-    // tmControlBall
-    actions[1][0].push_back(new PassTo);
+    ja.tmControllBall = true;
     actions[1][0].push_back(new Hold);
+    actions[1][0].push_back(new PassTo);
     for (int k = 1; k < AtomicAction::keepers; ++k) {
       actions[1][k].push_back(new Move);
       actions[1][k].push_back(new Stay);
     }
     construct(true, 0, actions[1], ja);
 
-    // !tmControllBall
+    ja.tmControllBall = false;
     for (int k = 0; k < AtomicAction::keepers; ++k) {
       actions[0][k].push_back(new Intercept);
       actions[0][k].push_back(new Stay);
@@ -200,8 +205,13 @@ public:
     return jas;
   }
 
-  const JointAction &sample(bool tmControlBall) const {
-    return jointActions[tmControlBall][rand() % jointActions[tmControlBall].size()];
+  int sample(bool tmControlBall) const {
+    return jointActions[tmControlBall][rand() % jointActions[tmControlBall].size()].id;
+  }
+
+  int sample(double state[], int num_features) const {
+    bool tmControllBall = state[num_features - 1] > 0.5;
+    return sample(tmControllBall);
   }
 
   int numActions() const { return (int) jaMap.size(); }

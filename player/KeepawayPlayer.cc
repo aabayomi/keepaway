@@ -322,47 +322,96 @@ SoccerCommand KeepawayPlayer::keeper()
     return soc;
   }
 
-  // If the ball is kickable,
-  // call main action selection routine.
-  if ( WM->isBallKickable() ) {
-    return keeperWithBall();
+  return fullTeamKeepers();
+
+//  // If the ball is kickable,
+//  // call main action selection routine.
+//  if ( WM->isBallKickable() ) {
+//    return keeperWithBall();
+//  }
+//
+//  // Get fastest to ball
+//  int iTmp;
+//  ObjectT fastest = WM->getFastestInSetTo( OBJECT_SET_TEAMMATES,
+//                                           OBJECT_BALL, &iTmp );
+//
+//  // If fastest, intercept the ball.
+//  if ( fastest == WM->getAgentObjectType() ) {
+//    Log.log( 100, "I am fastest to ball; can get there in %d cycles", iTmp );
+//
+//#if USE_DRAW_LOG
+//    LogDraw.logText( "state", VecPosition( 25, 25 ),
+//                     "fastest",
+//                     1, COLOR_WHITE );
+//#endif
+//    ObjectT lookObject = chooseLookObject( 0.98 );
+//#if USE_DRAW_LOG
+//    char buffer[128];
+//    LogDraw.logText( "lookObject", VecPosition( 25, -25 ),
+//                     SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
+//#endif
+//    ACT->putCommandInQueue( soc = intercept( false ) );
+//    //ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
+//    //ACT->putCommandInQueue( turnNeckToPoint( SS->getKeepawayRect().getPosCenter(), soc ) );
+//    ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
+//    return soc;
+//  }
+//
+//  // Not fastest, get open
+//  Log.log( 100, "I am not fastest to ball" );
+//#if USE_DRAW_LOG
+//  LogDraw.logText( "state", VecPosition( 25, 25 ),
+//                   "support",
+//                   1, COLOR_WHITE );
+//#endif
+//  return keeperSupport( fastest );
+}
+
+SoccerCommand KeepawayPlayer::fullTeamKeepers()
+{
+  int numK = WM->getNumKeepers();
+  ObjectT K[ numK ];
+  for ( int i = 0; i < numK; i++ )
+    K[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
+
+  ObjectT K1 = WM->getClosestInSetTo( OBJECT_SET_TEAMMATES, OBJECT_BALL );
+  if ( !WM->sortClosestTo( K, numK, K1) )
+    return interpretKeeperAction(0);
+
+  int agentIdx = 0;
+  while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
+  if (agentIdx >= numK) return interpretKeeperAction(0);
+
+  double state[ MAX_STATE_VARS ];
+  int action;
+
+  if ( WM->keeperStateVars( state ) > 0 ) { // if we can calculate state vars
+    // Call startEpisode() on the first SMDP step
+    if ( WM->getTimeLastAction() == UnknownTime ) {
+      action = SA->startEpisode( WM->getCurrentCycle(), state );
+    }
+    else if ( WM->getTimeLastAction() == WM->getCurrentCycle() - 1 &&
+              JointActionSpace::instance().getJointAction(WM->getLastAction()).actions[agentIdx]->type == AAT_PassTo ||
+              JointActionSpace::instance().getJointAction(WM->getLastAction()).actions[agentIdx]->type == AAT_Move) {
+      // if we were in the middle of a pass/move last cycle
+      Log.log(101, "KeepawayPlayer::keeperWithBall Passing...: %d", WM->getLastAction());
+      action = WM->getLastAction();         // then we follow through with it: keepon
+    }
+    else { // Call step() on all but first SMDP step
+      action = SA->step( WM->getCurrentCycle(), WM->keeperReward(), state );
+    }
+    WM->setLastAction( action );
+  }
+  else { // if we don't have enough info to calculate state vars
+    action = 0;  // hold ball
+#if USE_DRAW_LOG
+    LogDraw.logText( "state", VecPosition( 35, 25 ),
+                     "clueless",
+                     1, COLOR_RED );
+#endif
   }
 
-  // Get fastest to ball
-  int iTmp;
-  ObjectT fastest = WM->getFastestInSetTo( OBJECT_SET_TEAMMATES,
-                                           OBJECT_BALL, &iTmp );
-
-  // If fastest, intercept the ball.
-  if ( fastest == WM->getAgentObjectType() ) {
-    Log.log( 100, "I am fastest to ball; can get there in %d cycles", iTmp );
-
-#if USE_DRAW_LOG
-    LogDraw.logText( "state", VecPosition( 25, 25 ),
-                     "fastest",
-                     1, COLOR_WHITE );
-#endif
-    ObjectT lookObject = chooseLookObject( 0.98 );
-#if USE_DRAW_LOG
-    char buffer[128];
-    LogDraw.logText( "lookObject", VecPosition( 25, -25 ),
-                     SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
-#endif
-    ACT->putCommandInQueue( soc = intercept( false ) );
-    //ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
-    //ACT->putCommandInQueue( turnNeckToPoint( SS->getKeepawayRect().getPosCenter(), soc ) );
-    ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
-    return soc;
-  }
-
-  // Not fastest, get open
-  Log.log( 100, "I am not fastest to ball" );
-#if USE_DRAW_LOG
-  LogDraw.logText( "state", VecPosition( 25, 25 ),
-                   "support",
-                   1, COLOR_WHITE );
-#endif
-  return keeperSupport( fastest );
+  return interpretFullTeamKeeperAction( action, agentIdx);
 }
 
 SoccerCommand KeepawayPlayer::keeperWithBall()
@@ -397,6 +446,49 @@ SoccerCommand KeepawayPlayer::keeperWithBall()
   }
 
   return interpretKeeperAction( action );
+}
+
+SoccerCommand KeepawayPlayer::interpretFullTeamKeeperAction( int action, int agentIdx )
+{
+  SoccerCommand soc;
+
+  JointAction ja = JointActionSpace::instance().getJointAction(action);
+  AtomicAction *aa = ja.actions[agentIdx];
+
+  if (aa->type == AAT_PassTo) {
+    int numK = WM->getNumKeepers();
+    ObjectT K[ numK ];
+    for ( int i = 0; i < numK; i++ )
+      K[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
+    WM->sortClosestTo( K, numK, WM->getAgentObjectType() );
+    VecPosition tmPos = WM->getGlobalPosition( K[ aa->parameter ] );
+    // Normal Passing
+    ACT->putCommandInQueue( soc = directPass( tmPos, PASS_NORMAL ) );
+    // Or Fast Passing
+    //ACT->putCommandInQueue( soc = directPass( tmPos, PASS_FAST ) );
+  }
+  else if (aa->type == AAT_Hold) {
+    ACT->putCommandInQueue( soc = holdBall() );
+  }
+  else if (aa->type == AAT_Intercept) {
+    ObjectT lookObject = chooseLookObject( 0.98 );
+    ACT->putCommandInQueue( soc = intercept( false ) );
+    //ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
+    //ACT->putCommandInQueue( turnNeckToPoint( SS->getKeepawayRect().getPosCenter(), soc ) );
+    ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
+  }
+  else if (aa->type == AAT_Move) {
+    AngDeg ang2ball = (WM->getBallPos() - WM->getAgentGlobalPosition()).getDirection();
+
+    VecPosition target = WM->getAgentGlobalPosition() +
+                         VecPosition::getVecPositionFromPolar(1.0, ang2ball + aa->parameter * 90.0);
+    ACT->putCommandInQueue( soc = moveToPos(target, 30.0));
+  }
+  else if (aa->type == AAT_Stay) {
+    ACT->putCommandInQueue( soc = moveToPos(WM->getAgentGlobalPosition(), 30.0));
+  }
+
+  return soc;
 }
 
 SoccerCommand KeepawayPlayer::interpretKeeperAction( int action )

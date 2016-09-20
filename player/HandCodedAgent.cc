@@ -50,7 +50,7 @@ int HandCodedAgent::startEpisode( int current_time, double state[] )
 int HandCodedAgent::step( int current_time, double reward, double state[] )
 {
   if ( policy[0] == 'r' ) {      // (r)andom
-    return random();
+    return random(state);
   }
   else if ( policy[1] == 'o' ) { // h(o)ld
     return alwaysHold();
@@ -72,9 +72,9 @@ int HandCodedAgent::alwaysHold()
   return 0;
 }
 
-int HandCodedAgent::random()
+int HandCodedAgent::random(double state[])
 {
-  return ( rand() % getNumActions() );
+  return JointActionSpace::instance().sample(state, getNumFeatures());
 }
 
 /**
@@ -121,8 +121,8 @@ int HandCodedAgent::handCoded( double state[] )
   float dist_weight = 4.0;
 
   for ( int i=1; i<numK; i++ )
-    scores[i] = dist_weight * nearest_Opp_dist_K[i] +
-      nearest_Opp_ang_K[i];
+    scores[i] = (float) (dist_weight * nearest_Opp_dist_K[i] +
+                         nearest_Opp_ang_K[i]);
 
   // Get MAX
   int best = 0;

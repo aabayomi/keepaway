@@ -5,8 +5,8 @@ dist: trusty
 compiler: gcc
 before_script:
     - sudo apt-get update -qq
-    - sudo apt-get install -y xutils-dev
-script: ./build.sh
+    - sudo apt-get install -y xutils-dev cmake
+script: make all
 notifications:
     email:
         recipients: aijunbai@gmail.com

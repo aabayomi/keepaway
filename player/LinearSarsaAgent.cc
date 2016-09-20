@@ -206,7 +206,7 @@ int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
     Q[a] = computeQ(a);
   }
 
-  lastAction = selectAction(); // share Q[lastAction] in hive mind mode
+  lastAction = selectAction(state); // share Q[lastAction] in hive mind mode
   lastActionTime = current_time;
 
   {
@@ -268,7 +268,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
     Q[a] = computeQ(a); //Q_{t-1}[s_t, *]
   }
 
-  lastAction = selectAction(); //a_t
+  lastAction = selectAction(state); //a_t
   lastActionTime = current_time;
 
   {
@@ -413,15 +413,15 @@ void LinearSarsaAgent::shutDown() {
   }
 }
 
-int LinearSarsaAgent::selectAction() {
+int LinearSarsaAgent::selectAction(double state[]) {
   int action;
 
   // Epsilon-greedy
   if (bLearning && drand48() < epsilon) {     /* explore */
-    action = rand() % getNumActions();
+    action = JointActionSpace::instance().sample(state, getNumFeatures());
   }
   else {
-    action = argmaxQ();
+    action = argmaxQ(state);
   }
 
   assert(action >= 0);
@@ -559,11 +559,16 @@ double LinearSarsaAgent::computeQ(int a) {
 }
 
 // Returns index (action) of largest entry in Q array, breaking ties randomly
-int LinearSarsaAgent::argmaxQ() const {
+int LinearSarsaAgent::argmaxQ(double state[]) const {
+  bool tmControllBall = state[getNumFeatures() - 1] > 0.5;
+
   int bestAction = 0;
-  double bestValue = Q[bestAction];
+  double bestValue = INT_MIN;
   int numTies = 0;
-  for (int a = bestAction + 1; a < getNumActions(); a++) {
+  for (int a = 0; a < getNumActions(); a++) {
+    if (JointActionSpace::instance().getJointAction(a).tmControllBall != tmControllBall)
+      continue;
+
     double value = Q[a];
     if (value > bestValue) {
       bestValue = value;

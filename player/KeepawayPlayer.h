@@ -68,8 +68,10 @@ class KeepawayPlayer:public BasicPlayer
   // behaviors
   SoccerCommand keeper();
   SoccerCommand keeperWithBall();
+	SoccerCommand fullTeamKeepers();
   SoccerCommand keeperSupport( ObjectT fastest );
   SoccerCommand interpretKeeperAction( int action );
+	SoccerCommand interpretFullTeamKeeperAction( int action, int agentIdx );
 
   ObjectT chooseLookObject( double ballThr );
 

@@ -68,11 +68,11 @@ protected:
   bool saveWeights(char *filename);
 
   // Value function methods for CMACs
-  int selectAction();
+  int selectAction(double state[]);
 
   double computeQ(int a);
 
-  int argmaxQ() const;
+  int argmaxQ(double state[]) const;
 
   void updateWeights(double delta);
 
