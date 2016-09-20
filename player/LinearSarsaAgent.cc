@@ -566,7 +566,7 @@ int LinearSarsaAgent::argmaxQ(double state[]) const {
   double bestValue = INT_MIN;
   int numTies = 0;
   for (int a = 0; a < getNumActions(); a++) {
-    if (JointActionSpace::instance().getJointAction(a).tmControllBall != tmControllBall)
+    if (JointActionSpace::instance().getJointAction(a)->tmControllBall != tmControllBall)
       continue;
 
     double value = Q[a];

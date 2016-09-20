@@ -386,15 +386,16 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
   int action;
 
   if ( WM->keeperStateVars( state ) > 0 ) { // if we can calculate state vars
+    bool tmControllBall = state[SA->getNumFeatures() - 1] > 0.5;
     // Call startEpisode() on the first SMDP step
     if ( WM->getTimeLastAction() == UnknownTime ) {
       action = SA->startEpisode( WM->getCurrentCycle(), state );
     }
     else if ( WM->getTimeLastAction() == WM->getCurrentCycle() - 1 &&
-              JointActionSpace::instance().getJointAction(WM->getLastAction()).actions[agentIdx]->type == AAT_PassTo ||
-              JointActionSpace::instance().getJointAction(WM->getLastAction()).actions[agentIdx]->type == AAT_Move) {
+              JointActionSpace::instance().getJointAction(WM->getLastAction())->actions[agentIdx]->type == AAT_PassTo ||
+              (tmControllBall && JointActionSpace::instance().getJointAction(WM->getLastAction())->actions[agentIdx]->type == AAT_Move)) {
       // if we were in the middle of a pass/move last cycle
-      Log.log(101, "KeepawayPlayer::keeperWithBall Passing...: %d", WM->getLastAction());
+      Log.log(101, "KeepawayPlayer::keeperWithBall Passing/Moving...: %d", WM->getLastAction());
       action = WM->getLastAction();         // then we follow through with it: keepon
     }
     else { // Call step() on all but first SMDP step
@@ -452,8 +453,10 @@ SoccerCommand KeepawayPlayer::interpretFullTeamKeeperAction( int action, int age
 {
   SoccerCommand soc;
 
-  JointAction ja = JointActionSpace::instance().getJointAction(action);
-  AtomicAction *aa = ja.actions[agentIdx];
+  auto ja = JointActionSpace::instance().getJointAction(action);
+  auto aa = ja->actions[agentIdx];
+
+  Log.log(101, "KeepawayPlayer::interpretFullTeamKeeperAction action: %d agentIdx: %d", action, agentIdx);
 
   if (aa->type == AAT_PassTo) {
     int numK = WM->getNumKeepers();
@@ -464,17 +467,12 @@ SoccerCommand KeepawayPlayer::interpretFullTeamKeeperAction( int action, int age
     VecPosition tmPos = WM->getGlobalPosition( K[ aa->parameter ] );
     // Normal Passing
     ACT->putCommandInQueue( soc = directPass( tmPos, PASS_NORMAL ) );
-    // Or Fast Passing
-    //ACT->putCommandInQueue( soc = directPass( tmPos, PASS_FAST ) );
   }
   else if (aa->type == AAT_Hold) {
     ACT->putCommandInQueue( soc = holdBall() );
   }
   else if (aa->type == AAT_Intercept) {
-    ObjectT lookObject = chooseLookObject( 0.98 );
     ACT->putCommandInQueue( soc = intercept( false ) );
-    //ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
-    //ACT->putCommandInQueue( turnNeckToPoint( SS->getKeepawayRect().getPosCenter(), soc ) );
     ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
   }
   else if (aa->type == AAT_Move) {
@@ -482,7 +480,13 @@ SoccerCommand KeepawayPlayer::interpretFullTeamKeeperAction( int action, int age
 
     VecPosition target = WM->getAgentGlobalPosition() +
                          VecPosition::getVecPositionFromPolar(1.0, ang2ball + aa->parameter * 90.0);
-    ACT->putCommandInQueue( soc = moveToPos(target, 30.0));
+
+    if (WM->getKeepawayRect().isInside(target)) {
+      ACT->putCommandInQueue( soc = moveToPos(target, 30.0));
+    }
+    else {
+      ACT->putCommandInQueue( soc = moveToPos(WM->getAgentGlobalPosition(), 30.0));
+    }
   }
   else if (aa->type == AAT_Stay) {
     ACT->putCommandInQueue( soc = moveToPos(WM->getAgentGlobalPosition(), 30.0));

@@ -186,7 +186,7 @@ private:
       std::vector<std::vector<AtomicAction*>> &actions, JointAction &ja) {
     if (k >= AtomicAction::keepers) {
       ja.id = count++;
-      jointActions[tmControlBall].push_back(ja);
+      jointActions[tmControlBall].push_back(new JointAction(ja));
       jaMap[ja.id] = jointActions[tmControlBall].back();
     }
     else {
@@ -206,7 +206,7 @@ public:
   }
 
   int sample(bool tmControlBall) const {
-    return jointActions[tmControlBall][rand() % jointActions[tmControlBall].size()].id;
+    return jointActions[tmControlBall][rand() % jointActions[tmControlBall].size()]->id;
   }
 
   int sample(double state[], int num_features) const {
@@ -216,19 +216,19 @@ public:
 
   int numActions() const { return (int) jaMap.size(); }
 
-  const JointAction &getJointAction(int id) { return jaMap[id]; }
+  const JointAction *getJointAction(int id) { return jaMap[id]; }
 
 private:
-  std::vector<JointAction> jointActions[2];
+  std::vector<JointAction*> jointActions[2];
+  std::unordered_map<int, JointAction*> jaMap;
   int count;
-  std::unordered_map<int, JointAction> jaMap;
 };
 
 class SMDPAgent
 {
   int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
 
-protected:
+public:
 
   int getNumFeatures() const { return m_numFeatures; }
   int getNumActions()  const { return JointActionSpace::instance().numActions();  }
