@@ -37,43 +37,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*! This class is a superclass from BasicPlayer and contains a more
     sophisticated decision procedure to determine the next action. */
-class KeepawayPlayer:public BasicPlayer
-{
- protected:
-  bool          bContLoop;               /*!< is server is alive             */
+class KeepawayPlayer : public BasicPlayer {
+protected:
+  bool bContLoop;               /*!< is server is alive             */
 
-  Time          m_timeLastSay;           /*!< last time communicated         */
-  Time          m_timeStartEpisode;
-  SMDPAgent     *SA;
+  Time m_timeLastSay;           /*!< last time communicated         */
+  SMDPAgent *SA;
 
   // methods associated with saying (defined in KeepawayPlayer.cc)
-  bool          shallISaySomething        (                                  );
-  void          makeSayMessage            ( SoccerCommand  soc,
-					    char *         str               );
+  bool shallISaySomething();
 
- public:
-  KeepawayPlayer                          ( SMDPAgent      *sa,
-					    ActHandler     *a,
-                                            WorldModel     *wm,
-                                            ServerSettings *ss,
-                                            PlayerSettings *cs,
-                                            char           *strTeamName,
-					    int            iNumKeepers,
-					    int            iNumTakers,
-                                            double         dVersion,
-                                            int            iReconnect = -1   );
+  void makeSayMessage(SoccerCommand soc,
+                      char *str);
 
-  void          mainLoop                  (                                  );
+public:
+  KeepawayPlayer(SMDPAgent *sa,
+                 ActHandler *a,
+                 WorldModel *wm,
+                 ServerSettings *ss,
+                 PlayerSettings *cs,
+                 char *strTeamName,
+                 int iNumKeepers,
+                 int iNumTakers,
+                 double dVersion,
+                 int iReconnect = -1);
+
+  void mainLoop();
 
   // behaviors
   SoccerCommand keeper();
-  SoccerCommand keeperWithBall();
-	SoccerCommand fullTeamKeepers();
-  SoccerCommand keeperSupport( ObjectT fastest );
-  SoccerCommand interpretKeeperAction( int action );
-	SoccerCommand interpretFullTeamKeeperAction( int action, int agentIdx );
 
-  ObjectT chooseLookObject( double ballThr );
+  SoccerCommand fullTeamKeepers();
+
+  SoccerCommand interpretKeeperAction(int action);
+
+  SoccerCommand interpretFullTeamKeeperAction(int action, int agentIdx);
 
   SoccerCommand taker();
 

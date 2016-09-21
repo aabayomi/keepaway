@@ -24,21 +24,21 @@ Based On:
 */
 
 /*
- * SayMsgDecoder.h - functional class that is used to decode a coachable agent 
- *   say message into message types that can be incorporated into the world model. 
+ * SayMsgDecoder.h - functional class that is used to decode a coachable agent
+ *   say message into message types that can be incorporated into the world model.
  *
  *
  * Creation Date: 11/18/03
  * Author: John Davin
  *
- * USAGE: 
+ * USAGE:
  *
  * 1) Write subclasses for the msg type classes in SayMsgTypes and define process() functions
- *   that incorporate the information into your world model (or do something else with the data). 
+ *   that incorporate the information into your world model (or do something else with the data).
  * 2) Write a subclass of SayMsgFactory (eg, MySayMsgFactory) that defines the SayMsgFactory
- *    functions to return instances of your msg type subclasses that you defined in step 1. 
- * 3) To decode a message: 
- * 
+ *    functions to return instances of your msg type subclasses that you defined in step 1.
+ * 3) To decode a message:
+ *
  * string serverSayMsg = // you get this from the server
  * int playernum =  // you also get this with the say msg
  * SayMsgFactory *msgfactory = new MySayMsgFactory();
@@ -49,10 +49,10 @@ Based On:
  * for( ; iter != decoder->getMsgIteratorEnd(); iter++){
  *   SayMsgTypes *curunit = *iter;
  *   curunit->process();
- *   // calls the process function that you defined for the current SayMsgType 
- *   
- * Note: Each time you call decodeStr( ), it will *erase* the previous message units. 
- *   So if you wish, you can use the same SayMsgDecoder instance to decode all messages
+ *   // calls the process function that you defined for the current SayMsgType
+ *
+ * Note: Each time you call decodeStr( ), it will *erase* the previous message units.
+ *   So if you wish, you can use the same SayMsgDecoder ins to decode all messages
  */
 
 
@@ -70,17 +70,17 @@ using namespace std;
 
 class SayMsgDecoder {
 
- private: 
+ private:
   vector<SayMsgTypes*> units; // stores the SayMsgTypes for this say message
   SayMsgFactory *msgfactory; // SayMsgFactory used to get new msg type objects
 
 
- public: 
+ public:
   typedef vector<SayMsgTypes*>::const_iterator DecodedMsgIterator;
 
 
   /*
-   * create a SayMsgDecoder class 
+   * create a SayMsgDecoder class
    * using the msgfactory to get the user's subclassed message types
    */
   SayMsgDecoder(SayMsgFactory *msgfact)
@@ -90,11 +90,11 @@ class SayMsgDecoder {
     clearStorage();
   }
 
-  /* 
-   * Decode the specified string and put its SayMsgTypes into our vector storage. 
-   * Clears the storage vector before decoding the specified string. 
+  /*
+   * Decode the specified string and put its SayMsgTypes into our vector storage.
+   * Clears the storage vector before decoding the specified string.
    * playernum specifies the player number of the sender
-   * Returns true if decoding succeeded; false otherwise. 
+   * Returns true if decoding succeeded; false otherwise.
    */
   bool decodeStr(string str, int playernum){
     unsigned int id;
@@ -107,7 +107,7 @@ class SayMsgDecoder {
 
       // get the message id character and convert to int
       id = DataTypes::MsgTypeID::getDecoding(str[0]);
-      
+
       // get a user subclassed SayMsgTypes object from the msgfactory.
       // if the user has not implemented a message type, it will return NULL
       // and we will use a standard SayMsgTypes object (process() function empty)
@@ -141,11 +141,11 @@ class SayMsgDecoder {
       if(!parsed){ delete msgunit; return false; }
       msgunit->setPlayernum(playernum);
 
-      // add the msgunit to our storage: 
+      // add the msgunit to our storage:
       units.push_back(msgunit);
 
       // skip ahead by the number of chars this msgunit used
-      str = str.substr(msgunit->getCost()); 
+      str = str.substr(msgunit->getCost());
     }
 
     return true;

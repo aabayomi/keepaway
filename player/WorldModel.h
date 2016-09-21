@@ -249,9 +249,6 @@ private:
   int           m_numKeepers;
   int           m_numTakers;
 
-  int           m_lastAction;
-  int           m_timeLastAction;
-
   // keepaway region
   Rect          m_keepawayRect;
   double        m_moveSpeed;
@@ -880,11 +877,7 @@ public:
   void          setNewEpisode              ( bool           bNewEp           );
   bool          isNewEpisode               (                                 );
 
-  void          setLastAction              ( int            iAction          );
-  int           getLastAction              (                                 );
-  int           getTimeLastAction          (                                 );
-
-  double        keeperReward               (                                 );
+  double        keeperReward               (int lastActionTime                   );
   int           keeperStateVars            ( double         state[]          );
   int           keeperStateRangesAndResolutions ( double         ranges[],
 					     double         minValues[],

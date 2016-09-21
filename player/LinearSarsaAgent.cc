@@ -141,8 +141,6 @@ LinearSarsaAgent::LinearSarsaAgent(int numFeatures,
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
 
   numTilings = 0;
-  lastAction = -1;
-  lastActionTime = UnknownTime;
   wait4Episode = true;
   minimumTrace = 0.01;
   numNonzeroTraces = 0;
@@ -302,11 +300,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
                    1, COLOR_NAVY );
 #endif
 
-  if (std::isnan(Q[lastAction]) || std::isinf(Q[lastAction])) {
-    PRINT_VALUE(lastAction);
-    PRINT_VALUE(Q[lastAction]);
-  }
-
+  assert(!std::isnan(Q[lastAction]) && !std::isinf(Q[lastAction]));
   delta += pow(gamma, tau) * Q[lastAction]; //delta += Q_{t-1}[s_t, a_t]
 
   updateWeights(delta); //Q_t <- Q_{t-1}
@@ -419,7 +413,7 @@ int LinearSarsaAgent::selectAction(double state[]) {
 
   // Epsilon-greedy
   if (bLearning && drand48() < epsilon) {     /* explore */
-    action = JointActionSpace::instance().sample(state, getNumFeatures());
+    action = JointActionSpace::ins().sample(state, getNumFeatures());
   }
   else {
     action = argmaxQ(state);
@@ -567,7 +561,7 @@ int LinearSarsaAgent::argmaxQ(double state[]) const {
   double bestValue = INT_MIN;
   int numTies = 0;
   for (int a = 0; a < getNumActions(); a++) {
-    if (JointActionSpace::instance().getJointAction(a)->tmControllBall != tmControllBall)
+    if (JointActionSpace::ins().getJointAction(a)->tmControllBall != tmControllBall)
       continue;
 
     double value = Q[a];

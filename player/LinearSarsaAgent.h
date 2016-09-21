@@ -31,8 +31,6 @@ protected:
   int hiveMind; // 1: hive mind, 2: full hive mind
   int hiveFile;
 
-  int lastAction;
-  int lastActionTime;
   bool wait4Episode; // waiting for new episode
 
   double alpha;

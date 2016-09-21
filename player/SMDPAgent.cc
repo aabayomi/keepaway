@@ -1,7 +1,26 @@
 #include "SMDPAgent.h"
 #include "BasicPlayer.h"
 
+using namespace std;
+
 int AtomicAction::keepers = 3;
+
+std::ostream& operator<<(std::ostream& out, const AtomicActionType value) {
+  static std::map<AtomicActionType, std::string> strings;
+
+  if (strings.size() == 0){
+#define INSERT_ELEMENT(p) strings[p] = #p
+    INSERT_ELEMENT(AAT_None);
+    INSERT_ELEMENT(AAT_Hold);
+    INSERT_ELEMENT(AAT_PassTo);
+    INSERT_ELEMENT(AAT_Intercept);
+    INSERT_ELEMENT(AAT_Stay);
+    INSERT_ELEMENT(AAT_Move);
+#undef INSERT_ELEMENT
+  }
+
+  return out << strings[value];
+}
 
 SoccerCommand Hold::execute(BasicPlayer *player) {
   SoccerCommand soc;
@@ -62,8 +81,8 @@ SoccerCommand Move::execute(BasicPlayer *player) {
   return soc;
 }
 
-JointActionSpace::JointActionSpace() :
-    count(0) {
+JointActionSpace::JointActionSpace()
+    : count(0) {
   std::vector<std::vector<AtomicAction *>> actions[2];
   actions[0].resize((std::size_t) AtomicAction::keepers);
   actions[1].resize((std::size_t) AtomicAction::keepers);
@@ -89,7 +108,7 @@ JointActionSpace::JointActionSpace() :
 
 void JointActionSpace::construct(
     bool tmControlBall, int k,
-    std::vector<std::vector<AtomicAction *>> &actions, JointAction &ja) {
+    vector<vector<AtomicAction *>> &actions, JointAction &ja) {
   if (k >= AtomicAction::keepers) {
     ja.id = count++;
     jointActions[tmControlBall].push_back(new JointAction(ja));

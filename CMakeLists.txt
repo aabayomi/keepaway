@@ -47,7 +47,8 @@ set(SOURCE_FILES
     player/ServerSettings.cc
     player/ServerSettings.h
     player/SMDPAgent.h
-        player/SMDPAgent.cc
+    player/SMDPAgent.cc
+    player/prettyprint.h
     player/SoccerTypes.cc
     player/SoccerTypes.h
     player/tiles2.cc

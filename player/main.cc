@@ -303,11 +303,11 @@ int main(int argc, char *argv[]) {
   double resolutions[MAX_STATE_VARS];
 
   AtomicAction::keepers = iNumKeepers;
-  PRINT_VALUE(JointActionSpace::instance().numActions());
+  PRINT_VALUE(JointActionSpace::ins().numActions());
 
   int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                        iNumKeepers, iNumTakers);
-
+  assert(hiveMind == 2);
   if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
     // (l)earned
     // or "learned!" -> Don't explore at all.

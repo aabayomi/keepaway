@@ -55,9 +55,7 @@ KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
   WM->setNumKeepers( iNumKeepers );
   WM->setNumTakers( iNumTakers );
   WM->setNewEpisode( false );
-  WM->setLastAction( UnknownIntValue );
   m_timeLastSay = -5;
-  m_timeStartEpisode = -5;
 
   // create initialisation string
   if( iReconnect != -1 )
@@ -65,7 +63,6 @@ KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
   else
     sprintf( str, "(init %s (version %f))", strTeamName, dVersion );
   ACT->sendMessage( str );
-
 }
 
 /*! This is the main loop of the agent. This method calls the update methods
@@ -102,7 +99,7 @@ void KeepawayPlayer::mainLoop( )
       else
         soc = taker();
 
-      if( shallISaySomething() == true )           // shall I communicate
+      if(shallISaySomething())           // shall I communicate
       {
         m_timeLastSay = WM->getCurrentTime();
         char strMsg[MAX_SAY_MSG];
@@ -111,10 +108,11 @@ void KeepawayPlayer::mainLoop( )
           Log.log( 600, "send communication string: %s", strMsg );
         WM->setCommunicationString( strMsg );
       }
+
       Log.logWithTime( 3, "  determined action; waiting for new info" );
       // directly after see message, will not get better info, so send commands
       if( WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
-          (SS->getSynchMode() && WM->getRecvThink() == true ))
+          (SS->getSynchMode() && WM->getRecvThink()))
       {
         Log.logWithTime( 3, "  send messages directly" );
         ACT->sendCommands( );
@@ -183,7 +181,6 @@ void KeepawayPlayer::mainLoop( )
          ((double)WM->iNrTeammatesSeen/WM->getCurrentCycle()));
   printf("   Opponents seen: %d (%f)\n", WM->iNrOpponentsSeen,
          ((double)WM->iNrOpponentsSeen/WM->getCurrentCycle()));
-
 }
 
 
@@ -251,8 +248,8 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
     LogDraw.logCircle( "ball sending", posBall,
                        1.1, 90, false, COLOR_BLUE );
 #endif
-    myencoder.add( new BallInfo( posBall.getX(), posBall.getY(),
-                                 velBall.getX(), velBall.getY(), 1 - iDiff ) );
+    myencoder.add( new BallInfo((float) posBall.getX(), (float) posBall.getY(),
+                                (float) velBall.getX(), (float) velBall.getY(), (unsigned short) (1 - iDiff)) );
   }
 
   // Find closest opponent that was seen this cycle
@@ -269,13 +266,13 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
 
   if ( numSeen > 0 ) { // add closest
     VecPosition posOpp = WM->getGlobalPosition( T[ 0 ] );
-    myencoder.add( new OppPos( SoccerTypes::getIndex( T[ 0 ] ) + 1,
-                               posOpp.getX(), posOpp.getY(), 1 ) );
+    myencoder.add( new OppPos((unsigned short) (SoccerTypes::getIndex(T[ 0 ] ) + 1),
+                              (float) posOpp.getX(), (float) posOpp.getY(), 1 ) );
   }
 
   if ( myencoder.getSize() <= 7 &&  // if there is room
        WM->getConfidence( WM->getAgentObjectType() ) > PS->getPlayerHighConfThr() ) {
-    myencoder.add( new OurPos( posAgentPred.getX(), posAgentPred.getY() ) );
+    myencoder.add( new OurPos((float) posAgentPred.getX(), (float) posAgentPred.getY()) );
   }
 
   strcpy( strMsg, myencoder.getEncodedStr().c_str() );
@@ -291,10 +288,8 @@ SoccerCommand KeepawayPlayer::keeper()
   SoccerCommand soc;
 
   if ( WM->isNewEpisode() ) {
-    SA->endEpisode( WM->getCurrentCycle(), WM->keeperReward() );
+    SA->endEpisode( WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime) );
     WM->setNewEpisode( false );
-    WM->setLastAction( UnknownIntValue );
-    m_timeStartEpisode = WM->getCurrentTime();
   }
 
 #if USE_DRAW_LOG
@@ -321,52 +316,15 @@ SoccerCommand KeepawayPlayer::keeper()
   }
 
   return fullTeamKeepers();
-
-//  // If the ball is kickable,
-//  // call main action selection routine.
-//  if ( WM->isBallKickable() ) {
-//    return keeperWithBall();
-//  }
-//
-//  // Get fastest to ball
-//  int iTmp;
-//  ObjectT fastest = WM->getFastestInSetTo( OBJECT_SET_TEAMMATES,
-//                                           OBJECT_BALL, &iTmp );
-//
-//  // If fastest, intercept the ball.
-//  if ( fastest == WM->getAgentObjectType() ) {
-//    Log.log( 100, "I am fastest to ball; can get there in %d cycles", iTmp );
-//
-//#if USE_DRAW_LOG
-//    LogDraw.logText( "state", VecPosition( 25, 25 ),
-//                     "fastest",
-//                     1, COLOR_WHITE );
-//#endif
-//    ObjectT lookObject = chooseLookObject( 0.98 );
-//#if USE_DRAW_LOG
-//    char buffer[128];
-//    LogDraw.logText( "lookObject", VecPosition( 25, -25 ),
-//                     SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
-//#endif
-//    ACT->putCommandInQueue( soc = intercept( false ) );
-//    //ACT->putCommandInQueue( turnNeckToObject( lookObject, soc ) );
-//    //ACT->putCommandInQueue( turnNeckToPoint( SS->getKeepawayRect().getPosCenter(), soc ) );
-//    ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
-//    return soc;
-//  }
-//
-//  // Not fastest, get open
-//  Log.log( 100, "I am not fastest to ball" );
-//#if USE_DRAW_LOG
-//  LogDraw.logText( "state", VecPosition( 25, 25 ),
-//                   "support",
-//                   1, COLOR_WHITE );
-//#endif
-//  return keeperSupport( fastest );
 }
 
 SoccerCommand KeepawayPlayer::fullTeamKeepers()
 {
+  double state[ MAX_STATE_VARS ];
+  if ( WM->keeperStateVars( state ) <= 0 ) {
+    return interpretKeeperAction(0); // do nothing
+  }
+
   int numK = WM->getNumKeepers();
   ObjectT K[ numK ];
   for ( int i = 0; i < numK; i++ )
@@ -380,77 +338,45 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
   while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
   if (agentIdx >= numK) return interpretKeeperAction(0);
 
-  double state[ MAX_STATE_VARS ];
-  int action;
+  // if within an option
+  if (SA->lastAction >= 0) {
+    Log.log(101, "in option %s agentIdx %d",
+            JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(), agentIdx);
+    auto ja = JointActionSpace::ins().getJointAction(SA->lastAction);
+    auto aa = ja->actions[0]; // the action of the leading agent
 
-  if ( WM->keeperStateVars( state ) > 0 ) { // if we can calculate state vars
-    bool tmControllBall = state[SA->getNumFeatures() - 1] > 0.5;
-    // Call startEpisode() on the first SMDP step
-    if ( WM->getTimeLastAction() == UnknownTime ) {
-      action = SA->startEpisode( WM->getCurrentCycle(), state );
+    bool passing = SA->lastActionTime == WM->getCurrentCycle() - 1 &&
+        JointActionSpace::ins().getJointAction(SA->lastAction)->actions[0]->type == AAT_PassTo;
+
+    if (passing || !aa->terminated(state, SA->getNumFeatures())) {
+      return interpretFullTeamKeeperAction(SA->lastAction, agentIdx);
     }
-    else if ( WM->getTimeLastAction() == WM->getCurrentCycle() - 1 &&
-              JointActionSpace::instance().getJointAction(WM->getLastAction())->actions[agentIdx]->type == AAT_PassTo ||
-              (tmControllBall &&
-               JointActionSpace::instance().getJointAction(WM->getLastAction())->actions[agentIdx]->type == AAT_Move)) {
-      // if we were in the middle of a pass/move last cycle
-      Log.log(101, "KeepawayPlayer::keeperWithBall Passing/Moving...: %d", WM->getLastAction());
-      action = WM->getLastAction();         // then we follow through with it: keepon
+    else {
+      SA->lastAction = -1;
+    }
+  }
+
+  // K0 makes the decision
+  if (agentIdx == 0) {
+    int action;
+    if ( SA->lastActionTime == UnknownTime ) {
+      action = SA->startEpisode(WM->getCurrentCycle(), state);
     }
     else { // Call step() on all but first SMDP step
-      action = SA->step( WM->getCurrentCycle(), WM->keeperReward(), state );
+      action = SA->step( WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime), state );
     }
-    WM->setLastAction( action );
+    Log.log(101, "execute %s agentIdx %d",
+            JointActionSpace::ins().getJointAction(action)->name().c_str(), agentIdx);
+    return interpretFullTeamKeeperAction(action, agentIdx);
   }
-  else { // if we don't have enough info to calculate state vars
-    action = 0;  // hold ball
-#if USE_DRAW_LOG
-    LogDraw.logText( "state", VecPosition( 35, 25 ),
-                     "clueless",
-                     1, COLOR_RED );
-#endif
+  else {
+    return interpretKeeperAction(0); // do nothing at this cycle
   }
-
-  return interpretFullTeamKeeperAction( action, agentIdx);
-}
-
-SoccerCommand KeepawayPlayer::keeperWithBall()
-{
-  Log.log( 101, "KeepawayPlayer::keeperWithBall: Ball kickable" );
-
-  double state[ MAX_STATE_VARS ];
-  int action;
-
-  if ( WM->keeperStateVars( state ) > 0 ) { // if we can calculate state vars
-    // Call startEpisode() on the first SMDP step
-    if ( WM->getTimeLastAction() == UnknownTime ) {
-      action = SA->startEpisode( WM->getCurrentCycle(), state );
-    }
-    else if ( WM->getTimeLastAction() == WM->getCurrentCycle() - 1 &&
-              WM->getLastAction() > 0 ) {   // if we were in the middle of a pass last cycle
-      Log.log(101, "KeepawayPlayer::keeperWithBall Passing...: %d", WM->getLastAction());
-      action = WM->getLastAction();         // then we follow through with it: keepon
-    }
-    else { // Call step() on all but first SMDP step
-      action = SA->step( WM->getCurrentCycle(), WM->keeperReward(), state );
-    }
-    WM->setLastAction( action );
-  }
-  else { // if we don't have enough info to calculate state vars
-    action = 0;  // hold ball
-#if USE_DRAW_LOG
-    LogDraw.logText( "state", VecPosition( 35, 25 ),
-                     "clueless",
-                     1, COLOR_RED );
-#endif
-  }
-
-  return interpretKeeperAction( action );
 }
 
 SoccerCommand KeepawayPlayer::interpretFullTeamKeeperAction( int action, int agentIdx )
 {
-  auto ja = JointActionSpace::instance().getJointAction(action);
+  auto ja = JointActionSpace::ins().getJointAction(action);
   auto aa = ja->actions[agentIdx];
 
   return aa->execute(this);
@@ -461,79 +387,10 @@ SoccerCommand KeepawayPlayer::interpretKeeperAction( int action )
   SoccerCommand soc;
 
   if ( action == 0 ) { // interpret HOLD action
-    ACT->putCommandInQueue( soc = holdBall() );
-#if USE_DRAW_LOG
-    LogDraw.logText( "state", VecPosition( 25, 25 ),
-                     "holding",
-                     1, COLOR_WHITE );
-#endif
-  }
-  else { // interpret PASS action
-    int numK = WM->getNumKeepers();
-    ObjectT K[ numK ];
-    for ( int i = 0; i < numK; i++ )
-      K[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
-    WM->sortClosestTo( K, numK, WM->getAgentObjectType() );
-    VecPosition tmPos = WM->getGlobalPosition( K[ action ] );
-    // Normal Passing
-    ACT->putCommandInQueue( soc = directPass( tmPos, PASS_NORMAL ) );
-    // Or Fast Passing
-    //ACT->putCommandInQueue( soc = directPass( tmPos, PASS_FAST ) );
-
-#if USE_DRAW_LOG
-    char buffer[128];
-    LogDraw.logText( "state", VecPosition( 25, 25 ),
-                     SoccerTypes::getObjectStr( buffer, K[ action ] ),
-                     1, COLOR_WHITE );
-#endif
+    ACT->putCommandInQueue( soc = moveToPos(WM->getAgentGlobalPosition(), 30.0) );
   }
 
   return soc;
-}
-
-SoccerCommand KeepawayPlayer::keeperSupport( ObjectT fastest )
-{
-  SoccerCommand soc;
-
-  int iCycles = WM->predictNrCyclesToObject( fastest, OBJECT_BALL );
-  VecPosition posPassFrom =
-      WM->predictPosAfterNrCycles( OBJECT_BALL, iCycles );
-//  LogDraw.logCircle( "BallPredict", posPassFrom, 1, 70, true, COLOR_BROWN );
-  soc = getOpenForPassFromInRectangle( WM->getKeepawayRect(), posPassFrom );
-
-  ObjectT lookObject = chooseLookObject(0.97);
-
-#if USE_DRAW_LOG
-  char buffer[128];
-  LogDraw.logText( "lookObject", VecPosition( 25, -25 ),
-                   SoccerTypes::getObjectStr( buffer, lookObject ), 100, COLOR_WHITE );
-#endif
-  ACT->putCommandInQueue( soc );
-  ACT->putCommandInQueue(turnNeckToObject(lookObject, soc));
-  ACT->putCommandInQueue( turnNeckToPoint( WM->getKeepawayRect().getPosCenter(), soc ) );
-
-  return soc;
-}
-
-ObjectT KeepawayPlayer::chooseLookObject( double ballThr )
-{
-  if ( WM->getConfidence( OBJECT_BALL ) < ballThr )
-    return OBJECT_BALL;
-
-  ObjectT objLeast = OBJECT_ILLEGAL;
-  double confLeast = 1.1;
-  for ( int i = 0; i < WM->getNumKeepers(); i++ ) {
-    ObjectT obj = SoccerTypes::getTeammateObjectFromIndex( i );
-    if ( obj != WM->getAgentObjectType() ) {
-      double conf = WM->getConfidence( obj );
-      if ( conf < confLeast ) {
-        confLeast = conf;
-        objLeast = obj;
-      }
-    }
-  }
-
-  return objLeast;
 }
 
 SoccerCommand KeepawayPlayer::taker()

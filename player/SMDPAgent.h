@@ -37,8 +37,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <zconf.h>
 #include <cassert>
 #include <cstdlib>
+#include <sstream>
 #include <unordered_set>
 #include <unordered_map>
+#include <map>
 #include "SoccerTypes.h"
 
 #define MAX_STATE_VARS         128
@@ -55,13 +57,24 @@ enum AtomicActionType {
   AAT_Move // Left, Right, In, Out
 };
 
+std::ostream& operator<<(std::ostream& out, const AtomicActionType value);
+
 struct AtomicAction {
   AtomicActionType type;
   int parameter;
 
   AtomicAction(AtomicActionType t = AAT_None, int p = 0): type(t), parameter(p) { }
 
+  std::string name() const {
+    stringstream ss;
+    ss << type << "_" << parameter;
+    return ss.str();
+  }
+
   virtual std::vector<int> parameters() { return {0}; }
+  virtual bool terminated(double state[], int num_features) {
+    return state[num_features - 1] > 0.5;
+  }
 
   virtual SoccerCommand execute(BasicPlayer *player) = 0;
   virtual AtomicAction *clone(int parameter) = 0;
@@ -87,7 +100,6 @@ struct PassTo: public AtomicAction {
   PassTo(): AtomicAction(AAT_PassTo) { }
 
   virtual std::vector<int> parameters();
-
   virtual SoccerCommand execute(BasicPlayer *player);
   CLONE(PassTo)
 };
@@ -138,6 +150,14 @@ struct JointAction {
     }
     return *this;
   }
+
+  std::string name() const {
+    stringstream ss;
+    ss << "{";
+    for (auto a : actions) ss << a->name() << ", ";
+    ss << "}";
+    return ss.str();
+  }
 };
 
 class JointActionSpace {
@@ -148,7 +168,7 @@ private:
       std::vector<std::vector<AtomicAction *>> &actions, JointAction &ja);
 
 public:
-  static JointActionSpace &instance() {
+  static JointActionSpace &ins() {
     static JointActionSpace jas;
     return jas;
   }
@@ -174,24 +194,28 @@ private:
 
 class SMDPAgent
 {
-  int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
-
 public:
+  int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
+  int lastAction;
+  int lastActionTime;
 
   int getNumFeatures() const { return m_numFeatures; }
-  int getNumActions()  const { return JointActionSpace::instance().numActions();  }
+  int getNumActions()  const { return JointActionSpace::ins().numActions();  }
 
 public:
-
   SMDPAgent( int numFeatures)
-  { m_numFeatures = numFeatures; }
+  {
+    m_numFeatures = numFeatures;
+    lastAction = -1;
+    lastActionTime = UnknownTime;
+  }
+
   virtual ~SMDPAgent() {}
 
   // abstract methods to be supplied by implementing class
   virtual int  startEpisode( int current_time, double state[] ) = 0;
   virtual int  step( int current_time, double reward, double state[] ) = 0;
   virtual void endEpisode( int current_time, double reward ) = 0;
-  virtual void setParams(int iCutoffEpisodes, int iStopLearningEpisodes) = 0; //*met 8/16/05
 
   // Optional customization point.
   virtual void shutDown() {}

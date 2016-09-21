@@ -106,38 +106,19 @@ bool WorldModel::isNewEpisode()
   return m_newEpisode;
 }
 
-double WorldModel::keeperReward()
+double WorldModel::keeperReward(int lastActionTime)
 {
   //Log.log( 101, "WorldModel::keeperReward getTimeLastAction: %d", getTimeLastAction());
   //Log.log( 101, "WorldModel::keeperReward getCurrentCycle: %d", getCurrentCycle());
-  double reward = getCurrentCycle() - getTimeLastAction();
+  double reward = getCurrentCycle() - lastActionTime;
   return reward;
-}
-
-void WorldModel::setLastAction( int iAction )
-{
-  m_lastAction = iAction;
-  m_timeLastAction =
-    ( iAction == UnknownIntValue ) ? UnknownTime : getCurrentCycle();
-  //Log.log( 101, "WorldModel::setLastAction m_lastAction: %d", m_lastAction);
-  //Log.log( 101, "WorldModel::setLastAction m_timeLastAction: %d", m_timeLastAction);
-}
-
-int WorldModel::getLastAction()
-{
-  return m_lastAction;
-}
-
-int WorldModel::getTimeLastAction()
-{
-  return m_timeLastAction; // shared in hive mind mode
 }
 
 int WorldModel::keeperStateVars( double state[] )
 {
   ObjectT K0 = getClosestInSetTo( OBJECT_SET_TEAMMATES, OBJECT_BALL );
-//  if ( !SoccerTypes::isTeammate( PB ) )
-//    return 0;
+  if ( !SoccerTypes::isTeammate( K0 ) )
+    return 0;
 
   VecPosition B = getBallPos();
   double WK0_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
