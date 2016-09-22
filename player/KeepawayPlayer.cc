@@ -320,9 +320,11 @@ SoccerCommand KeepawayPlayer::keeper()
 
 SoccerCommand KeepawayPlayer::fullTeamKeepers()
 {
+  SA->sync();
+
   double state[ MAX_STATE_VARS ];
   if ( WM->keeperStateVars( state ) <= 0 ) {
-    return interpretKeeperAction(0); // do nothing
+    return stay(); // do nothing
   }
 
   int numK = WM->getNumKeepers();
@@ -332,16 +334,14 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
 
   ObjectT K0 = WM->getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
   if (!WM->sortClosestTo(K, numK, K0))
-    return interpretKeeperAction(0);
+    return stay();
 
   int agentIdx = 0;
   while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
-  if (agentIdx >= numK) return interpretKeeperAction(0);
+  if (agentIdx >= numK) return stay();
 
-  // if within an option
+  // if running an option
   if (SA->lastAction >= 0) {
-    Log.log(101, "in option %s agentIdx %d",
-            JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(), agentIdx);
     auto ja = JointActionSpace::ins().getJointAction(SA->lastAction);
     auto aa = ja->actions[0]; // the action of the leading agent
 
@@ -349,10 +349,14 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
         JointActionSpace::ins().getJointAction(SA->lastAction)->actions[0]->type == AAT_PassTo;
 
     if (passing || !aa->terminated(state, SA->getNumFeatures())) {
-      return interpretFullTeamKeeperAction(SA->lastAction, agentIdx);
+      Log.log(101, "execute option %s [%d] passing %d",
+              JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(),
+              agentIdx, passing);
+      return execute(SA->lastAction, agentIdx);
     }
-    else {
-      SA->lastAction = -1;
+    else if (!passing) {
+      Log.log(101, "terminated option %s [%d]",
+              JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(), agentIdx);
     }
   }
 
@@ -365,16 +369,26 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     else { // Call step() on all but first SMDP step
       action = SA->step( WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime), state );
     }
-    Log.log(101, "execute %s agentIdx %d",
+
+    Log.log(101, "execute option %s [%d]",
             JointActionSpace::ins().getJointAction(action)->name().c_str(), agentIdx);
-    return interpretFullTeamKeeperAction(action, agentIdx);
+
+    return execute(action, agentIdx);
   }
   else {
-    return interpretKeeperAction(0); // do nothing at this cycle
+    while (SA->lastAction < 0) { // wait for K0
+      timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
+      nanosleep(&sleepTime, NULL);
+      SA->sync();
+    }
+
+    Log.log(101, "execute option %s [%d]",
+            JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(), agentIdx);
+    return execute(SA->lastAction, agentIdx);
   }
 }
 
-SoccerCommand KeepawayPlayer::interpretFullTeamKeeperAction( int action, int agentIdx )
+SoccerCommand KeepawayPlayer::execute(int action, int agentIdx)
 {
   auto ja = JointActionSpace::ins().getJointAction(action);
   auto aa = ja->actions[agentIdx];
@@ -382,13 +396,10 @@ SoccerCommand KeepawayPlayer::interpretFullTeamKeeperAction( int action, int age
   return aa->execute(this);
 }
 
-SoccerCommand KeepawayPlayer::interpretKeeperAction( int action )
+SoccerCommand KeepawayPlayer::stay()
 {
   SoccerCommand soc;
-
-  if ( action == 0 ) { // interpret HOLD action
-    ACT->putCommandInQueue( soc = moveToPos(WM->getAgentGlobalPosition(), 30.0) );
-  }
+  ACT->putCommandInQueue( soc = moveToPos(WM->getAgentGlobalPosition(), 30.0) );
 
   return soc;
 }

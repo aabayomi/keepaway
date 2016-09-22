@@ -65,8 +65,8 @@ double WorldModel::congestion( VecPosition pos, bool considerMe )
        obj = iterateObjectNext ( iIndex, OBJECT_SET_PLAYERS ) ) {
     if ( ( playerPos = getGlobalPosition( obj ) ) != pos )
       if ( obj != getAgentObjectType() )
-      /* Don't want to count a player in its own congestion measure */
-      congest += 1/playerPos.getDistanceTo( pos );
+        /* Don't want to count a player in its own congestion measure */
+        congest += 1/playerPos.getDistanceTo( pos );
   }
 
   return congest;
@@ -117,8 +117,6 @@ double WorldModel::keeperReward(int lastActionTime)
 int WorldModel::keeperStateVars( double state[] )
 {
   ObjectT K0 = getClosestInSetTo( OBJECT_SET_TEAMMATES, OBJECT_BALL );
-  if ( !SoccerTypes::isTeammate( K0 ) )
-    return 0;
 
   VecPosition B = getBallPos();
   double WK0_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
@@ -207,21 +205,21 @@ int WorldModel::keeperStateVars( double state[] )
 // class generic.
 
 // Yaxin: changed from keeperTileWidths to keeperResolutions and keeperRanges,
-
-int WorldModel::keeperStateRangesAndResolutions( double ranges[],
-						 double minValues[],
-						 double resolutions[],
-						 int numK, int numT )
+int WorldModel::keeperStateRangesAndResolutions(
+    double ranges[],
+    double minValues[],
+    double resolutions[],
+    int numK, int numT )
 {
   if ( numK < 3 ) {
     cerr << "keeperTileWidths: num keepers must be at least 3, found: "
-	 << numK << endl;
+         << numK << endl;
     return 0;
   }
 
   if ( numT < 2 ) {
     cerr << "keeperTileWidths: num takers must be at least 2, found: "
-	 << numT << endl;
+         << numT << endl;
     return 0;
   }
 

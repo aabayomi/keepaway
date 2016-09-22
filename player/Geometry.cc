@@ -686,7 +686,7 @@ AngDeg VecPosition::getDirection( ) const
     VecPosition; false otherwise */
 bool VecPosition::isInFrontOf( const VecPosition &p )
 {
-  return ( ( m_x > p.getX( ) ) ? true : false );
+  return m_x > p.getX( );
 }
 
 /*! This method determines whether the x-coordinate of the current
@@ -700,7 +700,7 @@ bool VecPosition::isInFrontOf( const VecPosition &p )
     given value; false otherwise */
 bool VecPosition::isInFrontOf( const double &d )
 {
-  return ( ( m_x > d ) ? true : false );
+  return m_x > d;
 }
 
 /*! This method determines whether the current VecPosition is behind a
@@ -715,7 +715,7 @@ bool VecPosition::isInFrontOf( const double &d )
     VecPosition; false otherwise */
 bool VecPosition::isBehindOf( const VecPosition &p )
 {
-  return ( ( m_x < p.getX( ) ) ? true : false );
+  return m_x < p.getX( );
 }
 
 /*! This method determines whether the x-coordinate of the current
@@ -728,7 +728,7 @@ bool VecPosition::isBehindOf( const VecPosition &p )
     value; false otherwise */
 bool VecPosition::isBehindOf( const double &d )
 {
-  return ( ( m_x < d ) ? true : false );
+  return m_x < d;
 }
 
 /*! This method determines whether the current VecPosition is to the
@@ -743,7 +743,7 @@ bool VecPosition::isBehindOf( const double &d )
     given VecPosition; false otherwise */
 bool VecPosition::isLeftOf( const VecPosition &p )
 {
-  return ( ( m_y < p.getY( ) ) ? true : false );
+  return m_y < p.getY( );
 }
 
 /*! This method determines whether the y-coordinate of the current
@@ -757,7 +757,7 @@ bool VecPosition::isLeftOf( const VecPosition &p )
     given value; false otherwise */
 bool VecPosition::isLeftOf( const double &d )
 {
-  return ( ( m_y < d ) ? true : false );
+  return m_y < d;
 }
 
 /*! This method determines whether the current VecPosition is to the
@@ -772,7 +772,7 @@ bool VecPosition::isLeftOf( const double &d )
     given VecPosition; false otherwise */
 bool VecPosition::isRightOf( const VecPosition &p )
 {
-  return ( ( m_y > p.getY( ) ) ? true : false );
+  return m_y > p.getY( );
 }
 
 /*! This method determines whether the y-coordinate of the current
@@ -786,7 +786,7 @@ bool VecPosition::isRightOf( const VecPosition &p )
     given value; false otherwise */
 bool VecPosition::isRightOf( const double &d )
 {
-  return ( ( m_y > d ) ? true : false );
+  return m_y > d;
 }
 
 /*! This method determines whether the current VecPosition is in
@@ -805,7 +805,7 @@ bool VecPosition::isRightOf( const double &d )
     otherwise */
 bool VecPosition::isBetweenX( const VecPosition &p1, const VecPosition &p2 )
 {
-  return ( ( isInFrontOf( p1 ) && isBehindOf( p2 ) ) ? true : false );
+  return isInFrontOf(p1 ) && isBehindOf(p2 );
 }
 
 /*! This method determines whether the x-coordinate of the current
@@ -823,7 +823,7 @@ bool VecPosition::isBetweenX( const VecPosition &p1, const VecPosition &p2 )
     given values; false otherwise */
 bool VecPosition::isBetweenX( const double &d1, const double &d2 )
 {
-  return ( ( isInFrontOf( d1 ) && isBehindOf( d2 ) ) ? true : false );
+  return isInFrontOf(d1 ) && isBehindOf(d2 );
 }
 
 /*! This method determines whether the current VecPosition is in
@@ -842,7 +842,7 @@ bool VecPosition::isBetweenX( const double &d1, const double &d2 )
     otherwise */
 bool VecPosition::isBetweenY( const VecPosition &p1, const VecPosition &p2 )
 {
-  return ( ( isRightOf( p1 ) && isLeftOf( p2 ) ) ? true : false );
+  return isRightOf(p1 ) && isLeftOf(p2 );
 }
 
 /*! This method determines whether the y-coordinate of the current
@@ -860,7 +860,7 @@ bool VecPosition::isBetweenY( const VecPosition &p1, const VecPosition &p2 )
     given values; false otherwise */
 bool VecPosition::isBetweenY( const double &d1, const double &d2 )
 {
-  return ( ( isRightOf( d1 ) && isLeftOf( d2 ) ) ? true : false );
+  return isRightOf(d1 ) && isLeftOf(d2 );
 }
 
 /*! This method normalizes a VecPosition by setting the magnitude of
@@ -1243,7 +1243,7 @@ double Circle::getArea()
 
 /*! This method returns a boolean that indicates whether 'pos' is
     located inside the circle.
- 
+
    \param pos position of which should be checked whether it is
    located in the circle
 

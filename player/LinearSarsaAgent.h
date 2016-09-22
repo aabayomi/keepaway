@@ -31,8 +31,6 @@ protected:
   int hiveMind; // 1: hive mind, 2: full hive mind
   int hiveFile;
 
-  bool wait4Episode; // waiting for new episode
-
   double alpha;
   double gamma;
   double lambda;
@@ -90,6 +88,7 @@ protected:
   size_t mmapSize();
 
   long *loadSharedData(collision_table *colTab, double *weights);
+  virtual void sync();
 
   double reward(double tau, double gamma);
 

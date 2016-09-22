@@ -23,5 +23,3 @@
 	* Greg: Cleaned up code that had been commented out.
 	* Greg: Changed /bin/tcsh to /bin/csh in scripts to improve 
 	portability.
-
-	

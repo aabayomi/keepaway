@@ -1,6 +1,6 @@
 #!/bin/bash
 
-HIVEMODE="0"
+HIVEMODE="2"
 FULLSTATE=""
 MONITOR=""
 SYNCH=""

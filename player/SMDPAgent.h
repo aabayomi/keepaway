@@ -73,7 +73,7 @@ struct AtomicAction {
 
   virtual std::vector<int> parameters() { return {0}; }
   virtual bool terminated(double state[], int num_features) {
-    return state[num_features - 1] > 0.5;
+    return state[num_features - 1] > 0.5; // terminate when tms can kick the ball
   }
 
   virtual SoccerCommand execute(BasicPlayer *player) = 0;
@@ -92,6 +92,7 @@ struct AtomicAction {
 struct Hold: public AtomicAction {
   Hold(): AtomicAction(AAT_Hold) { }
 
+  virtual bool terminated(double state[], int num_features);
   virtual SoccerCommand execute(BasicPlayer *player);
   CLONE(Hold)
 };
@@ -184,11 +185,11 @@ public:
 
   int numActions() const { return (int) jaMap.size(); }
 
-  const JointAction *getJointAction(int id) { return jaMap[id]; }
+  const JointAction *getJointAction(int id) { return jaMap[id].first; }
 
 private:
   std::vector<JointAction*> jointActions[2];
-  std::unordered_map<int, JointAction*> jaMap;
+  std::unordered_map<int, std::pair<JointAction*, std::string>> jaMap;
   int count;
 };
 
@@ -213,6 +214,7 @@ public:
   virtual ~SMDPAgent() {}
 
   // abstract methods to be supplied by implementing class
+  virtual void sync() {}
   virtual int  startEpisode( int current_time, double state[] ) = 0;
   virtual int  step( int current_time, double reward, double state[] ) = 0;
   virtual void endEpisode( int current_time, double reward ) = 0;

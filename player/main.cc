@@ -307,7 +307,6 @@ int main(int argc, char *argv[]) {
 
   int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                        iNumKeepers, iNumTakers);
-  assert(hiveMind == 2);
   if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
     // (l)earned
     // or "learned!" -> Don't explore at all.

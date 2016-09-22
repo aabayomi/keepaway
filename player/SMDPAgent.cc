@@ -6,7 +6,7 @@ using namespace std;
 int AtomicAction::keepers = 3;
 
 std::ostream& operator<<(std::ostream& out, const AtomicActionType value) {
-  static std::map<AtomicActionType, std::string> strings;
+  static std::unordered_map<int, std::string> strings;
 
   if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
@@ -28,6 +28,10 @@ SoccerCommand Hold::execute(BasicPlayer *player) {
   return soc;
 }
 
+bool Hold::terminated(double state[], int num_features) {
+  return true; // always terminate in one cycle
+}
+
 std::vector<int> PassTo::parameters() {
   std::vector<int> ret;
   for (int k = 1; k < keepers; ++k) {
@@ -38,14 +42,22 @@ std::vector<int> PassTo::parameters() {
 
 SoccerCommand PassTo::execute(BasicPlayer *player) {
   SoccerCommand soc;
-  int numK = player->WM->getNumKeepers();
-  ObjectT K[numK];
-  for (int i = 0; i < numK; i++)
-    K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
-  player->WM->sortClosestTo(K, numK, player->WM->getAgentObjectType());
-  VecPosition tmPos = player->WM->getGlobalPosition(K[parameter]);
-  // Normal Passing
-  player->ACT->putCommandInQueue(soc = player->directPass(tmPos, PASS_NORMAL));
+
+  if (player->WM->isBallKickable()) {
+    int numK = player->WM->getNumKeepers();
+    ObjectT K[numK];
+    for (int i = 0; i < numK; i++)
+      K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
+    player->WM->sortClosestTo(K, numK, player->WM->getAgentObjectType());
+    VecPosition tmPos = player->WM->getGlobalPosition(K[parameter]);
+    // Normal Passing
+    player->ACT->putCommandInQueue(soc = player->directPass(tmPos, PASS_NORMAL));
+  }
+  else {
+    player->ACT->putCommandInQueue(
+        soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
+  }
+
   return soc;
 }
 
@@ -58,7 +70,8 @@ SoccerCommand Intercept::execute(BasicPlayer *player) {
 
 SoccerCommand Stay::execute(BasicPlayer *player) {
   SoccerCommand soc;
-  player->ACT->putCommandInQueue(soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
+  player->ACT->putCommandInQueue(
+      soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
   return soc;
 }
 
@@ -68,15 +81,15 @@ std::vector<int> Move::parameters() {
 
 SoccerCommand Move::execute(BasicPlayer *player) {
   SoccerCommand soc;
-  AngDeg ang2ball = (player->WM->getBallPos() - player->WM->getAgentGlobalPosition()).getDirection();
-
   VecPosition target = player->WM->getAgentGlobalPosition() +
-                       VecPosition::getVecPositionFromPolar(1.0, ang2ball + parameter * 90.0);
+      (player->WM->getBallPos() -
+          player->WM->getAgentGlobalPosition()).rotate(parameter * 90.0).normalize();
 
   if (player->WM->getKeepawayRect().isInside(target)) {
     player->ACT->putCommandInQueue(soc = player->moveToPos(target, 30.0));
   } else {
-    player->ACT->putCommandInQueue(soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
+    player->ACT->putCommandInQueue(
+        soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
   }
   return soc;
 }
@@ -95,6 +108,7 @@ JointActionSpace::JointActionSpace()
   for (int k = 1; k < AtomicAction::keepers; ++k) {
     actions[ja.tmControllBall][k].push_back(new Move);
     actions[ja.tmControllBall][k].push_back(new Stay);
+    actions[ja.tmControllBall][k].push_back(new Intercept);
   }
   construct(ja.tmControllBall, 0, actions[ja.tmControllBall], ja);
 
@@ -102,6 +116,7 @@ JointActionSpace::JointActionSpace()
   actions[ja.tmControllBall][0].push_back(new Intercept);
   for (int k = 1; k < AtomicAction::keepers; ++k) {
     actions[ja.tmControllBall][k].push_back(new Stay);
+    actions[ja.tmControllBall][k].push_back(new Move);
   }
   construct(ja.tmControllBall, 0, actions[ja.tmControllBall], ja);
 }
@@ -112,9 +127,22 @@ void JointActionSpace::construct(
   if (k >= AtomicAction::keepers) {
     ja.id = count++;
     jointActions[tmControlBall].push_back(new JointAction(ja));
-    jaMap[ja.id] = jointActions[tmControlBall].back();
+    auto j = jointActions[tmControlBall].back();
+    jaMap[ja.id] = {j, j->name()};
   } else {
     for (auto a : actions[k]) {
+      if (k &&
+          ja.actions[0]->type == AAT_PassTo &&
+          ja.actions[0]->parameter == k &&
+          a->type != AAT_Intercept) continue;
+      if (k &&
+          ja.actions[0]->type == AAT_PassTo &&
+          ja.actions[0]->parameter != k &&
+          a->type == AAT_Intercept) continue;
+      if (k &&
+          ja.actions[0]->type == AAT_Hold &&
+          a->type == AAT_Intercept) continue;
+
       for (auto pa : a->parameters()) {
         ja.actions[k] = a->clone(pa);
         construct(tmControlBall, k + 1, actions, ja);

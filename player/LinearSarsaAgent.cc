@@ -53,10 +53,15 @@ struct SharedData {
   int lastActionTime;
   double minimumTrace;
   int numNonzeroTraces;
-  bool wait4Episode;
 };
 #pragma pack(pop)
 #define VERBOSE_HIVE_MIND false
+
+void LinearSarsaAgent::sync() {
+  FileLock lock(string(weightsFile) + "-sync");
+  Log.log(101, "LinearSarsaAgent::sync");
+  if (hiveMind) loadSharedData(colTab, weights);
+}
 
 /**
  * Assumes collision table header follows weights.
@@ -82,7 +87,6 @@ long *LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
     lastActionTime = shared->lastActionTime;
     minimumTrace = shared->minimumTrace;
     numNonzeroTraces = shared->numNonzeroTraces;
-    wait4Episode = shared->wait4Episode;
   }
 
   if (VERBOSE_HIVE_MIND) {
@@ -97,18 +101,19 @@ long *LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
   return reinterpret_cast<long *>(shared + 1);
 }
 
-LinearSarsaAgent::LinearSarsaAgent(int numFeatures,
-                                   bool bLearn,
-                                   double widths[],
-                                   char *loadWeightsFile,
-                                   char *saveWeightsFile,
-                                   int hiveMind,
-                                   bool jointTiling,
-                                   double gamma) :
-    SMDPAgent(numFeatures),
-    jointTiling(jointTiling),
-    hiveFile(-1),
-    gamma(gamma) {
+LinearSarsaAgent::LinearSarsaAgent(
+    int numFeatures,
+    bool bLearn,
+    double widths[],
+    char *loadWeightsFile,
+    char *saveWeightsFile,
+    int hiveMind,
+    bool jointTiling,
+    double gamma)
+    : SMDPAgent(numFeatures),
+      jointTiling(jointTiling),
+      hiveFile(-1),
+      gamma(gamma) {
   bLearning = bLearn;
 
   for (int i = 0; i < getNumFeatures(); i++) {
@@ -141,7 +146,6 @@ LinearSarsaAgent::LinearSarsaAgent(int numFeatures,
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
 
   numTilings = 0;
-  wait4Episode = true;
   minimumTrace = 0.01;
   numNonzeroTraces = 0;
 
@@ -164,7 +168,6 @@ LinearSarsaAgent::LinearSarsaAgent(int numFeatures,
   numTilings = 0;
   lastAction = -1;
   lastActionTime = UnknownTime;
-  wait4Episode = true;
   minimumTrace = 0.01;
   numNonzeroTraces = 0;
 }
@@ -185,12 +188,11 @@ int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
 
   Log.log(101, "LinearSarsaAgent::startEpisode current_time: %d", current_time);
   if (hiveMind) loadSharedData(colTab, weights);
-  Log.log(101, "LinearSarsaAgent::startEpisode wait4Episode: %d", wait4Episode);
 
-  if (hiveMind > 1 && !wait4Episode
-      && lastActionTime != UnknownTime
-      && lastActionTime < current_time
-      && lastAction > 0) { // already started by another teammate
+  if (hiveMind > 1 &&
+      lastActionTime != UnknownTime &&
+      lastActionTime < current_time &&
+      lastAction > 0) { // already started by another teammate
     double tau = current_time - lastActionTime;
     Log.log(101, "LinearSarsaAgent::startEpisode hived lastActionTime: %d", lastActionTime);
     Log.log(101, "LinearSarsaAgent::startEpisode hived tau: %f", tau);
@@ -229,7 +231,6 @@ int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
   for (int j = 0; j < numTilings; j++)
     setTrace(tiles[lastAction][j], 1.0);
 
-  wait4Episode = false;
   Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
   if (hiveMind) saveWeights(weightsFile);
   return lastAction;
@@ -257,9 +258,12 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
   if (hiveMind > 1 && lastActionTime != UnknownTime && lastActionTime < current_time) {
     tau = current_time - lastActionTime;
     Log.log(101, "LinearSarsaAgent::step hived lastActionTime: %d", lastActionTime);
+    Log.log(101, "LinearSarsaAgent::step hived lastAction: %d %s", lastAction,
+            JointActionSpace::ins().getJointAction(lastAction)->name().c_str());
     Log.log(101, "LinearSarsaAgent::step hived tau: %f", tau);
   }
 
+  assert(lastAction >= 0);
   double delta = reward(tau, gamma) - Q[lastAction]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
 
   loadTiles(state); //s_t
@@ -293,7 +297,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
 
 #if USE_DRAW_LOG
 
-  //char buffer[128];
+    //char buffer[128];
   sprintf( buffer, "reward: %.2f", reward );
   LogDraw.logText( "reward", VecPosition( 25, 30 ),
                    buffer,
@@ -342,17 +346,12 @@ void LinearSarsaAgent::endEpisode(int current_time, double reward_) {
     }
 
 #if USE_DRAW_LOG
-      char buffer[128];
+    char buffer[128];
       sprintf( buffer, "reward: %.2f", reward );
       LogDraw.logText( "reward", VecPosition( 25, 30 ),
                        buffer,
                        1, COLOR_NAVY );
 #endif
-
-//    /* finishing up the last episode */
-//    /* assuming gamma = 1  -- if not,error*/
-//    if ( gamma != 1.0)
-//      cerr << "We're assuming gamma's 1" << endl;
 
     double delta = reward(tau, gamma) - Q[lastAction];
     updateWeights(delta);
@@ -362,11 +361,9 @@ void LinearSarsaAgent::endEpisode(int current_time, double reward_) {
     saveWeights(weightsFile);
   }
 
-  wait4Episode = true;
-  if (hiveMind) saveWeights(weightsFile);
-
   lastAction = -1;
   lastActionTime = UnknownTime;
+  if (hiveMind) saveWeights(weightsFile);
 }
 
 size_t LinearSarsaAgent::mmapSize() {
@@ -519,7 +516,6 @@ bool LinearSarsaAgent::saveWeights(char *filename) {
       shared->lastActionTime = lastActionTime;
       shared->minimumTrace = minimumTrace;
       shared->numNonzeroTraces = numNonzeroTraces;
-      shared->wait4Episode = wait4Episode;
     }
 
     if (VERBOSE_HIVE_MIND) {

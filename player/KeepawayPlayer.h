@@ -69,9 +69,9 @@ public:
 
   SoccerCommand fullTeamKeepers();
 
-  SoccerCommand interpretKeeperAction(int action);
+  SoccerCommand stay();
 
-  SoccerCommand interpretFullTeamKeeperAction(int action, int agentIdx);
+  SoccerCommand execute(int action, int agentIdx);
 
   SoccerCommand taker();
 
