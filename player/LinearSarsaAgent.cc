@@ -51,16 +51,22 @@ struct SharedData {
   int numTilings;
   int lastAction;
   int lastActionTime;
+  ObjectT K[11]; // mapping from index to player obj
   double minimumTrace;
   int numNonzeroTraces;
 };
 #pragma pack(pop)
 #define VERBOSE_HIVE_MIND false
 
-void LinearSarsaAgent::sync() {
+void LinearSarsaAgent::sync(bool load) {
   FileLock lock(string(weightsFile) + "-sync");
-  Log.log(101, "LinearSarsaAgent::sync");
-  if (hiveMind) loadSharedData(colTab, weights);
+  Log.log(101, "LinearSarsaAgent::sync %s", load? "load": "save");
+  if (load) {
+    if (hiveMind) loadSharedData(colTab, weights);
+  }
+  else {
+    if (hiveMind) saveWeights(weightsFile);
+  }
 }
 
 /**
@@ -85,6 +91,7 @@ long *LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
     numTilings = shared->numTilings;
     lastAction = shared->lastAction;
     lastActionTime = shared->lastActionTime;
+    memcpy(K, shared->K, sizeof(shared->K));
     minimumTrace = shared->minimumTrace;
     numNonzeroTraces = shared->numNonzeroTraces;
   }
@@ -514,6 +521,7 @@ bool LinearSarsaAgent::saveWeights(char *filename) {
       shared->numTilings = numTilings;
       shared->lastAction = lastAction;
       shared->lastActionTime = lastActionTime;
+      memcpy(shared->K, K, sizeof(K));
       shared->minimumTrace = minimumTrace;
       shared->numNonzeroTraces = numNonzeroTraces;
     }

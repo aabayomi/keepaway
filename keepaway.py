@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 
 class Any:
     """
@@ -35,9 +36,8 @@ def launch_player(player_type, index, options):
         i = '1', # verbose
         g = float(options.gamma),
         z = int(options.joint_tiling),
-        u = int(options.remove_center_position),
         l = options.log_level, # log level
-        o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index),
+        o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index + 1),
         e = int(getattr(options, player_type + '_learn')),
         j = options.taker_count,
         k = options.keeper_count,
@@ -338,9 +338,6 @@ def parse_options(args = None, **defaults):
         '--joint-tiling', action = 'store_true', default = False,
         help = "Tiling using all state variables (not per state variable).")
     parser.add_option(
-        '--remove-center-position', action = 'store_true', default = False,
-        help = "Remove center position from state representation.")
-    parser.add_option(
         '--gamma', type = 'float', default = 1.0,
         help = "Discount factor gamma.")
 
@@ -384,12 +381,14 @@ def run(options):
     keeper_pids = []
     for i in xrange(options.keeper_count):
         keeper_pids.append(launch_player('keeper', i, options))
+        time.sleep(0.5)
     # Watch for the team to make sure keepers are team 0.
     wait_for_players(options.port, 'keepers')
 
     # Then takers.
     for i in xrange(options.taker_count):
         launch_player('taker', i, options)
+        time.sleep(0.5)
     # Allow dispstart to kick off play.
     wait_for_players(options.port, 'takers', True)
 

@@ -88,7 +88,7 @@ protected:
   size_t mmapSize();
 
   long *loadSharedData(collision_table *colTab, double *weights);
-  virtual void sync();
+  virtual void sync(bool load);
 
   double reward(double tau, double gamma);
 

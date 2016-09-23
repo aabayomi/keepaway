@@ -191,6 +191,7 @@ int WorldModel::keeperStateVars( double state[] )
     state[ j++ ] = nearest_Opp_dist_K[ i ];
   for ( int i = 1; i < numK; i++ )
     state[ j++ ] = nearest_Opp_ang_K[ i ];
+
   state[j++] = tmControllBall ? 1.0 : 0.0;
 
   return j;

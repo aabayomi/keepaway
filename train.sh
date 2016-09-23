@@ -10,8 +10,9 @@ JOINTTILING=""
 REMOVECENTERP=""
 GAMMA="1."
 BUILD="release"
+LEARNING="--keeper-learn --keeper-policy=learned"
 
-while getopts  "b:h:g:lfmsjr" flag; do
+while getopts  "b:h:g:lfmsjrn" flag; do
     case "$flag" in
         h) HIVEMODE="$OPTARG";;
         f) FULLSTATE="--fullstate";; 
@@ -22,6 +23,7 @@ while getopts  "b:h:g:lfmsjr" flag; do
         r) REMOVECENTERP="--remove-center-position";;
         g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`";;
         b) BUILD="$OPTARG";;
+        n) LEARNING="--keeper-policy=learned!";;
     esac
 done
 
@@ -50,7 +52,8 @@ if [ $BUILD != "none" ]; then
 fi
 
 ulimit -c unlimited
-./keepaway.py --keeper-learn --keeper-policy=learn \
+./keepaway.py $LEARNING \
     --keeper-output=$QFILE --keeper-input=$QFILE \
     $HIVE $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
     $JOINTTILING $REMOVECENTERP --gamma=$GAMMA --label=$QFILE
+

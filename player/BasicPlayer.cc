@@ -1482,20 +1482,19 @@ SoccerCommand BasicPlayer::moveToPosAlongLine( VecPosition pos, AngDeg ang,
     \return SoccerCommand to intercept the ball. */
 SoccerCommand BasicPlayer::intercept( bool isGoalie )
 {
-  SoccerCommand soc = (isGoalie)? interceptCloseGoalie():interceptClose(),soc2;
-  VecPosition   pos = WM->getAgentGlobalPosition();
+  SoccerCommand soc = (isGoalie)? interceptCloseGoalie(): interceptClose(), soc2;
 
-  if( soc.commandType != CMD_ILLEGAL
-      && isGoalie )
-  {
-    Log.log( 502, "intercept in two cycles" );
+  if( soc.commandType != CMD_ILLEGAL && isGoalie ) {
+    Log.log( 101, "intercept in two cycles" );
     return soc;
   }
-  Log.log( 608, "start intercept, obj %d", WM->getAgentObjectType()  );
+
+  Log.log( 101, "start intercept, obj %d", WM->getAgentObjectType()  );
   soc2 = WM->predictCommandToInterceptBall( WM->getAgentObjectType(), soc );
+
   if (soc2.isIllegal()) {
+    Log.log( 101, "soc2 illegal");
     return moveToPos(WM->getBallPos(), 30.0);
-//    return turnBodyToPoint( pos + VecPosition( 1.0, 0, POLAR ) );
   }
 
   return soc2;

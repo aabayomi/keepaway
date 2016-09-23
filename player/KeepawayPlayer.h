@@ -69,7 +69,7 @@ public:
 
   SoccerCommand fullTeamKeepers();
 
-  SoccerCommand stay();
+  SoccerCommand stay(std::string error);
 
   SoccerCommand execute(int action, int agentIdx);
 

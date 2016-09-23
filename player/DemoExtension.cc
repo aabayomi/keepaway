@@ -10,6 +10,7 @@ public:
 
   DemoAgent(WorldModel& world, int numFeatures);
 
+  virtual void sync(bool load) {}
   virtual int startEpisode(int current_time, double state[]);
   virtual int step(int current_time, double reward, double state[]);
   virtual void endEpisode(int current_time, double reward);
