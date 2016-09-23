@@ -373,7 +373,7 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
   if (agentIdx >= numK) return stay("agentIdx not valid");
   Log.log(101, "agentIdx %d", agentIdx);
 
-  // K0 makes the decision
+  // K0 makes the decision -- the leading agent
   if (agentIdx == 0) {
     int action;
     if ( SA->lastActionTime == UnknownTime ) {
@@ -391,7 +391,8 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     return execute(action, agentIdx);
   }
   else {
-    while (SA->lastActionTime != WM->getCurrentCycle()) { // wait for K0
+    int loops = 10;
+    while (loops-- && SA->lastActionTime != WM->getCurrentCycle()) { // wait for K0
       Log.log(101, "wait for K0");
       timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
       nanosleep(&sleepTime, NULL);
@@ -419,7 +420,8 @@ SoccerCommand KeepawayPlayer::execute(int action, int agentIdx)
 SoccerCommand KeepawayPlayer::stay(string error)
 {
   SoccerCommand soc;
-  ACT->putCommandInQueue( soc = moveToPos(WM->getAgentGlobalPosition(), 30.0) );
+  ACT->putCommandInQueue( soc = turnBodyToObject( OBJECT_BALL ) );
+  ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
   Log.log(101, "stay (error: %s)", error.c_str());
   return soc;
 }
@@ -447,7 +449,7 @@ SoccerCommand KeepawayPlayer::taker()
 
   // If not first (or second) closest, then mark open opponent
   int numT = WM->getNumTakers();
-  ObjectT T[ numT ];
+  ObjectT T[ 11 ];
   for ( int i = 0; i < numT; i++ )
     T[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
   WM->sortClosestTo( T, numT, OBJECT_BALL );
@@ -469,20 +471,29 @@ SoccerCommand KeepawayPlayer::taker()
 
   if ( SoccerTypes::isTeammate( closest ) &&
        closest != WM->getAgentObjectType() &&
-       dDist < SS->getMaximalKickDist() ) {
+       dDist < WM->getMaximalKickDist(closest)) {
     Log.log(101, "turnBodyToObject( OBJECT_BALL )");
     ACT->putCommandInQueue( soc = turnBodyToObject( OBJECT_BALL ) );
     ACT->putCommandInQueue( alignNeckWithBody() );
     return soc;
   }
 
-  Log.log(101, "intercept/tackle");
-  // Otherwise try to intercept/tackle the ball
+  Log.log(101, "intercept");
   soc = intercept( false );
   if (soc.commandType == CMD_TURN) {
-    if (WM->getProbTackleSucceeds(WM->getAgentObjectType()) > 0.5) {
+    if (WM->getProbTackleSucceeds(WM->getAgentObjectType()) > 0.75) {
       soc = tackle();
       Log.log(101, "tackle");
+    }
+    else {
+      closest= WM->getClosestInSetTo(OBJECT_SET_OPPONENTS,
+                                     OBJECT_BALL, &dDist);
+
+      if (SoccerTypes::isOpponent(closest) &&
+          dDist < WM->getMaximalKickDist(closest)) { // opp can kick
+        soc = moveToPos(WM->getBallPos(), 30.0);
+        Log.log(101, "move to ball");
+      }
     }
   }
 

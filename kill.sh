@@ -8,3 +8,4 @@ for i in `seq 1 100`; do
     killall lt-rcssserver 1>/dev/null 2>&1 &
 done 
 
+wait
