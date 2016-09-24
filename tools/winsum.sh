@@ -19,7 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-WINDOW="1000"
+WINDOW="200"
 ALPHA="0.01"
 COARSE="`expr $WINDOW / 10`"
 OUTPUT=$2

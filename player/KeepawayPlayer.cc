@@ -341,7 +341,7 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     auto aa = ja->actions[0]; // the action of the leading agent
 
     bool passing = SA->lastActionTime == WM->getCurrentCycle() - 1 &&
-        JointActionSpace::ins().getJointAction(SA->lastAction)->actions[0]->type == AAT_PassTo;
+                   JointActionSpace::ins().getJointAction(SA->lastAction)->actions[0]->type == AAT_PassTo;
 
     int idx = 0;
     while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
@@ -357,6 +357,7 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
       Log.log(101, "terminated option %d:%s [%d] passing: %d", SA->lastAction,
               JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(),
               idx, passing);
+      SA->lastAction = -1;
     }
   }
 
@@ -391,21 +392,28 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     return execute(action, agentIdx);
   }
   else {
-    int loops = 10;
-    while (loops-- && SA->lastActionTime != WM->getCurrentCycle()) { // wait for K0
+    int loops = 50;
+    while (loops-- &&
+           (SA->lastAction == -1 ||
+            SA->lastActionTime != WM->getCurrentCycle())) { // wait for K0
       Log.log(101, "wait for K0");
       timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
       nanosleep(&sleepTime, NULL);
       SA->sync(true);
     }
 
-    int idx = 0;
-    while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
-    if (idx >= numK) return stay("idx not valid 2");
+    if (SA->lastActionTime == WM->getCurrentCycle() && SA->lastAction != -1) {
+      int idx = 0;
+      while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
+      if (idx >= numK) return stay("idx not valid 2");
 
-    Log.log(101, "execute option %d:%s [%d]", SA->lastAction,
-            JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(), idx);
-    return execute(SA->lastAction, idx);
+      Log.log(101, "execute option %d:%s [%d]", SA->lastAction,
+              JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(), idx);
+      return execute(SA->lastAction, idx);
+    }
+    else {
+      return stay("wait for K0 timeout");
+    }
   }
 }
 

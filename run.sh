@@ -28,7 +28,7 @@ exec 2>&1
 make clean
 make release
 
-for hive in `seq 1 2`; do
+for hive in `seq 2`; do
     for lookahead in `seq 1 10`; do
         gamma=`echo 1.0 - 1.0 / 2^$lookahead | bc -l`
         ./train.sh -b none -h $hive -s $FULLSTATE -g $gamma &

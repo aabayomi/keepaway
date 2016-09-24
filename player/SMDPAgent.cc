@@ -115,6 +115,7 @@ JointActionSpace::JointActionSpace()
   ja.tmControllBall = false;
   actions[ja.tmControllBall][0].push_back(new Intercept);
   for (int k = 1; k < AtomicAction::keepers; ++k) {
+    actions[ja.tmControllBall][k].push_back(new Move);
     actions[ja.tmControllBall][k].push_back(new Stay);
   }
   construct(ja.tmControllBall, 0, actions[ja.tmControllBall], ja);

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <cmath>
+#include <climits>
 #include <fcntl.h>
 #include <sstream>
 #include <numeric>

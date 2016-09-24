@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unordered_map>
 #include <map>
 #include "SoccerTypes.h"
+#include "Logger.h"
 
 #define MAX_STATE_VARS         128
 #define MAX_ACTIONS            128
@@ -185,7 +186,11 @@ public:
 
   int numActions() const { return (int) jaMap.size(); }
 
-  const JointAction *getJointAction(int id) { return jaMap[id].first; }
+  const JointAction *getJointAction(int id) {
+    if (id >= 0 && id < jaMap.size()) return jaMap[id].first;
+    PRINT_VALUE(id);
+    return 0;
+  }
 
 private:
   std::vector<JointAction*> jointActions[2];
