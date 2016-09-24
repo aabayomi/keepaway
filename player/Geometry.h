@@ -331,14 +331,16 @@ public:
                                   VecPosition pos2                  );
   bool        setPosLeftTop     ( VecPosition pos                   );
   VecPosition getPosLeftTop     (                                   );
+  VecPosition getPosRightTop();
   bool        setPosRightBottom ( VecPosition pos                   );
   VecPosition getPosRightBottom (                                   );
-  
+  VecPosition getPosLeftBottom();
+
   VecPosition getPosCenter      (                                   );
 
   double      getWidth          (                                   );
   double      getLength         (                                   );
-  
+
 };
 
 #endif

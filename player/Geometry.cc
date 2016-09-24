@@ -1707,6 +1707,10 @@ VecPosition Rect::getPosLeftTop(  )
   return m_posLeftTop;
 }
 
+VecPosition Rect::getPosRightTop() {
+  return VecPosition(m_posRightBottom.getX(), m_posLeftTop.getY());
+}
+
 /*! This method sets the right bottom position of the rectangle
     \param pos new right bottom position of the rectangle
     \return true when update was succesfull */
@@ -1721,6 +1725,10 @@ bool Rect::setPosRightBottom( VecPosition pos )
 VecPosition Rect::getPosRightBottom(  )
 {
   return m_posRightBottom;
+}
+
+VecPosition Rect::getPosLeftBottom() {
+  return VecPosition(m_posLeftTop.getX(), m_posRightBottom.getY());
 }
 
 VecPosition Rect::getPosCenter()

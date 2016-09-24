@@ -85,11 +85,44 @@ SoccerCommand Move::execute(BasicPlayer *player) {
       (player->WM->getBallPos() -
           player->WM->getAgentGlobalPosition()).rotate(parameter * 90.0).normalize();
 
-  if (player->WM->getKeepawayRect().isInside(target)) {
+  auto r = player->WM->getKeepawayRect();
+  if (r.isInside(target)) {
+    Log.log(101, "move to target %s", target.str().c_str());
     player->ACT->putCommandInQueue(soc = player->moveToPos(target, 30.0));
   } else {
-    player->ACT->putCommandInQueue(
-        soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
+    double minDist = INT_MAX;
+    VecPosition refinedTarget;
+    pair<VecPosition, VecPosition> pt[4];
+
+    pt[0] = {r.getPosLeftTop(), r.getPosRightTop()};
+    pt[1] = {r.getPosRightTop(), r.getPosRightBottom()};
+    pt[2] = {r.getPosRightBottom(), r.getPosLeftBottom()};
+    pt[3] = {r.getPosLeftBottom(), r.getPosLeftTop()};
+
+    for (int i = 0; i < 4; ++i) {
+      auto edge = Line::makeLineFromTwoPoints(pt[i].first, pt[i].second);
+      auto refined = edge.getPointOnLineClosestTo(target);
+      bool inBetween = edge.isInBetween(refined, pt[i].first, pt[i].second);
+      if (inBetween) {
+        auto d = refined.getDistanceTo(target);
+        if (d < minDist) {
+          minDist = d;
+          refinedTarget = refined;
+        }
+      }
+    }
+
+    if (minDist < INT_MAX) {
+      Log.log(101, "move to refinedTarget %s", refinedTarget.str().c_str());
+      player->ACT->putCommandInQueue(
+          soc = player->moveToPos(refinedTarget, 30.0));
+    }
+    else {
+      Log.log(101, "move to player->WM->getAgentGlobalPosition() %s",
+              player->WM->getAgentGlobalPosition().str().c_str());
+      player->ACT->putCommandInQueue(
+          soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
+    }
   }
   return soc;
 }
