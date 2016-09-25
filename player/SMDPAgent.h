@@ -44,8 +44,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SoccerTypes.h"
 #include "Logger.h"
 
-#define MAX_STATE_VARS         128
-#define MAX_ACTIONS            128
+#define MAX_STATE_VARS         256
+#define MAX_ACTIONS            256
 
 class BasicPlayer;
 
@@ -153,6 +153,13 @@ struct JointAction {
     return *this;
   }
 
+  bool has_intercept(int k) {
+    for (int i = 0; i < k; ++i) {
+      if (actions[i]->type == AAT_Intercept) return true;
+    }
+    return false;
+  }
+
   std::string name() const {
     stringstream ss;
     ss << "{";
@@ -184,17 +191,21 @@ public:
     return sample(tmControllBall);
   }
 
-  int numActions() const { return (int) jaMap.size(); }
+  int numActions() const { return count; }
 
   const JointAction *getJointAction(int id) {
-    if (id >= 0 && id < jaMap.size()) return jaMap[id].first;
-    PRINT_VALUE(id);
+    if (id >= 0 && id < count) return jaMap[id].first;
+    return 0;
+  }
+
+  const char *getJointActionName(int id) {
+    if (id >= 0 && id < count) return jaMap[id].second.c_str();
     return 0;
   }
 
 private:
   std::vector<JointAction*> jointActions[2];
-  std::unordered_map<int, std::pair<JointAction*, std::string>> jaMap;
+  std::pair<JointAction*, std::string> jaMap[MAX_ACTIONS];
   int count;
 };
 
@@ -205,6 +216,7 @@ public:
   int lastAction;
   int lastActionTime;
   ObjectT K[11]; // mapping from index to player obj
+  int hiveMind; // 1: hive mind, 2: full hive mind
 
   int getNumFeatures() const { return m_numFeatures; }
   int getNumActions()  const { return JointActionSpace::ins().numActions();  }
@@ -215,6 +227,7 @@ public:
     m_numFeatures = numFeatures;
     lastAction = -1;
     lastActionTime = UnknownTime;
+    hiveMind = 0;
   }
 
   virtual ~SMDPAgent() {}

@@ -20,14 +20,16 @@ extern Logger Log;
 extern LoggerDraw LogDraw;
 #endif
 
-FileLock::FileLock(const std::string name) {
+FileLock::FileLock(const std::string name, int hiveMind) {
   lockName = name + ".lock";
   timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
 
-  for (;;) {
-    lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
-    if (lock >= 0) break;
-    nanosleep(&sleepTime, NULL);
+  if (hiveMind) {
+    for (;;) {
+      lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
+      if (lock >= 0) break;
+      nanosleep(&sleepTime, NULL);
+    }
   }
 }
 
@@ -60,13 +62,15 @@ struct SharedData {
 #define VERBOSE_HIVE_MIND false
 
 void LinearSarsaAgent::sync(bool load) {
-  FileLock lock(string(weightsFile) + "-sync");
-  Log.log(101, "LinearSarsaAgent::sync %s", load? "load": "save");
+  if (!hiveMind) return;
+
+  FileLock lock(string(weightsFile) + "-sync", hiveMind);
+  Log.log(101, "LinearSarsaAgent::sync %s", load ? "load" : "save");
+
   if (load) {
-    if (hiveMind) loadSharedData(colTab, weights);
-  }
-  else {
-    if (hiveMind) saveWeights(weightsFile);
+    loadSharedData(colTab, weights);
+  } else {
+    saveWeights(weightsFile);
   }
 }
 
@@ -192,7 +196,7 @@ void LinearSarsaAgent::setEpsilon(double epsilon) {
 }
 
 int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
-  FileLock lock(string(weightsFile) + "-startEpisode");
+  FileLock lock(string(weightsFile) + "-startEpisode", hiveMind);
 
   Log.log(101, "LinearSarsaAgent::startEpisode current_time: %d", current_time);
   if (hiveMind) loadSharedData(colTab, weights);
@@ -255,7 +259,7 @@ double LinearSarsaAgent::reward(double tau, double gamma) {
 }
 
 int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
-  FileLock lock(string(weightsFile) + "-step");
+  FileLock lock(string(weightsFile) + "-step", hiveMind);
 
   double tau = reward_; // here reward is actually tau
 
@@ -267,7 +271,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
     tau = current_time - lastActionTime;
     Log.log(101, "LinearSarsaAgent::step hived lastActionTime: %d", lastActionTime);
     Log.log(101, "LinearSarsaAgent::step hived lastAction: %d %s", lastAction,
-            JointActionSpace::ins().getJointAction(lastAction)->name().c_str());
+            JointActionSpace::ins().getJointActionName(lastAction));
     Log.log(101, "LinearSarsaAgent::step hived tau: %f", tau);
   }
 
@@ -336,7 +340,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
 }
 
 void LinearSarsaAgent::endEpisode(int current_time, double reward_) {
-  FileLock lock(string(weightsFile) + "-endEpisode");
+  FileLock lock(string(weightsFile) + "-endEpisode", hiveMind);
 
   double tau = reward_; // here reward is actually tau
 
@@ -435,7 +439,7 @@ bool LinearSarsaAgent::loadWeights(char *filename) {
       // First, check the lock file, so we have only one initializer.
       // Later interaction should be approximately synchronized by having only
       // one active player at a time per team, but we can't assume that here.
-      FileLock lock(filename);
+      FileLock lock(filename, hiveMind);
 
       // First, see if the file is already there.
       bool fileFound = !access(filename, F_OK);

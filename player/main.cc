@@ -314,11 +314,13 @@ int main(int argc, char *argv[]) {
         numFeatures, bLearn, resolutions,
         loadWeightsFile, saveWeightsFile, hiveMind, jointTiling, gamma
     );
+
     // Check for pure exploitation mode.
     size_t length = strlen(strPolicy);
     if (strPolicy[length - 1] == '!') {
       linearSarsaAgent->setEpsilon(0.0);
     }
+
     // Done setting up.
     sa = linearSarsaAgent;
   } else if (!strncmp(strPolicy, "ext=", 4)) {

@@ -320,22 +320,33 @@ SoccerCommand KeepawayPlayer::keeper()
 
 SoccerCommand KeepawayPlayer::fullTeamKeepers()
 {
-  SA->sync(true);
-
-  double state[ MAX_STATE_VARS ];
+  double state[MAX_STATE_VARS];
   int numK = WM->getNumKeepers();
 
-  if ( WM->keeperStateVars( state ) <= 0 ) {
-    return stay("state not valid"); // do nothing
-  }
+  if (WM->keeperStateVars(state) <= 0) return stay("state not valid"); // do nothing
 
   bool tmControllBall = state[SA->getNumFeatures() - 1] > 0.5;
   Log.log(101, "tmControllBall %f:%d", state[SA->getNumFeatures() - 1], tmControllBall);
 
+  ObjectT K[11];
+  for (int i = 0; i < numK; i++)
+    K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
+
+  ObjectT K0 = WM->getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
+  if (!WM->sortClosestTo(K, numK, K0)) return stay("sortClosestTo failed");
+
+  int agentIdx = 0;
+  while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
+  Log.log(101, "agentIdx %d", agentIdx);
+
+  if (agentIdx >= numK) return stay("agentIdx not valid");
+
+  SA->sync(true);
+
   // if running an option
   if (SA->lastAction >= 0) {
     Log.log(101, "SA->lastAction %d:%s", SA->lastAction,
-            JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str());
+            JointActionSpace::ins().getJointActionName(SA->lastAction));
 
     auto ja = JointActionSpace::ins().getJointAction(SA->lastAction);
     auto aa = ja->actions[0]; // the action of the leading agent
@@ -349,49 +360,31 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
 
     if (passing || !aa->terminated(state, SA->getNumFeatures())) {
       Log.log(101, "execute option %d:%s [%d] passing: %d", SA->lastAction,
-              JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(),
-              idx, passing);
+              JointActionSpace::ins().getJointActionName(SA->lastAction), idx, passing);
       return execute(SA->lastAction, idx);
-    }
-    else {
+    } else {
       Log.log(101, "terminated option %d:%s [%d] passing: %d", SA->lastAction,
-              JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(),
-              idx, passing);
+              JointActionSpace::ins().getJointActionName(SA->lastAction), idx, passing);
       SA->lastAction = -1;
     }
   }
 
-  ObjectT K[ 11 ];
-  for ( int i = 0; i < numK; i++ )
-    K[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
-
-  ObjectT K0 = WM->getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
-  if (!WM->sortClosestTo(K, numK, K0))
-    return stay("sortClosestTo failed");
-
-  int agentIdx = 0;
-  while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
-  if (agentIdx >= numK) return stay("agentIdx not valid");
-  Log.log(101, "agentIdx %d", agentIdx);
-
-  // K0 makes the decision -- the leading agent
-  if (agentIdx == 0) {
+  // K0 makes the decision or !hiveMind
+  if (agentIdx == 0 || SA->hiveMind <= 1) {
     int action;
-    if ( SA->lastActionTime == UnknownTime ) {
+    if (SA->lastActionTime == UnknownTime) {
       action = SA->startEpisode(WM->getCurrentCycle(), state);
-    }
-    else { // Call step() on all but first SMDP step
-      action = SA->step( WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime), state );
+    } else { // Call step() on all but first SMDP step
+      action = SA->step(WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime), state);
     }
 
     Log.log(101, "execute option %d:%s [%d]", action,
-            JointActionSpace::ins().getJointAction(action)->name().c_str(), agentIdx);
+            JointActionSpace::ins().getJointActionName(action), agentIdx);
 
     memcpy(SA->K, K, sizeof(K)); // save K[]
     SA->sync(false);
     return execute(action, agentIdx);
-  }
-  else {
+  } else {
     int loops = 50;
     while (loops-- &&
            (SA->lastAction == -1 ||
@@ -408,10 +401,9 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
       if (idx >= numK) return stay("idx not valid 2");
 
       Log.log(101, "execute option %d:%s [%d]", SA->lastAction,
-              JointActionSpace::ins().getJointAction(SA->lastAction)->name().c_str(), idx);
+              JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
       return execute(SA->lastAction, idx);
-    }
-    else {
+    } else {
       return stay("wait for K0 timeout");
     }
   }
@@ -462,8 +454,8 @@ SoccerCommand KeepawayPlayer::taker()
     T[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
   WM->sortClosestTo( T, numT, OBJECT_BALL );
 
-  if (numT > 1 && T[0] != WM->getAgentObjectType()
-    /*T[ 1 ] != WM->getAgentObjectType()*/ ) {
+  if (numT > 1 && T[0] != WM->getAgentObjectType() &&
+      T[ 1 ] != WM->getAgentObjectType() ) {
     ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS,
                                               OBJECT_BALL );
     Log.log(101, "markMostOpenOpponent( withBall )");
@@ -486,23 +478,17 @@ SoccerCommand KeepawayPlayer::taker()
     return soc;
   }
 
-  Log.log(101, "intercept");
-  soc = intercept( false );
-  if (soc.commandType == CMD_TURN) {
-    if (WM->getProbTackleSucceeds(WM->getAgentObjectType()) > 0.75) {
-      soc = tackle();
-      Log.log(101, "tackle");
-    }
-    else {
-      closest= WM->getClosestInSetTo(OBJECT_SET_OPPONENTS,
-                                     OBJECT_BALL, &dDist);
+  closest = WM->getClosestInSetTo(OBJECT_SET_OPPONENTS,
+                                  OBJECT_BALL, &dDist);
 
-      if (SoccerTypes::isOpponent(closest) &&
-          dDist < WM->getMaximalKickDist(closest)) { // opp can kick
-        soc = moveToPos(WM->getBallPos(), 30.0);
-        Log.log(101, "move to ball");
-      }
-    }
+  if (SoccerTypes::isOpponent(closest) &&
+      dDist < WM->getMaximalKickDist(closest)) { // opp can kick
+    Log.log(101, "move to ball");
+    soc = moveToPos(WM->getBallPos(), 30.0);
+  }
+  else {
+    Log.log(101, "intercept");
+    soc = intercept( false );
   }
 
   ACT->putCommandInQueue( soc );

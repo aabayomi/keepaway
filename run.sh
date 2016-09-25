@@ -1,47 +1,59 @@
-#!/bin/bash - 
-#===============================================================================
-#
-#          FILE: run.sh
-# 
-#         USAGE: ./run.sh 
-# 
-#   DESCRIPTION: 
-# 
-#       OPTIONS: ---
-#  REQUIREMENTS: ---
-#          BUGS: ---
-#         NOTES: ---
-#        AUTHOR: Aijun Bai (), 
-#  ORGANIZATION: 
-#       CREATED: 08/01/2016 18:59
-#      REVISION:  ---
-#===============================================================================
+#!/bin/bash
 
-set -o nounset                              # Treat unset variables as an error
+HIVEMODE="0"
+FULLSTATE=""
+MONITOR=""
+SYNCH=""
+LOG=""
+LOGLEVEL="101"
+JOINTTILING=""
+GAMMA="1."
+BUILD="release"
+LEARNING="--keeper-learn --keeper-policy=learned"
+QFILE2=""
 
-SLEEP="10"
-FULLSTATE="-f"
-
-exec > console.log                                                              
-exec 2>&1
-
-make clean
-make release
-
-for hive in `seq 2`; do
-    for lookahead in `seq 1 10`; do
-        gamma=`echo 1.0 - 1.0 / 2^$lookahead | bc -l`
-        ./train.sh -b none -h $hive -s $FULLSTATE -g $gamma &
-        sleep $SLEEP
-    done
-
-    ./train.sh -b none -h $hive -s $FULLSTATE &
+while getopts  "b:h:g:q:lfmsjn" flag; do
+    case "$flag" in
+        h) HIVEMODE="$OPTARG";;
+        f) FULLSTATE="--fullstate";; 
+        m) MONITOR="--monitor";;
+        s) SYNCH="--synch-mode";;
+        l) LOG="--log-dir=logs --log-game --log-text --log-level $LOGLEVEL";;
+        j) JOINTTILING="--joint-tiling";;
+        g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`";;
+        b) BUILD="$OPTARG";;
+        n) LEARNING="--keeper-policy=learned!";;
+        q) QFILE2="$OPTARG";;
+    esac
 done
 
-for policy in random hand hold; do
-    sleep $SLEEP
-    ./evaluate.sh -b 0 -p $policy -s $FULLSTATE &
-done
+HIVE="--keeper-hive $HIVEMODE"
+QFILE="Q_H${HIVEMODE}"
+PORT="--port=`shuf -i 2000-65000 -n 1`"
 
-wait
+if [ ! -z $GAMMA ]; then
+    QFILE="${QFILE}_G${GAMMA}"
+fi
+
+if [ ! -z $FULLSTATE ]; then
+    QFILE="${QFILE}_fs"
+fi
+
+if [ ! -z $JOINTTILING ]; then
+    QFILE="${QFILE}_jt"
+fi
+
+if [ ! -z $QFILE2 ]; then
+    QFILE="$QFILE2"
+fi
+
+if [ $BUILD != "none" ]; then
+    make $BUILD
+fi
+
+ulimit -c unlimited
+./keepaway.py $LEARNING \
+    --keeper-output=$QFILE --keeper-input=$QFILE \
+    $HIVE $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
+    $JOINTTILING --gamma=$GAMMA --label=`basename $QFILE`
 

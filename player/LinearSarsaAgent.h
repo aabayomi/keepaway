@@ -16,7 +16,7 @@ private:
   std::string lockName;
 
 public:
-  FileLock(const std::string name);
+  FileLock(const std::string name, int hiveMind);
   ~FileLock();
 };
 
@@ -28,7 +28,6 @@ protected:
   bool jointTiling;
 
   /// Hive mind indicator and file descriptor.
-  int hiveMind; // 1: hive mind, 2: full hive mind
   int hiveFile;
 
   double alpha;

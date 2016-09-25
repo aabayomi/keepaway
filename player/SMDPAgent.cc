@@ -1,3 +1,4 @@
+#include <climits>
 #include "SMDPAgent.h"
 #include "BasicPlayer.h"
 
@@ -25,10 +26,13 @@ std::ostream& operator<<(std::ostream& out, const AtomicActionType value) {
 SoccerCommand Hold::execute(BasicPlayer *player) {
   SoccerCommand soc;
   player->ACT->putCommandInQueue(soc = player->holdBall());
+  player->ACT->putCommandInQueue( player->turnNeckToObject( OBJECT_BALL, soc ) );
   return soc;
 }
 
 bool Hold::terminated(double state[], int num_features) {
+  (void) state;
+  (void) num_features;
   return true; // always terminate in one cycle
 }
 
@@ -54,10 +58,10 @@ SoccerCommand PassTo::execute(BasicPlayer *player) {
     player->ACT->putCommandInQueue(soc = player->directPass(tmPos, PASS_NORMAL));
   }
   else {
-    player->ACT->putCommandInQueue(
-        soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
+    player->ACT->putCommandInQueue( soc = player->turnBodyToObject( OBJECT_BALL ) );
   }
 
+  player->ACT->putCommandInQueue( player->turnNeckToObject( OBJECT_BALL, soc ) );
   return soc;
 }
 
@@ -70,8 +74,8 @@ SoccerCommand Intercept::execute(BasicPlayer *player) {
 
 SoccerCommand Stay::execute(BasicPlayer *player) {
   SoccerCommand soc;
-  player->ACT->putCommandInQueue(
-      soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
+  player->ACT->putCommandInQueue( soc = player->turnBodyToObject( OBJECT_BALL ) );
+  player->ACT->putCommandInQueue( player->turnNeckToObject( OBJECT_BALL, soc ) );
   return soc;
 }
 
@@ -114,16 +118,15 @@ SoccerCommand Move::execute(BasicPlayer *player) {
 
     if (minDist < INT_MAX) {
       Log.log(101, "move to refinedTarget %s", refinedTarget.str().c_str());
-      player->ACT->putCommandInQueue(
-          soc = player->moveToPos(refinedTarget, 30.0));
+      player->ACT->putCommandInQueue(soc = player->moveToPos(refinedTarget, 30.0));
     }
     else {
-      Log.log(101, "move to player->WM->getAgentGlobalPosition() %s",
-              player->WM->getAgentGlobalPosition().str().c_str());
-      player->ACT->putCommandInQueue(
-          soc = player->moveToPos(player->WM->getAgentGlobalPosition(), 30.0));
+      Log.log(101, "player->turnBodyToObject( OBJECT_BALL )");
+      player->ACT->putCommandInQueue( soc = player->turnBodyToObject( OBJECT_BALL ) );
     }
   }
+
+  player->ACT->putCommandInQueue( player->turnNeckToObject( OBJECT_BALL, soc ) );
   return soc;
 }
 
@@ -139,17 +142,17 @@ JointActionSpace::JointActionSpace()
   actions[ja.tmControllBall][0].push_back(new Hold);
   actions[ja.tmControllBall][0].push_back(new PassTo);
   for (int k = 1; k < AtomicAction::keepers; ++k) {
-    actions[ja.tmControllBall][k].push_back(new Move);
-    actions[ja.tmControllBall][k].push_back(new Stay);
     actions[ja.tmControllBall][k].push_back(new Intercept);
+    actions[ja.tmControllBall][k].push_back(new Stay);
+    actions[ja.tmControllBall][k].push_back(new Move);
   }
   construct(ja.tmControllBall, 0, actions[ja.tmControllBall], ja);
 
   ja.tmControllBall = false;
-  actions[ja.tmControllBall][0].push_back(new Intercept);
-  for (int k = 1; k < AtomicAction::keepers; ++k) {
-    actions[ja.tmControllBall][k].push_back(new Move);
+  for (int k = 0; k < AtomicAction::keepers; ++k) {
+    actions[ja.tmControllBall][k].push_back(new Intercept);
     actions[ja.tmControllBall][k].push_back(new Stay);
+    actions[ja.tmControllBall][k].push_back(new Move);
   }
   construct(ja.tmControllBall, 0, actions[ja.tmControllBall], ja);
 }
@@ -164,17 +167,24 @@ void JointActionSpace::construct(
     jaMap[ja.id] = {j, j->name()};
   } else {
     for (auto a : actions[k]) {
-      if (k &&
-          ja.actions[0]->type == AAT_PassTo &&
-          ja.actions[0]->parameter == k &&
-          a->type != AAT_Intercept) continue;
-      if (k &&
-          ja.actions[0]->type == AAT_PassTo &&
-          ja.actions[0]->parameter != k &&
-          a->type == AAT_Intercept) continue;
-      if (k &&
-          ja.actions[0]->type == AAT_Hold &&
-          a->type == AAT_Intercept) continue;
+      if (tmControlBall) {
+        if (k && ja.actions[0]->type == AAT_PassTo &&
+            ja.actions[0]->parameter == k &&
+            a->type != AAT_Intercept)
+          continue;
+        if (k && ja.actions[0]->type == AAT_PassTo &&
+            ja.actions[0]->parameter != k &&
+            a->type == AAT_Intercept)
+          continue;
+        if (k && ja.actions[0]->type == AAT_Hold &&
+            a->type == AAT_Intercept)
+          continue;
+      }
+      else {
+        if (k && a->type == AAT_Intercept &&
+            ja.has_intercept(k))
+          continue;
+      }
 
       for (auto pa : a->parameters()) {
         ja.actions[k] = a->clone(pa);
