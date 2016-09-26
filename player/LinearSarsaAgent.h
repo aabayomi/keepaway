@@ -6,9 +6,9 @@
 #include "SMDPAgent.h"
 #include "tiles2.h"
 
-#define RL_MEMORY_SIZE (2 << 20)
-#define RL_MAX_NONZERO_TRACES (2 << 17)
-#define RL_MAX_NUM_TILINGS (2 << 14)
+#define RL_MEMORY_SIZE (2 << 22)
+#define RL_MAX_NONZERO_TRACES (2 << 18)
+#define RL_MAX_NUM_TILINGS (2 << 15)
 
 class FileLock {
 private:

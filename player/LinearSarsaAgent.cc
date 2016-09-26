@@ -7,7 +7,6 @@
 #include <sstream>
 #include <numeric>
 #include "LinearSarsaAgent.h"
-#include "Logger.h"
 #include "LoggerDraw.h"
 #include <cassert>
 
