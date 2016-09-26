@@ -149,9 +149,10 @@ JointActionSpace::JointActionSpace()
   construct(ja.tmControllBall, 0, actions[ja.tmControllBall], ja);
 
   ja.tmControllBall = false;
-  for (int k = 0; k < AtomicAction::keepers; ++k) {
-    actions[ja.tmControllBall][k].push_back(new Intercept);
+  actions[ja.tmControllBall][0].push_back(new Intercept);
+  for (int k = 1; k < AtomicAction::keepers; ++k) {
     actions[ja.tmControllBall][k].push_back(new Stay);
+    actions[ja.tmControllBall][k].push_back(new Move);
   }
   construct(ja.tmControllBall, 0, actions[ja.tmControllBall], ja);
 }
@@ -177,9 +178,6 @@ void JointActionSpace::construct(
           continue;
         if (k && ja.actions[0]->type == AAT_Hold &&
             a->type == AAT_Intercept)
-          continue;
-        if (k && ja.actions[0]->type != AAT_Hold &&
-            a->type == AAT_Move)
           continue;
       }
       else {
