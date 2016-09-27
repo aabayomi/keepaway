@@ -16,4 +16,5 @@ clean:
 	cd tools; make clean
 
 cleanall: clean
+	rm -fr Debug Release
 	rm -fr hive*-Q* logs/* *.lock core core.* vgcore.* *.lock Q_H* console.log nohup.out

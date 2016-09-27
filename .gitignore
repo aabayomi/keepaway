@@ -13,11 +13,9 @@ tools/*.out
 tools/*.hist
 tools/*.eps
 console.log
-hive*-Q*
 *~
 tools/*.gnuplot
 breakpoints
 build/
 Debug/
 Release/
-Q_*
