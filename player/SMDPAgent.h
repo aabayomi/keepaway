@@ -43,6 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include "SoccerTypes.h"
 #include "Logger.h"
+#include "BasicPlayer.h"
 
 #define MAX_STATE_VARS         256
 #define MAX_ACTIONS            256
@@ -73,8 +74,13 @@ struct AtomicAction {
   }
 
   virtual std::vector<int> parameters() { return {0}; }
-  virtual bool terminated(double state[], int num_features) {
-    return state[num_features - 1] > 0.5; // terminate when tms can kick the ball
+  virtual bool terminated(BasicPlayer *player) {
+    double dDist = INT_MAX;
+    ObjectT closest = player->WM->getClosestInSetTo( OBJECT_SET_TEAMMATES,
+                                                     OBJECT_BALL, &dDist );
+
+    return SoccerTypes::isTeammate(closest ) &&
+           dDist < player->WM->getMaximalKickDist(closest);
   }
 
   virtual SoccerCommand execute(BasicPlayer *player) = 0;
@@ -93,7 +99,7 @@ struct AtomicAction {
 struct Hold: public AtomicAction {
   Hold(): AtomicAction(AAT_Hold) { }
 
-  virtual bool terminated(double state[], int num_features);
+  virtual bool terminated(BasicPlayer *player);
   virtual SoccerCommand execute(BasicPlayer *player);
   CLONE(Hold)
 };

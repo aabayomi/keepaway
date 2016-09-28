@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "BasicPlayer.h"
+#include <limits>
 
 /********************** LOW-LEVEL SKILLS *************************************/
 
@@ -757,9 +758,10 @@ SoccerCommand BasicPlayer::interceptClose( )
     dDesBody = (WM->getPosOpponentGoal()-posAgent).getDirection();
 
   // get the distance to the closest opponent
-  double dDistOpp;
+  double dDistOpp = std::numeric_limits<double>::max();
   ObjectT objOpp = WM->getClosestInSetTo( OBJECT_SET_OPPONENTS,
-                                          WM->getAgentObjectType(), &dDistOpp, PS->getPlayerConfThr() );
+                                          WM->getAgentObjectType(),
+                                          &dDistOpp, PS->getPlayerConfThr() );
   angTurn =VecPosition::normalizeAngle(dDesBody-WM->getAgentGlobalBodyAngle());
 
   // check the distance to the ball when we do not dash (e.g., and only turn)
@@ -1161,7 +1163,7 @@ SoccerCommand BasicPlayer::kickTo( VecPosition posTarget, double dEndSpeed )
            SS->getKickableMargin() );
 
 
-  double   dDistOpp;
+  double   dDistOpp = std::numeric_limits<double>::max();
   ObjectT  objOpp     = WM->getClosestInSetTo( OBJECT_SET_OPPONENTS,
                                                OBJECT_BALL, &dDistOpp );
 
@@ -1309,7 +1311,7 @@ SoccerCommand BasicPlayer::turnWithBallTo( AngDeg ang, AngDeg, double )
   VecPosition   posAgent= WM->getAgentGlobalPosition();
   VecPosition   posBall = WM->getBallPos();
   AngDeg        angBody = WM->getAgentGlobalBodyAngle();
-  double        dDist;
+  double        dDist = std::numeric_limits<double>::max();
   ObjectT       objOpp  = WM->getClosestInSetTo( OBJECT_SET_OPPONENTS,
                                                  WM->getAgentObjectType(), &dDist );
   VecPosition   posOpp  = WM->getGlobalPosition( objOpp );
@@ -2247,7 +2249,7 @@ SoccerCommand BasicPlayer::interceptScoringAttempt( )
     hardest for the opponent to tackle. */
 SoccerCommand BasicPlayer::holdBall( double dDistThr )
 {
-  double        dDist;
+  double        dDist = std::numeric_limits<double>::max();
   VecPosition   posAgent = WM->getAgentGlobalPosition();
   ObjectT       objOpp   = WM->getClosestInSetTo( OBJECT_SET_OPPONENTS,
                                                   OBJECT_BALL, &dDist );

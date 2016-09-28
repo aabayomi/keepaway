@@ -1,4 +1,4 @@
-#include <climits>
+#include <limits>
 #include "SMDPAgent.h"
 #include "BasicPlayer.h"
 
@@ -30,9 +30,8 @@ SoccerCommand Hold::execute(BasicPlayer *player) {
   return soc;
 }
 
-bool Hold::terminated(double state[], int num_features) {
-  (void) state;
-  (void) num_features;
+bool Hold::terminated(BasicPlayer *player) {
+  (void) player;
   return true; // always terminate in one cycle
 }
 
@@ -78,13 +77,27 @@ SoccerCommand PassTo::execute(BasicPlayer *player) {
 
 SoccerCommand Intercept::execute(BasicPlayer *player) {
   SoccerCommand soc;
-  player->ACT->putCommandInQueue(soc = player->intercept(false));
-  player->ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
-  return soc;
+
+  // If teammate has it, don't mess with it
+  double dDist = std::numeric_limits<double>::max();
+  ObjectT closest = player->WM->getClosestInSetTo( OBJECT_SET_TEAMMATES,
+                                                   OBJECT_BALL, &dDist );
+
+  if ( SoccerTypes::isTeammate( closest ) &&
+       closest != player->WM->getAgentObjectType() &&
+       dDist < player->WM->getMaximalKickDist(closest)) {
+    return Stay().execute(player);
+  }
+  else {
+    player->ACT->putCommandInQueue(soc = player->intercept(false));
+    player->ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
+    return soc;
+  }
 }
 
 SoccerCommand Stay::execute(BasicPlayer *player) {
   SoccerCommand soc;
+  Log.log(101, "turnBodyToObject( OBJECT_BALL )");
   player->ACT->putCommandInQueue( soc = player->turnBodyToObject( OBJECT_BALL ) );
   player->ACT->putCommandInQueue( player->turnNeckToObject( OBJECT_BALL, soc ) );
   return soc;
@@ -97,15 +110,15 @@ std::vector<int> Move::parameters() {
 SoccerCommand Move::execute(BasicPlayer *player) {
   SoccerCommand soc;
   VecPosition target = player->WM->getAgentGlobalPosition() +
-      (player->WM->getBallPos() -
-          player->WM->getAgentGlobalPosition()).rotate(parameter * 90.0).normalize();
+                       (player->WM->getBallPos() -
+                        player->WM->getAgentGlobalPosition()).rotate(parameter * 90.0).normalize();
 
   auto r = player->WM->getKeepawayRect();
   if (r.isInside(target)) {
     Log.log(101, "move to target %s", target.str().c_str());
     player->ACT->putCommandInQueue(soc = player->moveToPos(target, 30.0));
   } else {
-    double minDist = INT_MAX;
+    double minDist = std::numeric_limits<double>::max();
     VecPosition refinedTarget;
     pair<VecPosition, VecPosition> pt[4];
 
@@ -127,7 +140,7 @@ SoccerCommand Move::execute(BasicPlayer *player) {
       }
     }
 
-    if (minDist < INT_MAX) {
+    if (minDist < std::numeric_limits<double>::max()) {
       Log.log(101, "move to refinedTarget %s", refinedTarget.str().c_str());
       player->ACT->putCommandInQueue(soc = player->moveToPos(refinedTarget, 30.0));
     }

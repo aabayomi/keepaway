@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KeepawayPlayer.h"
 #include "SayMsgEncoder.h"
 #include <cstring>
+#include <limits>
 
 #if USE_DRAW_LOG
 extern LoggerDraw LogDraw;
@@ -358,7 +359,7 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
     if (idx >= numK) return stay("idx not valid");
 
-    if (passing || !aa->terminated(state, SA->getNumFeatures())) {
+    if (passing || !aa->terminated(this)) {
       Log.log(101, "execute option %d:%s [%d] passing: %d", SA->lastAction,
               JointActionSpace::ins().getJointActionName(SA->lastAction), idx, passing);
       return execute(SA->lastAction, idx);
@@ -465,7 +466,7 @@ SoccerCommand KeepawayPlayer::taker()
   }
 
   // If teammate has it, don't mess with it
-  double dDist;
+  double dDist = std::numeric_limits<double>::max();
   ObjectT closest = WM->getClosestInSetTo( OBJECT_SET_PLAYERS,
                                            OBJECT_BALL, &dDist );
 
