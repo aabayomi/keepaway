@@ -74,15 +74,7 @@ struct AtomicAction {
   }
 
   virtual std::vector<int> parameters() { return {0}; }
-  virtual bool terminated(BasicPlayer *player) {
-    double dDist = INT_MAX;
-    ObjectT closest = player->WM->getClosestInSetTo( OBJECT_SET_TEAMMATES,
-                                                     OBJECT_BALL, &dDist );
-
-    return SoccerTypes::isTeammate(closest ) &&
-           dDist < player->WM->getMaximalKickDist(closest);
-  }
-
+  virtual bool terminated(BasicPlayer *player);
   virtual SoccerCommand execute(BasicPlayer *player) = 0;
   virtual AtomicAction *clone(int parameter) = 0;
 

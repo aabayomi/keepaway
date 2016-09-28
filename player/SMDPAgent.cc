@@ -23,6 +23,15 @@ std::ostream& operator<<(std::ostream& out, const AtomicActionType value) {
   return out << strings[value];
 }
 
+bool AtomicAction::terminated(BasicPlayer *player) {
+  double dDist = numeric_limits<double>::max();
+  ObjectT closest = player->WM->getClosestInSetTo( OBJECT_SET_TEAMMATES,
+                                                   OBJECT_BALL, &dDist );
+
+  return SoccerTypes::isTeammate(closest ) &&
+         dDist < player->WM->getMaximalKickDist(closest);
+}
+
 SoccerCommand Hold::execute(BasicPlayer *player) {
   SoccerCommand soc;
   player->ACT->putCommandInQueue(soc = player->holdBall());
