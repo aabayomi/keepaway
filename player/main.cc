@@ -304,6 +304,8 @@ int main(int argc, char *argv[]) {
 
   AtomicAction::keepers = iNumKeepers;
   PRINT_VALUE(JointActionSpace::ins().numActions());
+  PRINT_VALUE(JointActionSpace::ins().to_string());
+  Log.log(101, "Joint Action Space: \n%s\n", JointActionSpace::ins().to_string().c_str());
 
   int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                        iNumKeepers, iNumTakers);

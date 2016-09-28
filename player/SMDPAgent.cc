@@ -36,12 +36,18 @@ bool Hold::terminated(double state[], int num_features) {
   return true; // always terminate in one cycle
 }
 
-std::vector<int> PassTo::parameters() {
-  std::vector<int> ret;
-  for (int k = 1; k < keepers; ++k) {
-    ret.push_back(k);
+vector<int> PassTo::parameters() {
+  vector<int> ret;
+  for (int i = 0; i < (keepers - 1) * 5; ++i) {
+    ret.push_back(i);
   }
   return ret;
+}
+
+string PassTo::name() const {
+  stringstream ss;
+  ss << type << "_" << k() << "-" << (d() == 4? "Stay": "Move_" + to_string(d()));
+  return ss.str();
 }
 
 SoccerCommand PassTo::execute(BasicPlayer *player) {
@@ -53,12 +59,17 @@ SoccerCommand PassTo::execute(BasicPlayer *player) {
     for (int i = 0; i < numK; i++)
       K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
     player->WM->sortClosestTo(K, numK, player->WM->getAgentObjectType());
-    VecPosition tmPos = player->WM->getGlobalPosition(K[parameter]);
+    VecPosition tmPos = player->WM->getGlobalPosition(K[k()]);
     // Normal Passing
     player->ACT->putCommandInQueue(soc = player->directPass(tmPos, PASS_NORMAL));
   }
   else {
-    player->ACT->putCommandInQueue( soc = player->turnBodyToObject( OBJECT_BALL ) );
+    if (d() == 4) {
+      return Stay().execute(player);
+    }
+    else {
+      return Move(d()).execute(player);
+    }
   }
 
   player->ACT->putCommandInQueue( player->turnNeckToObject( OBJECT_BALL, soc ) );
@@ -122,7 +133,7 @@ SoccerCommand Move::execute(BasicPlayer *player) {
     }
     else {
       Log.log(101, "player->turnBodyToObject( OBJECT_BALL )");
-      player->ACT->putCommandInQueue( soc = player->turnBodyToObject( OBJECT_BALL ) );
+      return Stay().execute(player);
     }
   }
 
@@ -169,11 +180,11 @@ void JointActionSpace::construct(
     for (auto a : actions[k]) {
       if (tmControlBall) {
         if (k && ja.actions[0]->type == AAT_PassTo &&
-            ja.actions[0]->parameter == k &&
+            ja.actions[0]->parameter / 5 + 1 == k &&
             a->type != AAT_Intercept)
           continue;
         if (k && ja.actions[0]->type == AAT_PassTo &&
-            ja.actions[0]->parameter != k &&
+            ja.actions[0]->parameter / 5 + 1 != k &&
             a->type == AAT_Intercept)
           continue;
         if (k && ja.actions[0]->type == AAT_Hold &&

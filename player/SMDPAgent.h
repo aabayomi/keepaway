@@ -66,7 +66,7 @@ struct AtomicAction {
 
   AtomicAction(AtomicActionType t = AAT_None, int p = 0): type(t), parameter(p) { }
 
-  std::string name() const {
+  virtual std::string name() const {
     stringstream ss;
     ss << type << "_" << parameter;
     return ss.str();
@@ -103,6 +103,11 @@ struct PassTo: public AtomicAction {
 
   virtual std::vector<int> parameters();
   virtual SoccerCommand execute(BasicPlayer *player);
+  virtual std::string name() const;
+
+  int k() const { return parameter / 5 + 1; }
+  int d() const { return parameter % 5; }
+
   CLONE(PassTo)
 };
 
@@ -121,7 +126,7 @@ struct Stay: public AtomicAction {
 };
 
 struct Move: public AtomicAction {
-  Move(): AtomicAction(AAT_Move) { }
+  Move(int p = 0): AtomicAction(AAT_Move, p) { }
 
   virtual std::vector<int> parameters();
 
@@ -192,6 +197,14 @@ public:
   }
 
   int numActions() const { return count; }
+
+  std::string to_string() {
+    std::stringstream ss;
+    for (int i = 0; i < count; ++i) {
+      ss << "id: " << i << " name: " << getJointActionName(i) << std::endl;
+    }
+    return ss.str();
+  }
 
   const JointAction *getJointAction(int id) {
     if (id >= 0 && id < count) return jaMap[id].first;

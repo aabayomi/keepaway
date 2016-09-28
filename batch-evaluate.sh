@@ -27,7 +27,7 @@ make release
 exec 1>console.log 2>&1                                                              
 
 for q in "$@"; do
-    ./evaluate.sh $q &
+    ./evaluate.sh -b none -q $q &
     sleep $SLEEP
 done
 

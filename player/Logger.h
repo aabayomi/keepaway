@@ -71,8 +71,8 @@ using namespace std;
   } while(0)
 
 
-#define MAX_LOG_LINE 3072 /*!< maximum size of a log message */
-#define MAX_HEADER   128  /*!< maximum size of the header    */
+#define MAX_LOG_LINE 8192 /*!< maximum size of a log message */
+#define MAX_HEADER   512  /*!< maximum size of the header    */
 
 /*****************************************************************************/
 /*********************** CLASS TIMING ****************************************/
