@@ -324,23 +324,29 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
   double state[MAX_STATE_VARS];
   int numK = WM->getNumKeepers();
 
-  if (WM->keeperStateVars(state) <= 0) return stay("state not valid"); // do nothing
+  int features = WM->keeperStateVars(state);
+  assert(features == 0 || features == SA->getNumFeatures());
+  if (features != SA->getNumFeatures()) return stay("features != SA->getNumFeatures()"); // do nothing
 
   bool tmControllBall = state[SA->getNumFeatures() - 1] > 0.5;
   Log.log(101, "tmControllBall %f:%d", state[SA->getNumFeatures() - 1], tmControllBall);
 
   ObjectT K[11];
+  memset(K, 0, sizeof(K));
+
   for (int i = 0; i < numK; i++)
     K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
 
   ObjectT K0 = WM->getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
-  if (!WM->sortClosestTo(K, numK, K0)) return stay("sortClosestTo failed");
+  if (!WM->sortClosestTo(K, numK, K0)) return stay("!WM->sortClosestTo(K, numK, K0)");
+  if (K0 != K[0]) return stay("K0 != K[0]");
 
   int agentIdx = 0;
   while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
+  assert(agentIdx < numK);
   Log.log(101, "agentIdx %d", agentIdx);
 
-  if (agentIdx >= numK) return stay("agentIdx not valid");
+  if (agentIdx >= numK) return stay("agentIdx >= numK");
 
   SA->sync(true);
 
@@ -357,7 +363,8 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
 
     int idx = 0;
     while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
-    if (idx >= numK) return stay("idx not valid");
+    assert(idx < numK);
+    if (idx >= numK) return stay("idx >= numK");
 
     if (passing || !aa->terminated(this)) {
       Log.log(101, "execute option %d:%s [%d] passing: %d", SA->lastAction,
@@ -386,7 +393,7 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     SA->sync(false);
     return execute(action, agentIdx);
   } else {
-    int loops = 50;
+    int loops = 75;
     while (loops-- &&
            (SA->lastAction == -1 ||
             SA->lastActionTime != WM->getCurrentCycle())) { // wait for K0
@@ -399,7 +406,8 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     if (SA->lastActionTime == WM->getCurrentCycle() && SA->lastAction != -1) {
       int idx = 0;
       while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
-      if (idx >= numK) return stay("idx not valid 2");
+      assert(idx < numK);
+      if (idx >= numK) return stay("idx >= numK 2");
 
       Log.log(101, "execute option %d:%s [%d]", SA->lastAction,
               JointActionSpace::ins().getJointActionName(SA->lastAction), idx);

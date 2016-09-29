@@ -116,7 +116,7 @@ bool ActHandler::sendCommands( )
 {
   static Time timeLastSent = -1;
   bool        bNoOneCycle  = false;
-  char        strCommand[MAX_MSG];
+  static char        strCommand[MAX_MSG];
   strCommand[0]            = '\0';
 
   if( WM->getCurrentTime() == timeLastSent )
@@ -254,7 +254,8 @@ bool ActHandler::putCommandInQueue( SoccerCommand command )
     \return true when message was sent, false otherwise */
 bool ActHandler::sendCommand( SoccerCommand soc )
 {
-  char strCommand[MAX_MSG];
+  static char        strCommand[MAX_MSG];
+  strCommand[0]            = '\0';
   soc.getCommandString( strCommand, SS );
   return sendMessage( strCommand );
 }
@@ -291,7 +292,8 @@ bool ActHandler::sendMessage( char * str )
     \return true when message was sent, false otherwise */
 bool ActHandler::sendCommandDirect( SoccerCommand soc )
 {
-  char strCommand[MAX_MSG];
+  static char        strCommand[MAX_MSG];
+  strCommand[0]            = '\0';
   if( soc.commandType == CMD_ILLEGAL )
     return false;
   soc.getCommandString( strCommand, SS );

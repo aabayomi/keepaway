@@ -96,6 +96,9 @@ struct Hold: public AtomicAction {
   CLONE(Hold)
 };
 
+/**
+ * PassTo is composed of passto(k) and move(d)/stay
+ */
 struct PassTo: public AtomicAction {
   PassTo(): AtomicAction(AAT_PassTo) { }
 

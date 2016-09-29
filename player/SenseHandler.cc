@@ -136,7 +136,9 @@ SenseHandler::SenseHandler( Connection *c, WorldModel *wm, ServerSettings *ss,
     is destroyed) and receives and parses the incoming messages.   */
 void SenseHandler::handleMessagesFromServer( )
 {
-  char strBuf[MAX_MSG];
+  static char strBuf[MAX_MSG];
+  strBuf[0] = '\0';
+
   int i=0;
 
   while( 1 )

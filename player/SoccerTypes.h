@@ -55,6 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _SOCCERTYPES_
 
 #include <iostream>       // needed for output stream.
+#include <unordered_map>
 #include "Geometry.h"     // needed for AngDeg
 #include "ServerSettings.h"
 
@@ -190,7 +191,9 @@ enum ObjectT { // don't change order
   OBJECT_OPPONENT_GOALIE,  /*!< Goalie of opponent side  */
   OBJECT_ILLEGAL,          /*!< illegal object           */
   OBJECT_MAX_OBJECTS       /*!< maximum nr of objects    */ // 90
-} ;
+};
+
+std::ostream& operator<<(std::ostream& out, const ObjectT value);
 
 /*!The ObjectSetT enumerations holds the different object sets, which
    consists of one or multiple ObjectT types. */

@@ -6,8 +6,8 @@ using namespace std;
 
 int AtomicAction::keepers = 3;
 
-std::ostream& operator<<(std::ostream& out, const AtomicActionType value) {
-  static std::unordered_map<int, std::string> strings;
+ostream& operator<<(ostream& out, const AtomicActionType value) {
+  static unordered_map<int, string> strings;
 
   if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
@@ -34,9 +34,16 @@ bool AtomicAction::terminated(BasicPlayer *player) {
 
 SoccerCommand Hold::execute(BasicPlayer *player) {
   SoccerCommand soc;
-  player->ACT->putCommandInQueue(soc = player->holdBall());
-  player->ACT->putCommandInQueue( player->turnNeckToObject( OBJECT_BALL, soc ) );
-  return soc;
+
+  if (player->WM->isBallKickable()) {
+    player->ACT->putCommandInQueue(soc = player->holdBall());
+    player->ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
+    return soc;
+  }
+  else {
+    assert(!"player->WM->isBallKickable()");
+    return Intercept().execute(player);
+  }
 }
 
 bool Hold::terminated(BasicPlayer *player) {

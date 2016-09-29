@@ -320,6 +320,8 @@ bool WorldModel::storePlayerMessage( int iPlayer, char *strMsg, int iCycle )
 bool WorldModel::processPlayerMessage( )
 {
   static char strMessage[MAX_MSG];                      // location for message
+  strMessage[0] = '\0';
+
   char        *strMsg;
   strcpy( strMessage, m_strPlayerMsg );
   strMsg = strMessage;                                  // pointer to work with
@@ -828,6 +830,8 @@ void  WorldModel::processLastSeeMessage( )
   Time    time = getTimeLastSeeMessage();
   bool    isGoalie, isTackling;
   static char strTmp[MAX_MSG];
+  strTmp[0] = '\0';
+
   char   *strMsg = strLastSeeMessage ;
   Parse::parseFirstInt( &strMsg );         // get the time
 

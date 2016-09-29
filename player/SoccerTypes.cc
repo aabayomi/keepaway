@@ -60,9 +60,113 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>     // needed for strncmp
 #endif
 
+#include <cassert>
 #include "SoccerTypes.h"
 #include "Parse.h"
+#include "Logger.h"
 
+
+ostream& operator<<(ostream& out, const ObjectT value) {
+  static unordered_map<int, string> strings;
+
+  if (strings.size() == 0){
+#define INSERT_ELEMENT(p) strings[p] = #p
+    INSERT_ELEMENT(OBJECT_BALL             );/*!< Ball                     */
+    INSERT_ELEMENT(OBJECT_GOAL_L           );/*!< Left goal                */    // 2 goals
+    INSERT_ELEMENT(OBJECT_GOAL_R           );/*!< Right goal               */
+    INSERT_ELEMENT(OBJECT_GOAL_UNKNOWN     );/*!< Unknown goal             */
+    INSERT_ELEMENT(OBJECT_LINE_L           );/*!< Left line                */    // 4 lines
+    INSERT_ELEMENT(OBJECT_LINE_R           );/*!< Right line               */
+    INSERT_ELEMENT(OBJECT_LINE_B           );/*!< Bottom line              */
+    INSERT_ELEMENT(OBJECT_LINE_T           );/*!< Top line                 */
+    INSERT_ELEMENT(OBJECT_FLAG_L_T         );/*!< Flag left top            */   // 53 flags
+    INSERT_ELEMENT(OBJECT_FLAG_T_L_50      );/*!< Flag top left 50         */
+    INSERT_ELEMENT(OBJECT_FLAG_T_L_40      );/*!< Flag top left 40         */
+    INSERT_ELEMENT(OBJECT_FLAG_T_L_30      );/*!< Flag top left 30         */
+    INSERT_ELEMENT(OBJECT_FLAG_T_L_20      );/*!< Flag top left 20         */
+    INSERT_ELEMENT(OBJECT_FLAG_T_L_10      );/*!< Flag top left 10         */
+    INSERT_ELEMENT(OBJECT_FLAG_T_0         );/*!< Flag top left 0          */
+    INSERT_ELEMENT(OBJECT_FLAG_C_T         );/*!< Flag top center          */
+    INSERT_ELEMENT(OBJECT_FLAG_T_R_10      );/*!< Flag top right 10        */
+    INSERT_ELEMENT(OBJECT_FLAG_T_R_20      );/*!< Flag top right 20        */
+    INSERT_ELEMENT(OBJECT_FLAG_T_R_30      );/*!< Flag top right 30        */
+    INSERT_ELEMENT(OBJECT_FLAG_T_R_40      );/*!< Flag top right 40        */
+    INSERT_ELEMENT(OBJECT_FLAG_T_R_50      );/*!< Flag top right 50        */
+    INSERT_ELEMENT(OBJECT_FLAG_R_T         );/*!< Flag right top           */
+    INSERT_ELEMENT(OBJECT_FLAG_R_T_30      );/*!< Flag right top 30        */
+    INSERT_ELEMENT(OBJECT_FLAG_R_T_20      );/*!< Flag right top 20        */
+    INSERT_ELEMENT(OBJECT_FLAG_R_T_10      );/*!< Flag right top 10        */
+    INSERT_ELEMENT(OBJECT_FLAG_G_R_T       );/*!< Flag goal right top      */
+    INSERT_ELEMENT(OBJECT_FLAG_R_0         );/*!< Flag right 0             */
+    INSERT_ELEMENT(OBJECT_FLAG_G_R_B       );/*!< Flag goal right bottom   */
+    INSERT_ELEMENT(OBJECT_FLAG_R_B_10      );/*!< Flag right bottom 10     */
+    INSERT_ELEMENT(OBJECT_FLAG_R_B_20      );/*!< Flag right bottom 20     */
+    INSERT_ELEMENT(OBJECT_FLAG_R_B_30      );/*!< Flag right bottom 30     */
+    INSERT_ELEMENT(OBJECT_FLAG_R_B         );/*!< Flag right bottom        */
+    INSERT_ELEMENT(OBJECT_FLAG_B_R_50      );/*!< Flag bottom right 50     */
+    INSERT_ELEMENT(OBJECT_FLAG_B_R_40      );/*!< Flag bottom right 40     */
+    INSERT_ELEMENT(OBJECT_FLAG_B_R_30      );/*!< Flag bottom right 30     */
+    INSERT_ELEMENT(OBJECT_FLAG_B_R_20      );/*!< Flag bottom right 20     */
+    INSERT_ELEMENT(OBJECT_FLAG_B_R_10      );/*!< Flag bottom right 10     */
+    INSERT_ELEMENT(OBJECT_FLAG_C_B         );/*!< Flag center bottom       */
+    INSERT_ELEMENT(OBJECT_FLAG_B_0         );/*!< Flag bottom 0            */
+    INSERT_ELEMENT(OBJECT_FLAG_B_L_10      );/*!< Flag bottom left 10      */
+    INSERT_ELEMENT(OBJECT_FLAG_B_L_20      );/*!< Flag bottom left 20      */
+    INSERT_ELEMENT(OBJECT_FLAG_B_L_30      );/*!< Flag bottom left 30      */
+    INSERT_ELEMENT(OBJECT_FLAG_B_L_40      );/*!< Flag bottom left 40      */
+    INSERT_ELEMENT(OBJECT_FLAG_B_L_50      );/*!< Flag bottom left 50      */
+    INSERT_ELEMENT(OBJECT_FLAG_L_B         );/*!< Flag left bottom         */
+    INSERT_ELEMENT(OBJECT_FLAG_L_B_30      );/*!< Flag left bottom 30      */
+    INSERT_ELEMENT(OBJECT_FLAG_L_B_20      );/*!< Flag left bottom 20      */
+    INSERT_ELEMENT(OBJECT_FLAG_L_B_10      );/*!< Flag left bottom 10      */
+    INSERT_ELEMENT(OBJECT_FLAG_G_L_B       );/*!< Flag goal left bottom    */
+    INSERT_ELEMENT(OBJECT_FLAG_L_0         );/*!< Flag left 0              */
+    INSERT_ELEMENT(OBJECT_FLAG_G_L_T       );/*!< Flag goal left top       */
+    INSERT_ELEMENT(OBJECT_FLAG_L_T_10      );/*!< Flag left bottom 10      */
+    INSERT_ELEMENT(OBJECT_FLAG_L_T_20      );/*!< Flag left bottom 20      */
+    INSERT_ELEMENT(OBJECT_FLAG_L_T_30      );/*!< Flag left bottom 30      */
+    INSERT_ELEMENT(OBJECT_FLAG_P_L_T       );/*!< Flag penaly left top     */
+    INSERT_ELEMENT(OBJECT_FLAG_P_L_C       );/*!< Flag penaly left center  */
+    INSERT_ELEMENT(OBJECT_FLAG_P_L_B       );/*!< Flag penaly left bottom  */
+    INSERT_ELEMENT(OBJECT_FLAG_P_R_T       );/*!< Flag penaly right top    */
+    INSERT_ELEMENT(OBJECT_FLAG_P_R_C       );/*!< Flag penaly right center */
+    INSERT_ELEMENT(OBJECT_FLAG_P_R_B       );/*!< Flag penaly right bottom */
+    INSERT_ELEMENT(OBJECT_FLAG_C           );/*!< Flag center field        */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_1       );/*!< Teammate nr 1            */    // teammates 61
+    INSERT_ELEMENT(OBJECT_TEAMMATE_2       );/*!< Teammate nr 2            */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_3       );/*!< Teammate nr 3            */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_4       );/*!< Teammate nr 4            */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_5       );/*!< Teammate nr 5            */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_6       );/*!< Teammate nr 6            */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_7       );/*!< Teammate nr 7            */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_8       );/*!< Teammate nr 8            */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_9       );/*!< Teammate nr 9            */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_10      );/*!< Teammate nr 10           */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_11      );/*!< Teammate nr 11           */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_UNKNOWN );/*!< Teammate nr unkown       */
+    INSERT_ELEMENT(OBJECT_OPPONENT_1       );/*!< Opponent nr 1            */    // opponents 73
+    INSERT_ELEMENT(OBJECT_OPPONENT_2       );/*!< Opponent nr 2            */
+    INSERT_ELEMENT(OBJECT_OPPONENT_3       );/*!< Opponent nr 3            */
+    INSERT_ELEMENT(OBJECT_OPPONENT_4       );/*!< Opponent nr 4            */
+    INSERT_ELEMENT(OBJECT_OPPONENT_5       );/*!< Opponent nr 5            */
+    INSERT_ELEMENT(OBJECT_OPPONENT_6       );/*!< Opponent nr 6            */
+    INSERT_ELEMENT(OBJECT_OPPONENT_7       );/*!< Opponent nr 7            */
+    INSERT_ELEMENT(OBJECT_OPPONENT_8       );/*!< Opponent nr 8            */
+    INSERT_ELEMENT(OBJECT_OPPONENT_9       );/*!< Opponent nr 9            */
+    INSERT_ELEMENT(OBJECT_OPPONENT_10      );/*!< Opponent nr 10           */
+    INSERT_ELEMENT(OBJECT_OPPONENT_11      );/*!< Opponent nr 11           */
+    INSERT_ELEMENT(OBJECT_OPPONENT_UNKNOWN );/*!< Opponent nr unknown      */    // 84
+    INSERT_ELEMENT(OBJECT_PLAYER_UNKNOWN   );/*!< Unknown player           */
+    INSERT_ELEMENT(OBJECT_UNKNOWN          );/*!< Unknown object           */
+    INSERT_ELEMENT(OBJECT_TEAMMATE_GOALIE  );/*!< Goalie of your side      */
+    INSERT_ELEMENT(OBJECT_OPPONENT_GOALIE  );/*!< Goalie of opponent side  */
+    INSERT_ELEMENT(OBJECT_ILLEGAL          );/*!< illegal object           */
+    INSERT_ELEMENT(OBJECT_MAX_OBJECTS      ); /*!< maximum nr of objects    */ // 90
+#undef INSERT_ELEMENT
+  }
+
+  return out << strings[value];
+}
 
 /*****************************************************************************/
 /********************* CLASS TIME ********************************************/
@@ -746,6 +850,9 @@ bool SoccerCommand::makeKickCommand( char *str  )
     fprintf(stderr,
             "(SoccerCommand::makeKickCommand) one argument %d or %d is wrong\n",
             (int)dPower, (int)dAngle );
+    PRINT_VALUE(dPower);
+    PRINT_VALUE(dAngle);
+    assert(0);
     return false;
   }
   return true;
@@ -769,6 +876,9 @@ bool SoccerCommand::makeMoveCommand( char *str  )
     fprintf( stderr,
              "(SoccerCommand::makeMoveCommand) one argument %d or %d is wrong\n",
              (int)dX, (int)dY) ;
+    PRINT_VALUE(dX);
+    PRINT_VALUE(dY);
+    assert(0);
     return false;
   }
   return true;

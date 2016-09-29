@@ -29,7 +29,9 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cstring>
 #include "WorldModel.h"
+#include "SMDPAgent.h"
 
 int WorldModel::getNumKeepers()
 {
@@ -176,6 +178,8 @@ int WorldModel::keeperStateVars( double state[] )
       }
     }
   }
+
+  memset(state, 0, sizeof(double) * MAX_STATE_VARS);
 
   int j = 0;
   state[ j++ ] = WK0_dist_to_C;
