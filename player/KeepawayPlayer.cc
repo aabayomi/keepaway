@@ -321,7 +321,9 @@ SoccerCommand KeepawayPlayer::keeper()
 
 SoccerCommand KeepawayPlayer::fullTeamKeepers()
 {
-  double state[MAX_STATE_VARS];
+  static double state[MAX_STATE_VARS];
+  memset(state, 0, sizeof(state));
+
   int numK = WM->getNumKeepers();
 
   int features = WM->keeperStateVars(state);
@@ -379,6 +381,8 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
 
   // K0 makes the decision or !hiveMind
   if (agentIdx == 0 || SA->hiveMind <= 1) {
+    assert(!tmControllBall || WM->isBallKickable());
+
     int action;
     if (SA->lastActionTime == UnknownTime) {
       action = SA->startEpisode(WM->getCurrentCycle(), state);
@@ -390,6 +394,8 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
             JointActionSpace::ins().getJointActionName(action), agentIdx);
 
     memcpy(SA->K, K, sizeof(K)); // save K[]
+    Log.log(101, "sync write K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
+
     SA->sync(false);
     return execute(action, agentIdx);
   } else {
@@ -404,10 +410,16 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     }
 
     if (SA->lastActionTime == WM->getCurrentCycle() && SA->lastAction != -1) {
+      Log.log(101, "sync read K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
+
       int idx = 0;
       while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
+      if (idx >= numK) {
+        PRINT_VALUE(SA->K);
+        PRINT_VALUE(WM->getAgentObjectType());
+      }
       assert(idx < numK);
-      if (idx >= numK) return stay("idx >= numK 2");
+      if (idx >= numK) return stay("idx >= numK after having waited for K0");
 
       Log.log(101, "execute option %d:%s [%d]", SA->lastAction,
               JointActionSpace::ins().getJointActionName(SA->lastAction), idx);

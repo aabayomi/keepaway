@@ -55,6 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>     // needed for string
 #include <iomanip>    // needed for setw
 #include <set>        // needed for set
+#include "prettyprint.h"
 
 #ifdef WIN32
   #include <windows.h>  // needed for DWORD and GetTickCount() function

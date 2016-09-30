@@ -179,8 +179,6 @@ int WorldModel::keeperStateVars( double state[] )
     }
   }
 
-  memset(state, 0, sizeof(double) * MAX_STATE_VARS);
-
   int j = 0;
   state[ j++ ] = WK0_dist_to_C;
   for ( int i = 1; i < numK; i++ )

@@ -41,7 +41,6 @@ SoccerCommand Hold::execute(BasicPlayer *player) {
     return soc;
   }
   else {
-    assert(!"player->WM->isBallKickable()");
     return Intercept().execute(player);
   }
 }

@@ -87,9 +87,9 @@ double Object::getRelativeDistance( )
     \return confidence factor of this object */
 double Object::getConfidence( Time time )
 {
-  if( timeLastSeen.getTime() == -1 )       
+  if( timeLastSeen.getTime() == -1 )
     return 0.0;
-  double dConf = 
+  double dConf =
       max( 0.0, 1.0-(double)(time.getTimeDifference(timeLastSeen))/100.0);
   if( dConf > 1.0 )
     return 0.0;
@@ -445,7 +445,7 @@ Time DynamicObject::getTimeChangeInformation()  const
 
 /*! This method sets the global velocity of the object calculated after the last
     see message. The time of this information corresponds to
-    'getTimeChangeInformation'. 
+    'getTimeChangeInformation'.
     \return global body velocity derived from the last see message */
 bool DynamicObject::setGlobalVelocityLastSee ( VecPosition vec )
 {
@@ -453,9 +453,9 @@ bool DynamicObject::setGlobalVelocityLastSee ( VecPosition vec )
   return true;
 }
 
-/*! This method returns the global velocity of the object calculated after the 
+/*! This method returns the global velocity of the object calculated after the
     last see message. The time of this information corresponds to
-    'getTimeChangeInformation'. 
+    'getTimeChangeInformation'.
     \return global body velocity derived from the last see message */
 VecPosition DynamicObject::getGlobalVelocityLastSee ( )   const
 {
@@ -469,7 +469,7 @@ VecPosition DynamicObject::getGlobalVelocityLastSee ( )   const
 
 /*! This is the constructor for PlayerObject. A PlayerObject is created with
     all variables initialized to (illegal) default values */
-PlayerObject::PlayerObject( ):DynamicObject( )
+PlayerObject::PlayerObject( ): DynamicObject( )
 {
   angGlobalBodyAngle   = UnknownAngleValue;
   angGlobalNeckAngle   = UnknownAngleValue;
@@ -478,7 +478,7 @@ PlayerObject::PlayerObject( ):DynamicObject( )
 
   angRelativeBodyAngle = UnknownAngleValue;
   angRelativeNeckAngle = UnknownAngleValue;
-  
+
   iHeteroPlayerType    = 0;
 }
 
@@ -591,10 +591,10 @@ bool PlayerObject::setTimeGlobalAngles( Time time )
 }
 
 
-/*! This method sets the global angle of the agent calculated after the last 
+/*! This method sets the global angle of the agent calculated after the last
     see message. The time of this information corresponds to
     'getTimeChangeInformation', since the change information arrives always
-    together with the body and neck information. 
+    together with the body and neck information.
     \return global body angle derived from the last see message */
 bool PlayerObject::setGlobalBodyAngleLastSee( AngDeg ang )
 {
@@ -613,7 +613,7 @@ AngDeg PlayerObject::getGlobalBodyAngleLastSee( )  const
 {
   return angGlobalBodyAngleLastSee;
 }
-  
+
 
 /*! This method returns the server time in which the global body and neck
     angle of this object were calculated.
@@ -655,12 +655,12 @@ bool PlayerObject::isInRange( ObjectT obj, bool bTeammatesFirst )
     iIndMin += ( bTeammatesFirst ) ? 11 : -11 ;
   if( SoccerTypes::isOpponent( objRangeMax ) )
     iIndMax += ( bTeammatesFirst ) ? 11 : -11 ;
-  
+
   return iIndMin <= iIndObj && iIndObj <= iIndMax ;
 }
 
 /*! This method returns the minimal possible object type as set by
-   'setPossibleRange'. 
+   'setPossibleRange'.
     \return minimal possible object type */
 ObjectT PlayerObject::getMinRange( )
 {
@@ -668,7 +668,7 @@ ObjectT PlayerObject::getMinRange( )
 }
 
 /*! This method returns the maximal possible object type as set by
-   'setPossibleRange'. 
+   'setPossibleRange'.
     \return maximal possible object type */
 ObjectT PlayerObject::getMaxRange( )
 {
@@ -730,7 +730,7 @@ void PlayerObject::show( const char* strTeamName , ostream & os )
 {
   char buf[MAX_TEAM_NAME_LENGTH];
   SoccerTypes::getObjectStr( buf, objectType, strTeamName );
-  os << buf 
+  os << buf
             << " conf: "              << getConfidence( timeGlobalPosition )
             << " pos: "               << posGlobal
             << ","                    << timeGlobalPosition
@@ -744,13 +744,13 @@ void PlayerObject::show( const char* strTeamName , ostream & os )
 }
 
 /*! This method sets the heterogeneous index number of this player object.
-    \param hetereogeneous index number 
+    \param hetereogeneous index number
     \return bool indicating whether update was successful. */
 bool PlayerObject::setHeteroPlayerType( int index )
 {
   iHeteroPlayerType = index;
   return true;
-}  
+}
 
 /*! This method returns the heterogeneous index number of this player object.
     \return hetereogeneous index number */
@@ -776,7 +776,7 @@ Time PlayerObject::getTimeTackle( ) const
 
 
 /*! This method sets the global direction in which the arm of this object
-    has last been observed to point. The time related to this update is 
+    has last been observed to point. The time related to this update is
     represented by time.  */
 bool PlayerObject::setGlobalArm( AngDeg ang, Time time )
 {
@@ -791,7 +791,7 @@ AngDeg PlayerObject::getGlobalArm( ) const
   return m_angGlobalArm;
 }
 
-/*! This method sets the time that is related to the last time the arm 
+/*! This method sets the time that is related to the last time the arm
     of this object has been observed to point in the global direction returned
     by 'getGlobalArm'. */
 bool PlayerObject::setTimeGlobalArm( Time time )
@@ -1018,7 +1018,7 @@ bool AgentObject::getArmMovable( ) const
 }
 
 /*! This method returns whether it is allowed to move the arm of the agent. */
-bool AgentObject::setArmMovable( bool b ) 
+bool AgentObject::setArmMovable( bool b )
 {
   m_bArmMovable = b;
   return true;
@@ -1103,7 +1103,7 @@ void Stamina::show( ostream & os)
 TiredNessT  Stamina::getTiredNess( double dRecDecThr, double dStaminaMax )
 {
   double dStaDiffWithThr = getStamina() - dRecDecThr * dStaminaMax;
-//  cerr << getStamina() << " " << dStaminaMax << 
+//  cerr << getStamina() << " " << dStaminaMax <<
 //    " " << dRecDecThr << " " << dStaDiffWithThr << endl;
   if( dStaDiffWithThr < 100 )
     return TIREDNESS_TERRIBLE;

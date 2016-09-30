@@ -53,7 +53,7 @@ class BasicPlayer;
 enum AtomicActionType {
   AAT_None,
   AAT_Hold,
-  AAT_PassTo, // 1, 2, 3, ..., k - 1
+  AAT_PassTo,
   AAT_Intercept,
   AAT_Stay,
   AAT_Move // Left, Right, In, Out

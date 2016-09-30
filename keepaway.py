@@ -144,12 +144,10 @@ def launch_server(options):
 
     if options.log_game:
         server_options += [
-            # TODO Parameterize compression?
-            ('game_log_compression', 0),
+            ('game_log_compression', 1),
             ('game_log_dir', options.log_dir),
             ('game_log_fixed', 1),
             ('game_log_fixed_name', log_name),
-            # TODO Parameterize the version number?
             ('game_log_version', 5)];
     else:
         server_options += [('game_logging', 0)];
@@ -171,12 +169,10 @@ def launch_server(options):
     # TODO in synch mode?
     server_options += [
         ('synch_mode', int(options.synch_mode)),
-        # Synch offset 80 was hardcoded in keepaway.sh.
-        ('synch_offset', 80)]
+        ('synch_offset', 100)]
 
     if options.log_text:
         server_options += [
-            # TODO Parameterize compression?
             ('text_log_compression', 0),
             ('text_log_dir', options.log_dir),
             ('text_log_fixed', 1),

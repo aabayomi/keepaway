@@ -872,7 +872,7 @@ bool SenseHandler::analyzeServerParamMessage( char *strMsg )
   readServerParam( "keepaway_length",          strMsg );
   readServerParam( "keepaway_width",           strMsg );
 
-  VecPosition corner( SS->getKeepawayLength() / 2, SS->getKeepawayWidth() / 2 );
+  VecPosition corner( SS->getKeepawayLength() / 2 - 1.0, SS->getKeepawayWidth() / 2 - 1.0);
   WM->setKeepawayRect( -corner, corner );
 
 
