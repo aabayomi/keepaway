@@ -16,7 +16,7 @@ private:
   std::string lockName;
 
 public:
-  FileLock(const std::string name, int hiveMind);
+  FileLock(const std::string name);
   ~FileLock();
 };
 
@@ -86,7 +86,9 @@ protected:
 
   size_t mmapSize();
 
-  long *loadSharedData(collision_table *colTab, double *weights);
+  void loadSharedData(double *weights);
+
+  void saveSharedData(double *weights);
   virtual void sync(bool load);
 
   double reward(double tau, double gamma);
@@ -100,9 +102,6 @@ public:
                    int hiveMind,
                    bool jointTiling,
                    double gamma);
-
-  // Support for extra modes and/or analysis.
-  double getQ(int action);
 
   void setEpsilon(double epsilon);
 

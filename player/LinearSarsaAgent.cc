@@ -7,7 +7,6 @@
 #include <sstream>
 #include <numeric>
 #include "LinearSarsaAgent.h"
-#include "LoggerDraw.h"
 #include <cassert>
 
 // If all is well, there should be no mention of anything keepaway- or soccer-
@@ -19,16 +18,14 @@ extern Logger Log;
 extern LoggerDraw LogDraw;
 #endif
 
-FileLock::FileLock(const std::string name, int hiveMind) {
+FileLock::FileLock(const std::string name) {
   lockName = name + ".lock";
   timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
 
-  if (hiveMind) {
-    for (;;) {
-      lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
-      if (lock >= 0) break;
-      nanosleep(&sleepTime, NULL);
-    }
+  for (;;) {
+    lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
+    if (lock >= 0) break;
+    nanosleep(&sleepTime, NULL);
   }
 }
 
@@ -63,13 +60,13 @@ struct SharedData {
 void LinearSarsaAgent::sync(bool load) {
   if (!hiveMind) return;
 
-  FileLock lock(string(weightsFile) + "-sync", hiveMind);
+  FileLock lock(string(weightsFile) + "-sync");
   Log.log(101, "LinearSarsaAgent::sync %s", load ? "load" : "save");
 
   if (load) {
-    loadSharedData(colTab, weights);
+    loadSharedData(weights);
   } else {
-    saveWeights(weightsFile);
+    saveSharedData(weights);
   }
 }
 
@@ -78,7 +75,7 @@ void LinearSarsaAgent::sync(bool load) {
  * Returns the memory location after the header because that's useful for colTab
  * data array.
  */
-long *LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights) {
+void LinearSarsaAgent::loadSharedData(double *weights) {
   SharedData *shared =
       reinterpret_cast<SharedData *>(weights + RL_MEMORY_SIZE);
 
@@ -108,8 +105,38 @@ long *LinearSarsaAgent::loadSharedData(collision_table *colTab, double *weights)
          << " m: " << colTab->m << endl
          << " safe: " << colTab->safe << endl;
   }
+}
 
-  return reinterpret_cast<long *>(shared + 1);
+void LinearSarsaAgent::saveSharedData(double *weights) {
+  SharedData *shared =
+      reinterpret_cast<SharedData *>(weights + RL_MEMORY_SIZE);
+
+  // Do each field individually, since they don't all line up exactly for an
+  // easy copy.
+  shared->calls = colTab->calls;
+  shared->clearhits = colTab->clearhits;
+  shared->collisions = colTab->collisions;
+  shared->m = colTab->m;
+  shared->safe = colTab->safe;
+
+  if (hiveMind > 1) {
+    memcpy(shared->Q, Q, sizeof(Q));
+    shared->numTilings = numTilings;
+    shared->lastAction = lastAction;
+    shared->lastActionTime = lastActionTime;
+    memcpy(shared->K, K, sizeof(K));
+    shared->minimumTrace = minimumTrace;
+    shared->numNonzeroTraces = numNonzeroTraces;
+  }
+
+  if (VERBOSE_HIVE_MIND) {
+    cout << "Saved shared:" << endl
+         << " calls: " << colTab->calls << endl
+         << " clearhits: " << colTab->clearhits << endl
+         << " collisions: " << colTab->collisions << endl
+         << " m: " << colTab->m << endl
+         << " safe: " << colTab->safe << endl;
+  }
 }
 
 LinearSarsaAgent::LinearSarsaAgent(
@@ -183,22 +210,12 @@ LinearSarsaAgent::LinearSarsaAgent(
   numNonzeroTraces = 0;
 }
 
-double LinearSarsaAgent::getQ(int action) {
-  if (action < 0 || action > getNumActions()) {
-    throw "invalid action";
-  }
-  return Q[action];
-}
-
 void LinearSarsaAgent::setEpsilon(double epsilon) {
   this->epsilon = epsilon;
 }
 
 int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
-  FileLock lock(string(weightsFile) + "-startEpisode", hiveMind);
-
   Log.log(101, "LinearSarsaAgent::startEpisode current_time: %d", current_time);
-  if (hiveMind) loadSharedData(colTab, weights);
 
   if (hiveMind > 1 &&
       lastActionTime != UnknownTime &&
@@ -243,7 +260,6 @@ int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
     setTrace(tiles[lastAction][j], 1.0);
 
   Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
-  if (hiveMind) saveWeights(weightsFile);
   return lastAction;
 }
 
@@ -258,13 +274,10 @@ double LinearSarsaAgent::reward(double tau, double gamma) {
 }
 
 int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
-  FileLock lock(string(weightsFile) + "-step", hiveMind);
-
   double tau = reward_; // here reward is actually tau
 
   Log.log(101, "LinearSarsaAgent::step current_time: %d", current_time);
   Log.log(101, "LinearSarsaAgent::step tau: %f", tau);
-  if (hiveMind) loadSharedData(colTab, weights);
 
   if (hiveMind > 1 && lastActionTime != UnknownTime && lastActionTime < current_time) {
     tau = current_time - lastActionTime;
@@ -334,19 +347,14 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
     setTrace(tiles[lastAction][j], 1.0);
 
   Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
-  if (hiveMind) saveWeights(weightsFile);
   return lastAction;
 }
 
 void LinearSarsaAgent::endEpisode(int current_time, double reward_) {
-  FileLock lock(string(weightsFile) + "-endEpisode", hiveMind);
-
   double tau = reward_; // here reward is actually tau
 
   Log.log(101, "LinearSarsaAgent::endEpisode current_time: %d", current_time);
   Log.log(101, "LinearSarsaAgent::endEpisode tau: %f", tau);
-  if (hiveMind) loadSharedData(colTab, weights);
-
   Log.log(101, "LinearSarsaAgent::endEpisode hived lastAction: %d", lastAction);
   Log.log(101, "LinearSarsaAgent::endEpisode hived lastActionTime: %d", lastActionTime);
 
@@ -371,10 +379,8 @@ void LinearSarsaAgent::endEpisode(int current_time, double reward_) {
   if (bLearning && bSaveWeights && rand() % 200 == 0 && !hiveMind) {
     saveWeights(weightsFile);
   }
-
   lastAction = -1;
   lastActionTime = UnknownTime;
-  if (hiveMind) saveWeights(weightsFile);
 }
 
 size_t LinearSarsaAgent::mmapSize() {
@@ -394,13 +400,10 @@ size_t LinearSarsaAgent::mmapSize() {
 }
 
 void LinearSarsaAgent::shutDown() {
-  // We usually only save weights at random intervals.
-  // Always save at shutdown (if we are in saving mode).
   if (bLearning && bSaveWeights) {
     cout << "Saving weights at shutdown." << endl;
     saveWeights(weightsFile);
   }
-  // Also shut down the hive mind if needed.
   if (hiveMind) {
     size_t mmapLength = mmapSize();
     munmap(weights, mmapLength);
@@ -438,7 +441,7 @@ bool LinearSarsaAgent::loadWeights(char *filename) {
       // First, check the lock file, so we have only one initializer.
       // Later interaction should be approximately synchronized by having only
       // one active player at a time per team, but we can't assume that here.
-      FileLock lock(filename, hiveMind);
+      FileLock lock(filename);
 
       // First, see if the file is already there.
       bool fileFound = !access(filename, F_OK);
@@ -470,7 +473,7 @@ bool LinearSarsaAgent::loadWeights(char *filename) {
       SharedData *shared =
           reinterpret_cast<SharedData *>(weights + RL_MEMORY_SIZE);
       if (fileFound) {
-        loadSharedData(colTab, weights);
+        loadSharedData(weights);
       }
 
       // Now the collision table data.
@@ -509,35 +512,7 @@ bool LinearSarsaAgent::saveWeights(char *filename) {
   if (hiveMind) {
     // The big arrays should be saved out automatically, but we still need to
     // handle the collision table header.
-    SharedData *shared =
-        reinterpret_cast<SharedData *>(weights + RL_MEMORY_SIZE);
-
-    // Do each field individually, since they don't all line up exactly for an
-    // easy copy.
-    shared->calls = colTab->calls;
-    shared->clearhits = colTab->clearhits;
-    shared->collisions = colTab->collisions;
-    shared->m = colTab->m;
-    shared->safe = colTab->safe;
-
-    if (hiveMind > 1) {
-      memcpy(shared->Q, Q, sizeof(Q));
-      shared->numTilings = numTilings;
-      shared->lastAction = lastAction;
-      shared->lastActionTime = lastActionTime;
-      memcpy(shared->K, K, sizeof(K));
-      shared->minimumTrace = minimumTrace;
-      shared->numNonzeroTraces = numNonzeroTraces;
-    }
-
-    if (VERBOSE_HIVE_MIND) {
-      cout << "Saved shared:" << endl
-           << " calls: " << colTab->calls << endl
-           << " clearhits: " << colTab->clearhits << endl
-           << " collisions: " << colTab->collisions << endl
-           << " m: " << colTab->m << endl
-           << " safe: " << colTab->safe << endl;
-    }
+    saveSharedData(weights);
   } else {
     int file = open(filename, O_CREAT | O_WRONLY, 0664);
     if (file < 0) {

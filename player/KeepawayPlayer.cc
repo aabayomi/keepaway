@@ -32,7 +32,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KeepawayPlayer.h"
 #include "SayMsgEncoder.h"
 #include <cstring>
-#include <limits>
 
 #if USE_DRAW_LOG
 extern LoggerDraw LogDraw;
@@ -288,11 +287,6 @@ SoccerCommand KeepawayPlayer::keeper()
 
   SoccerCommand soc;
 
-  if ( WM->isNewEpisode() ) {
-    SA->endEpisode( WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime) );
-    WM->setNewEpisode( false );
-  }
-
 #if USE_DRAW_LOG
   LogDraw.logCircle( "ball belief", WM->getBallPos(),
                      1.1, 11, false, COLOR_RED,
@@ -350,10 +344,8 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
 
   if (agentIdx >= numK) return stay("agentIdx >= numK");
 
-  SA->sync(true);
-
   // if running an option
-  if (SA->lastAction >= 0) {
+  if (SA->lastAction >= 0 && !WM->isNewEpisode()) {
     Log.log(101, "SA->lastAction %d:%s", SA->lastAction,
             JointActionSpace::ins().getJointActionName(SA->lastAction));
 
@@ -375,13 +367,17 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     } else {
       Log.log(101, "terminated option %d:%s [%d] passing: %d", SA->lastAction,
               JointActionSpace::ins().getJointActionName(SA->lastAction), idx, passing);
-      SA->lastAction = -1;
     }
   }
 
   // K0 makes the decision or !hiveMind
   if (agentIdx == 0 || SA->hiveMind <= 1) {
-    assert(!tmControllBall || WM->isBallKickable());
+    assert(agentIdx != 0 || !tmControllBall || WM->isBallKickable());
+
+    if (WM->isNewEpisode()) {
+      SA->endEpisode(WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime));
+      WM->setNewEpisode(false);
+    }
 
     int action;
     if (SA->lastActionTime == UnknownTime) {
@@ -394,11 +390,16 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
             JointActionSpace::ins().getJointActionName(action), agentIdx);
 
     memcpy(SA->K, K, sizeof(K)); // save K[]
-    Log.log(101, "sync write K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
+    Log.log(101, "sync save K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
 
-    SA->sync(false);
+    SA->sync(false); // save shared memory
     return execute(action, agentIdx);
   } else {
+    SA->lastAction = -1;
+    if (WM->isNewEpisode()) {
+      WM->setNewEpisode(false);
+    }
+
     int loops = 75;
     while (loops-- &&
            (SA->lastAction == -1 ||
@@ -406,19 +407,14 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
       Log.log(101, "wait for K0");
       timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
       nanosleep(&sleepTime, NULL);
-      SA->sync(true);
+      SA->sync(true); // load shared memory
     }
 
     if (SA->lastActionTime == WM->getCurrentCycle() && SA->lastAction != -1) {
-      Log.log(101, "sync read K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
+      Log.log(101, "sync load K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
 
       int idx = 0;
       while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
-      if (idx >= numK) {
-        PRINT_VALUE(SA->K);
-        PRINT_VALUE(WM->getAgentObjectType());
-      }
-      assert(idx < numK);
       if (idx >= numK) return stay("idx >= numK after having waited for K0");
 
       Log.log(101, "execute option %d:%s [%d]", SA->lastAction,
