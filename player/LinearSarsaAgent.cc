@@ -43,7 +43,7 @@ struct SharedData {
 void LinearSarsaAgent::sync(bool load) {
   if (!hiveMind) return;
 
-  FileLock lock(lockPrefix, weightsFile, "sync");
+  FileLock lock(fileLockPrefix, weightsFile, "sync");
   Log.log(101, "LinearSarsaAgent::sync %s", load ? "load" : "save");
 
   if (load) {
@@ -81,7 +81,7 @@ void LinearSarsaAgent::loadSharedData(double *weights) {
   }
 
   if (VERBOSE_HIVE_MIND) {
-    cout << "Loaded shared:" << endl
+    cerr << "Loaded shared:" << endl
          << " calls: " << colTab->calls << endl
          << " clearhits: " << colTab->clearhits << endl
          << " collisions: " << colTab->collisions << endl
@@ -113,7 +113,7 @@ void LinearSarsaAgent::saveSharedData(double *weights) {
   }
 
   if (VERBOSE_HIVE_MIND) {
-    cout << "Saved shared:" << endl
+    cerr << "Saved shared:" << endl
          << " calls: " << colTab->calls << endl
          << " clearhits: " << colTab->clearhits << endl
          << " collisions: " << colTab->collisions << endl
@@ -126,8 +126,8 @@ LinearSarsaAgent::LinearSarsaAgent(
     int numFeatures,
     bool bLearn,
     double widths[],
-    char *loadWeightsFile,
-    char *saveWeightsFile,
+    string loadWeightsFile,
+    string saveWeightsFile,
     int hiveMind,
     bool jointTiling,
     double gamma)
@@ -143,12 +143,28 @@ LinearSarsaAgent::LinearSarsaAgent(
 
   // Saving weights (including for hive mind) requires learning and a file name.
   this->hiveMind = 0;
-  if (bLearning && strlen(saveWeightsFile) > 0) {
-    strcpy(weightsFile, saveWeightsFile);
+  if (bLearning && saveWeightsFile.length() > 0) {
+    const_cast<string &>(weightsFile) = saveWeightsFile; // thie is the weightfile in current dir
+
     bSaveWeights = true;
+
     // Hive mind further requires loading and saving from the same file.
-    if (!strcmp(loadWeightsFile, saveWeightsFile)) {
+    if (loadWeightsFile == saveWeightsFile) {
+      // hive in /run/shm dir
+      loadWeightsFile = sharedMemoryPrefix + loadWeightsFile;
+      saveWeightsFile = sharedMemoryPrefix + saveWeightsFile;
+
       this->hiveMind = hiveMind;
+
+      bool fileFound = !access(weightsFile.c_str(), F_OK);
+      if (fileFound) { // copy weightsFile to /run/shm/weightsFile
+        ifstream src(weightsFile, ios::binary);
+        ofstream dst(loadWeightsFile, ios::binary);
+
+        dst << src.rdbuf();
+        src.close();
+        dst.close();
+      }
     }
   }
   else {
@@ -182,8 +198,8 @@ LinearSarsaAgent::LinearSarsaAgent(
   GetTiles(tmp, 1, 1, tmpf, 0);  // A dummy call to set the hashing table
   srand((unsigned int) time(NULL));
 
-  if (strlen(loadWeightsFile) > 0)
-    loadWeights(loadWeightsFile);
+  if (loadWeightsFile.length() > 0)
+    loadWeights(loadWeightsFile.c_str());
 
   // reset in case they have been changed in loadWeights
   numTilings = 0;
@@ -360,7 +376,7 @@ void LinearSarsaAgent::endEpisode(int current_time, double reward_) {
   }
 
   if (bLearning && bSaveWeights && rand() % 200 == 0 && !hiveMind) {
-    saveWeights(weightsFile);
+    saveWeights(weightsFile.c_str());
   }
   lastAction = -1;
   lastActionTime = UnknownTime;
@@ -383,11 +399,25 @@ size_t LinearSarsaAgent::mmapSize() {
 }
 
 void LinearSarsaAgent::shutDown() {
+  FileLock lock(fileLockPrefix, weightsFile, "shutDown");
+
   if (bLearning && bSaveWeights) {
-    cout << "Saving weights at shutdown." << endl;
-    saveWeights(weightsFile);
+    cerr << "Saving weights at shutdown." << endl;
+    saveWeights(weightsFile.c_str());
   }
+
   if (hiveMind) {
+    string sharedWeightFile = sharedMemoryPrefix + weightsFile;
+    bool fileFound = !access(sharedWeightFile.c_str(), F_OK);
+    if (fileFound) { // copy /run/shm/weightsFile to weightsFile
+      ifstream src(sharedWeightFile, ios::binary);
+      ofstream dst(weightsFile, ios::binary);
+
+      dst << src.rdbuf();
+      src.close();
+      dst.close();
+    }
+
     size_t mmapLength = mmapSize();
     munmap(weights, mmapLength);
     close(hiveFile);
@@ -417,25 +447,25 @@ int LinearSarsaAgent::selectAction(double state[]) {
   return action;
 }
 
-bool LinearSarsaAgent::loadWeights(char *filename) {
-  cout << "Loading weights from " << filename << endl;
+bool LinearSarsaAgent::loadWeights(const char *filename) {
+  cerr << "Loading weights from " << filename << endl;
+
   if (hiveMind) {
     if (hiveFile < 0) {
       // First, check the lock file, so we have only one initializer.
       // Later interaction should be approximately synchronized by having only
       // one active player at a time per team, but we can't assume that here.
-      FileLock lock(lockPrefix, filename, "loadWeights");
+      FileLock lock(fileLockPrefix, weightsFile, "loadWeights");
 
       // First, see if the file is already there.
       bool fileFound = !access(filename, F_OK);
       // TODO Extract constant for permissions (0664)?
       hiveFile = open(filename, O_RDWR | O_CREAT, 0664);
-
       size_t mmapLength = mmapSize();
 
       if (!fileFound) {
         // Make the file the right size.
-        cout << "Initializing new hive file." << endl;
+        cerr << "Initializing new hive file." << endl;
         if (lseek(hiveFile, mmapLength - 1, SEEK_SET) < 0) {
           throw "failed to seek initial file size";
         }
@@ -474,7 +504,7 @@ bool LinearSarsaAgent::loadWeights(char *filename) {
 
       if (!fileFound) {
         fill(weights, weights + RL_MEMORY_SIZE, 0.0);
-        saveWeights(weightsFile);
+        saveWeights(weightsFile.c_str());
       }
     }
   } else {
@@ -487,11 +517,11 @@ bool LinearSarsaAgent::loadWeights(char *filename) {
     colTab->restore(file);
     close(file);
   }
-  cout << "...done" << endl;
+  cerr << "...done" << endl;
   return true;
 }
 
-bool LinearSarsaAgent::saveWeights(char *filename) {
+bool LinearSarsaAgent::saveWeights(const char *filename) {
   if (hiveMind) {
     // The big arrays should be saved out automatically, but we still need to
     // handle the collision table header.

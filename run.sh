@@ -28,20 +28,22 @@ while getopts  "b:h:g:q:lfmsjn" flag; do
 done
 
 HIVE="--keeper-hive $HIVEMODE"
-QFILE="Q_H${HIVEMODE}"
+QFILE="hive${HIVEMODE}"
 PORT="--port=`shuf -i 2000-65000 -n 1`"
 
 if [ ! -z $GAMMA ]; then
-    QFILE="${QFILE}_G${GAMMA}"
+    QFILE="${QFILE}_gamma${GAMMA}"
 fi
 
 if [ ! -z $FULLSTATE ]; then
-    QFILE="${QFILE}_fs"
+    QFILE="${QFILE}_fullstate"
 fi
 
 if [ ! -z $JOINTTILING ]; then
-    QFILE="${QFILE}_jt"
+    QFILE="${QFILE}_jointtiling"
 fi
+
+QFILE="${QFILE}.q"
 
 if [ ! -z $QFILE2 ]; then
     QFILE="$QFILE2"

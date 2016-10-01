@@ -109,8 +109,8 @@ int main(int argc, char *argv[]) {
   int iNumTakers = 2;
   char strPolicy[128] = "random";
   bool bLearn = false;
-  char loadWeightsFile[256] = "";
-  char saveWeightsFile[256] = "";
+  string loadWeightsFile;
+  string saveWeightsFile;
   int hiveMind = 0;
   bool bInfo = false;
   bool bSuppliedLogFile = false;
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
           bLearn = Parse::parseFirstInt(&str) == 1;
           break;
         case 'f':
-          strcpy(saveWeightsFile, argv[i + 1]);
+          saveWeightsFile = argv[i + 1];
           break;
         case 'g': // gamma
           str = &argv[i + 1][0];
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
           dVersion = Parse::parseFirstDouble(&str);
           break;
         case 'w':
-          strcpy(loadWeightsFile, argv[i + 1]);
+          loadWeightsFile = argv[i + 1];
           break;
         case 'x':
           str = &argv[i + 1][0];
@@ -332,7 +332,7 @@ int main(int argc, char *argv[]) {
     // above.
     // Added WorldModel for agents needing richer/relational representation!
     typedef SMDPAgent *(*CreateAgent)(
-        WorldModel &, int, bool, double *, char *, char *, int
+        WorldModel &, int, bool, double *, string, string, int
     );
     CreateAgent createAgent = NULL;
 #ifdef WIN32

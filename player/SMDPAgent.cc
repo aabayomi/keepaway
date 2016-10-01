@@ -38,10 +38,11 @@ SMDPAgent::SMDPAgent(int numFeatures) {
   lastActionTime = UnknownTime;
   hiveMind = 0;
 
-  lockPrefix = getexepath();
-  replace(lockPrefix.begin(), lockPrefix.end(), '/', '_');
-  lockPrefix = "/run/shm/" + lockPrefix;
-  PRINT_VALUE(lockPrefix);
+  string exepath = getexepath();
+  replace(exepath.begin(), exepath.end(), '/', '_');
+
+  fileLockPrefix = "/run/lock/" + exepath + "_";
+  sharedMemoryPrefix = "/run/shm/" + exepath + "_";
 }
 
 int AtomicAction::keepers = 3;

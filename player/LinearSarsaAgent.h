@@ -12,7 +12,7 @@
 
 class LinearSarsaAgent : public SMDPAgent {
 protected:
-  char weightsFile[256];
+  const string weightsFile;
   bool bLearning;
   bool bSaveWeights;
   bool jointTiling;
@@ -48,9 +48,9 @@ protected:
   collision_table *colTab;
 
   // Load / Save weights from/to disk
-  bool loadWeights(char *filename);
+  bool loadWeights(const char *filename);
 
-  bool saveWeights(char *filename);
+  bool saveWeights(const char *filename);
 
   // Value function methods for CMACs
   int selectAction(double state[]);
@@ -87,8 +87,8 @@ public:
   LinearSarsaAgent(int numFeatures,
                    bool bLearn,
                    double widths[],
-                   char *loadWeightsFile,
-                   char *saveWeightsFile,
+                   std::string loadWeightsFile,
+                   std::string saveWeightsFile,
                    int hiveMind,
                    bool jointTiling,
                    double gamma);

@@ -242,7 +242,8 @@ public:
   int lastActionTime;
   ObjectT K[11]; // mapping from index to player obj
   int hiveMind; // 1: hive mind, 2: full hive mind
-  string lockPrefix;
+  string fileLockPrefix;
+  string sharedMemoryPrefix;
 
   int getNumFeatures() const { return m_numFeatures; }
   int getNumActions()  const { return JointActionSpace::ins().numActions();  }

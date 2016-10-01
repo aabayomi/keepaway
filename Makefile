@@ -25,4 +25,7 @@ tools:
 
 cleanall: clean
 	rm -fr Debug Release
-	rm -fr hive*-Q* logs/* *.lock core core.* vgcore.* *.lock Q_H* console.log nohup.out
+	rm -fr hive*.q logs/* *.lock core core.* vgcore.* *.lock console.log nohup.out
+	rm -f /run/lock/*.flock
+	rm -f /run/shm/*.q
+	killall -9 keepaway_player
