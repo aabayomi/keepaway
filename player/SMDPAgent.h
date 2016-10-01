@@ -74,8 +74,10 @@ struct AtomicAction {
   }
 
   virtual std::vector<int> parameters() { return {0}; }
-  virtual bool terminated(BasicPlayer *player);
-  virtual SoccerCommand execute(BasicPlayer *player) = 0;
+
+  virtual bool terminated(BasicPlayer *player, ObjectT K[]);
+
+  virtual SoccerCommand execute(BasicPlayer *player, ObjectT K[]) = 0;
   virtual AtomicAction *clone(int parameter) = 0;
 
   static int keepers;
@@ -91,8 +93,9 @@ struct AtomicAction {
 struct Hold: public AtomicAction {
   Hold(): AtomicAction(AAT_Hold) { }
 
-  virtual bool terminated(BasicPlayer *player);
-  virtual SoccerCommand execute(BasicPlayer *player);
+  virtual bool terminated(BasicPlayer *player, ObjectT K[]);
+
+  virtual SoccerCommand execute(BasicPlayer *player, ObjectT K[]);
   CLONE(Hold)
 };
 
@@ -103,7 +106,10 @@ struct PassTo: public AtomicAction {
   PassTo(): AtomicAction(AAT_PassTo) { }
 
   virtual std::vector<int> parameters();
-  virtual SoccerCommand execute(BasicPlayer *player);
+
+  virtual bool terminated(BasicPlayer *player, ObjectT K[]);
+
+  virtual SoccerCommand execute(BasicPlayer *player, ObjectT K[]);
   virtual std::string name() const;
 
   int k() const { return parameter / 5 + 1; }
@@ -115,14 +121,16 @@ struct PassTo: public AtomicAction {
 struct Intercept: public AtomicAction {
   Intercept(): AtomicAction(AAT_Intercept) { }
 
-  virtual SoccerCommand execute(BasicPlayer *player);
+  virtual bool terminated(BasicPlayer *player, ObjectT K[]);
+
+  virtual SoccerCommand execute(BasicPlayer *player, ObjectT K[]);
   CLONE(Intercept)
 };
 
 struct Stay: public AtomicAction {
   Stay(): AtomicAction(AAT_Stay) { }
 
-  virtual SoccerCommand execute(BasicPlayer *player);
+  virtual SoccerCommand execute(BasicPlayer *player, ObjectT K[]);
   CLONE(Stay)
 };
 
@@ -131,7 +139,7 @@ struct Move: public AtomicAction {
 
   virtual std::vector<int> parameters();
 
-  virtual SoccerCommand execute(BasicPlayer *player);
+  virtual SoccerCommand execute(BasicPlayer *player, ObjectT K[]);
 
   CLONE(Move);
 };

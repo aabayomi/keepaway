@@ -64,16 +64,17 @@ ostream& operator<<(ostream& out, const AtomicActionType value) {
   return out << strings[value];
 }
 
-bool AtomicAction::terminated(BasicPlayer *player) {
+bool AtomicAction::terminated(BasicPlayer *player, ObjectT K[]) {
+  (void) K;
   double dDist = numeric_limits<double>::max();
   ObjectT closest = player->WM->getClosestInSetTo( OBJECT_SET_TEAMMATES,
                                                    OBJECT_BALL, &dDist );
 
-  return SoccerTypes::isTeammate(closest ) &&
+  return SoccerTypes::isTeammate(closest) &&
          dDist < player->WM->getMaximalKickDist(closest);
 }
 
-SoccerCommand Hold::execute(BasicPlayer *player) {
+SoccerCommand Hold::execute(BasicPlayer *player, ObjectT K[]) {
   SoccerCommand soc;
 
   if (player->WM->isBallKickable()) {
@@ -82,13 +83,24 @@ SoccerCommand Hold::execute(BasicPlayer *player) {
     return soc;
   }
   else {
-    return Intercept().execute(player);
+    return Intercept().execute(player, K);
   }
 }
 
-bool Hold::terminated(BasicPlayer *player) {
+bool Hold::terminated(BasicPlayer *player, ObjectT K[]) {
   (void) player;
+  (void) K;
   return true; // always terminate in one cycle
+}
+
+bool PassTo::terminated(BasicPlayer *player, ObjectT K[]) {
+  double dDist = numeric_limits<double>::max();
+  ObjectT closest = player->WM->getClosestInSetTo(OBJECT_SET_TEAMMATES,
+                                                  OBJECT_BALL, &dDist);
+
+  return SoccerTypes::isTeammate(closest) &&
+         closest != K[0] &&
+         dDist < player->WM->getMaximalKickDist(closest);
 }
 
 vector<int> PassTo::parameters() {
@@ -105,25 +117,20 @@ string PassTo::name() const {
   return ss.str();
 }
 
-SoccerCommand PassTo::execute(BasicPlayer *player) {
+SoccerCommand PassTo::execute(BasicPlayer *player, ObjectT K[]) {
   SoccerCommand soc;
 
   if (player->WM->isBallKickable()) {
-    int numK = player->WM->getNumKeepers();
-    ObjectT K[numK];
-    for (int i = 0; i < numK; i++)
-      K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
-    player->WM->sortClosestTo(K, numK, player->WM->getAgentObjectType());
     VecPosition tmPos = player->WM->getGlobalPosition(K[k()]);
     // Normal Passing
     player->ACT->putCommandInQueue(soc = player->directPass(tmPos, PASS_NORMAL));
   }
   else {
     if (d() == 4) {
-      return Stay().execute(player);
+      return Stay().execute(player, K);
     }
     else {
-      return Move(d()).execute(player);
+      return Move(d()).execute(player, K);
     }
   }
 
@@ -131,28 +138,30 @@ SoccerCommand PassTo::execute(BasicPlayer *player) {
   return soc;
 }
 
-SoccerCommand Intercept::execute(BasicPlayer *player) {
-  SoccerCommand soc;
+bool Intercept::terminated(BasicPlayer *player, ObjectT K[]) {
+  double dDist = numeric_limits<double>::max();
+  ObjectT closest = player->WM->getClosestInSetTo(OBJECT_SET_TEAMMATES,
+                                                  OBJECT_BALL, &dDist);
 
-  // If teammate has it, don't mess with it
-  double dDist = std::numeric_limits<double>::max();
-  ObjectT closest = player->WM->getClosestInSetTo( OBJECT_SET_TEAMMATES,
-                                                   OBJECT_BALL, &dDist );
-
-  if ( SoccerTypes::isTeammate( closest ) &&
-       closest != player->WM->getAgentObjectType() &&
-       dDist < player->WM->getMaximalKickDist(closest)) {
-    return Stay().execute(player);
-  }
-  else {
-    player->ACT->putCommandInQueue(soc = player->intercept(false));
-    player->ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
-    return soc;
-  }
+  return SoccerTypes::isTeammate(closest) &&
+         closest == K[0] &&
+         dDist < player->WM->getMaximalKickDist(closest);
 }
 
-SoccerCommand Stay::execute(BasicPlayer *player) {
+
+SoccerCommand Intercept::execute(BasicPlayer *player, ObjectT K[]) {
+  (void) K;
   SoccerCommand soc;
+
+  player->ACT->putCommandInQueue(soc = player->intercept(false));
+  player->ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
+  return soc;
+}
+
+SoccerCommand Stay::execute(BasicPlayer *player, ObjectT K[]) {
+  (void) K;
+  SoccerCommand soc;
+
   Log.log(101, "turnBodyToObject( OBJECT_BALL )");
   player->ACT->putCommandInQueue( soc = player->turnBodyToObject( OBJECT_BALL ) );
   player->ACT->putCommandInQueue( player->turnNeckToObject( OBJECT_BALL, soc ) );
@@ -163,8 +172,9 @@ std::vector<int> Move::parameters() {
   return {0, 1, 2, 3};
 }
 
-SoccerCommand Move::execute(BasicPlayer *player) {
+SoccerCommand Move::execute(BasicPlayer *player, ObjectT K[]) {
   SoccerCommand soc;
+
   VecPosition target = player->WM->getAgentGlobalPosition() +
                        (player->WM->getBallPos() -
                         player->WM->getAgentGlobalPosition()).rotate(parameter * 90.0).normalize();
@@ -202,7 +212,7 @@ SoccerCommand Move::execute(BasicPlayer *player) {
     }
     else {
       Log.log(101, "player->turnBodyToObject( OBJECT_BALL )");
-      return Stay().execute(player);
+      return Stay().execute(player, K);
     }
   }
 

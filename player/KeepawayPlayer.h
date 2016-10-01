@@ -71,7 +71,7 @@ public:
 
   SoccerCommand stay(std::string error);
 
-  SoccerCommand execute(int action, int agentIdx);
+  SoccerCommand execute(int action, int agentIdx, ObjectT K[]);
 
   SoccerCommand taker();
 

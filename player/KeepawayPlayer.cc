@@ -346,27 +346,21 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
 
   // if running an option
   if (SA->lastAction >= 0 && !WM->isNewEpisode()) {
-    Log.log(101, "SA->lastAction %d:%s", SA->lastAction,
-            JointActionSpace::ins().getJointActionName(SA->lastAction));
-
     auto ja = JointActionSpace::ins().getJointAction(SA->lastAction);
     auto aa = ja->actions[0]; // the action of the leading agent
-
-    bool passing = SA->lastActionTime == WM->getCurrentCycle() - 1 &&
-                   JointActionSpace::ins().getJointAction(SA->lastAction)->actions[0]->type == AAT_PassTo;
 
     int idx = 0;
     while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
     assert(idx < numK);
     if (idx >= numK) return stay("idx >= numK");
 
-    if (passing || !aa->terminated(this)) {
-      Log.log(101, "execute option %d:%s [%d] passing: %d", SA->lastAction,
-              JointActionSpace::ins().getJointActionName(SA->lastAction), idx, passing);
-      return execute(SA->lastAction, idx);
+    if (!aa->terminated(this, SA->K)) {
+      Log.log(101, "continue option %d:%s [%d]", SA->lastAction,
+              JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
+      return execute(SA->lastAction, idx, SA->K);
     } else {
-      Log.log(101, "terminated option %d:%s [%d] passing: %d", SA->lastAction,
-              JointActionSpace::ins().getJointActionName(SA->lastAction), idx, passing);
+      Log.log(101, "terminated option %d:%s [%d]", SA->lastAction,
+              JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
     }
   }
 
@@ -393,7 +387,7 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     Log.log(101, "sync save K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
 
     SA->sync(false); // save shared memory
-    return execute(action, agentIdx);
+    return execute(action, agentIdx, SA->K);
   } else {
     SA->lastAction = -1;
     if (WM->isNewEpisode()) {
@@ -419,19 +413,19 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
 
       Log.log(101, "execute option %d:%s [%d]", SA->lastAction,
               JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
-      return execute(SA->lastAction, idx);
+      return execute(SA->lastAction, idx, SA->K);
     } else {
       return stay("wait for K0 timeout");
     }
   }
 }
 
-SoccerCommand KeepawayPlayer::execute(int action, int agentIdx)
+SoccerCommand KeepawayPlayer::execute(int action, int agentIdx, ObjectT K[])
 {
   auto ja = JointActionSpace::ins().getJointAction(action);
   auto aa = ja->actions[agentIdx];
 
-  return aa->execute(this);
+  return aa->execute(this, K);
 }
 
 SoccerCommand KeepawayPlayer::stay(string error)

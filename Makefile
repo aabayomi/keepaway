@@ -28,4 +28,4 @@ cleanall: clean
 	rm -fr hive*.q logs/* *.lock core core.* vgcore.* *.lock console.log nohup.out
 	rm -f /run/lock/*.flock
 	rm -f /run/shm/*.q
-	killall -9 keepaway_player
+	killall -9 keepaway_player 1>/dev/null 2>&1
