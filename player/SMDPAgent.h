@@ -223,6 +223,17 @@ private:
   int count;
 };
 
+class FileLock {
+private:
+  int lock;
+  std::string lockName;
+
+public:
+  FileLock(const std::string &prefix, const std::string &file, const std::string &func);
+
+  ~FileLock();
+};
+
 class SMDPAgent
 {
 public:
@@ -231,19 +242,13 @@ public:
   int lastActionTime;
   ObjectT K[11]; // mapping from index to player obj
   int hiveMind; // 1: hive mind, 2: full hive mind
+  string lockPrefix;
 
   int getNumFeatures() const { return m_numFeatures; }
   int getNumActions()  const { return JointActionSpace::ins().numActions();  }
 
 public:
-  SMDPAgent( int numFeatures)
-  {
-    m_numFeatures = numFeatures;
-    lastAction = -1;
-    lastActionTime = UnknownTime;
-    hiveMind = 0;
-  }
-
+  SMDPAgent(int numFeatures);
   virtual ~SMDPAgent() {}
 
   // abstract methods to be supplied by implementing class

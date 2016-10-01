@@ -405,7 +405,7 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
            (SA->lastAction == -1 ||
             SA->lastActionTime != WM->getCurrentCycle())) { // wait for K0
       Log.log(101, "wait for K0");
-      timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
+      static const timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
       nanosleep(&sleepTime, NULL);
       SA->sync(true); // load shared memory
     }

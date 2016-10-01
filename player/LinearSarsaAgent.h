@@ -10,16 +10,6 @@
 #define RL_MAX_NONZERO_TRACES (2 << 17)
 #define RL_MAX_NUM_TILINGS (2 << 14)
 
-class FileLock {
-private:
-  int lock;
-  std::string lockName;
-
-public:
-  FileLock(const std::string name);
-  ~FileLock();
-};
-
 class LinearSarsaAgent : public SMDPAgent {
 protected:
   char weightsFile[256];

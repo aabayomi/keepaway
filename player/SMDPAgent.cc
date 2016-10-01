@@ -1,8 +1,48 @@
 #include <limits>
+#include <linux/limits.h>
+#include <fcntl.h>
+
 #include "SMDPAgent.h"
-#include "BasicPlayer.h"
 
 using namespace std;
+
+string getexepath() {
+  char result[PATH_MAX];
+  ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+  if (count > 0) {
+    return string(result, (size_t) count);
+  } else {
+    return string(result, 0);
+  }
+}
+
+FileLock::FileLock(const string &prefix, const string &file, const string &func) {
+  static const timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
+  lockName = prefix + "_" + file + "_" + func + ".flock";
+
+  for (;;) {
+    lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
+    if (lock >= 0) break;
+    nanosleep(&sleepTime, NULL);
+  }
+}
+
+FileLock::~FileLock() {
+  unlink(lockName.c_str());
+  close(lock);
+}
+
+SMDPAgent::SMDPAgent(int numFeatures) {
+  m_numFeatures = numFeatures;
+  lastAction = -1;
+  lastActionTime = UnknownTime;
+  hiveMind = 0;
+
+  lockPrefix = getexepath();
+  replace(lockPrefix.begin(), lockPrefix.end(), '/', '_');
+  lockPrefix = "/run/shm/" + lockPrefix;
+  PRINT_VALUE(lockPrefix);
+}
 
 int AtomicAction::keepers = 3;
 

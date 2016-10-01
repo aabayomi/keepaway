@@ -3,7 +3,6 @@
 #include <sys/mman.h>
 #include <cmath>
 #include <climits>
-#include <fcntl.h>
 #include <sstream>
 #include <numeric>
 #include "LinearSarsaAgent.h"
@@ -17,22 +16,6 @@ extern Logger Log;
 #if USE_DRAW_LOG
 extern LoggerDraw LogDraw;
 #endif
-
-FileLock::FileLock(const std::string name) {
-  lockName = name + ".lock";
-  timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
-
-  for (;;) {
-    lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
-    if (lock >= 0) break;
-    nanosleep(&sleepTime, NULL);
-  }
-}
-
-FileLock::~FileLock() {
-  unlink(lockName.c_str());
-  close(lock);
-}
 
 /**
  * Designed specifically to match the serialization format for collision_table.
@@ -60,7 +43,7 @@ struct SharedData {
 void LinearSarsaAgent::sync(bool load) {
   if (!hiveMind) return;
 
-  FileLock lock(string(weightsFile) + "-sync");
+  FileLock lock(lockPrefix, weightsFile, "sync");
   Log.log(101, "LinearSarsaAgent::sync %s", load ? "load" : "save");
 
   if (load) {
@@ -441,7 +424,7 @@ bool LinearSarsaAgent::loadWeights(char *filename) {
       // First, check the lock file, so we have only one initializer.
       // Later interaction should be approximately synchronized by having only
       // one active player at a time per team, but we can't assume that here.
-      FileLock lock(filename);
+      FileLock lock(lockPrefix, filename, "loadWeights");
 
       // First, see if the file is already there.
       bool fileFound = !access(filename, F_OK);
