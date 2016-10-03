@@ -298,9 +298,9 @@ int main(int argc, char *argv[]) {
 
   SMDPAgent *sa = NULL;
 
-  double ranges[MAX_STATE_VARS];
-  double minValues[MAX_STATE_VARS];
-  double resolutions[MAX_STATE_VARS];
+  double ranges[MAX_RL_STATE_VARS];
+  double minValues[MAX_RL_STATE_VARS];
+  double resolutions[MAX_RL_STATE_VARS];
 
   AtomicAction::keepers = iNumKeepers;
   PRINT_VALUE(JointActionSpace::ins().numActions());

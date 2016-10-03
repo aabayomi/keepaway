@@ -60,6 +60,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ServerSettings.h"
 
 
+#define MAX_RL_STATE_VARS         256
+#define MAX_RL_ACTIONS            256
+
+
 /*****************************************************************************/
 /********************* DEFINES ***********************************************/
 /*****************************************************************************/

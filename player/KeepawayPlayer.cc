@@ -315,7 +315,7 @@ SoccerCommand KeepawayPlayer::keeper()
 
 SoccerCommand KeepawayPlayer::fullTeamKeepers()
 {
-  static double state[MAX_STATE_VARS];
+  static double state[MAX_RL_STATE_VARS];
   memset(state, 0, sizeof(state));
 
   int numK = WM->getNumKeepers();

@@ -25,13 +25,13 @@ protected:
   double lambda;
   double epsilon;
 
-  double tileWidths[MAX_STATE_VARS];
-  double Q[MAX_ACTIONS];
+  double tileWidths[MAX_RL_STATE_VARS];
+  double Q[MAX_RL_ACTIONS];
 
   double *weights;
   double weightsRaw[RL_MEMORY_SIZE];
 
-  int tiles[MAX_ACTIONS][RL_MAX_NUM_TILINGS];
+  int tiles[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
   int numTilings;
 
   double minimumTrace;

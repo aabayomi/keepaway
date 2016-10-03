@@ -18,13 +18,13 @@
 */
 
 /*
- * DataTypes.h - functional class (no storage or variables) that 
+ * DataTypes.h - functional class (no storage or variables) that
  *  provides conversion methods to convert from datatypes to encoded
  *  characters (encoding) and vice versa (decoding)
  *
  * We also have a "bool bound(float|int *Datatype)" method which takes a pointer
- *  to a variable and bounds the value according to the min and max values for that 
- *  datatype. Returns true if the value was changed, false o/w. 
+ *  to a variable and bounds the value according to the min and max values for that
+ *  datatype. Returns true if the value was changed, false o/w.
  *
  *
  * Creation Date: 11/18/03
@@ -47,13 +47,13 @@ const char validchars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ
 
 extern short char2numMap[];
 
-/* 
- * All methods must be static so that functions can be called without 
- * class instantiations. 
+/*
+ * All methods must be static so that functions can be called without
+ * class instantiations.
  *
  */
 class DataTypes {
- public: 
+public:
 
   typedef unsigned short MsgTypeID_t;
   typedef float X_t;
@@ -64,30 +64,29 @@ class DataTypes {
   typedef unsigned short Playernum_t;
 
   /*
-   * returns the index into the validchars array for char c 
+   * returns the index into the validchars array for char c
    * Returns -1 on error (eg, char c is not in validchars)
    */
   static short get_num_from_char(char c){
     /* if the char2numMap is not computed yet, then we must do so now */
     /* (this part will only be run once) */
     if(char2numMap[0] == -2){
-      
+
       for(int i=0; i<256; i++)
-	char2numMap[i] = -1;
-      
+        char2numMap[i] = -1;
+
       for(int i=0; i<NUMCHARS; i++){
-	char2numMap[(int)validchars[i]] = i;
+        char2numMap[(int) validchars[i]] = i;
       }
     }
-    
+
     return char2numMap[(int)c];
   }
-  
-  
 
-  /* helper function for SayMsgTypes::getEncodedStr(): 
-   * Given i, an index into validchars array, returns the appropriate char. 
-   * If i is out of bounds, rounds to nearest bound. 
+
+  /* helper function for SayMsgTypes::getEncodedStr():
+   * Given i, an index into validchars array, returns the appropriate char.
+   * If i is out of bounds, rounds to nearest bound.
    */
   static char get_printable_char(float i){
     // cast i to integer using floor (standard C casting) as defined in specification
@@ -105,10 +104,10 @@ class DataTypes {
       return validchars[NUMCHARS-1];
     }
     else { // index is within bounds
-      
+
       return validchars[index];
     }
-    
+
   }
 
 
@@ -139,18 +138,18 @@ class DataTypes {
       return ((float)get_num_from_char(encoded) / NUMCHARS * 106.) - 53.;
     }
 
-    /* 
+    /*
      * call as: DataTypes::X::bound(&X)
-     * Returns: true if X was modified, false o/w. 
+     * Returns: true if X was modified, false o/w.
      */
     static bool bound(X_t *X){
       if(*X < -53.){
-	*X = -53.;
-	return true;
+        *X = -53.;
+        return true;
       }
       else if(*X >= 53.){
-	*X = 52.999;
-	return true;
+        *X = 52.999;
+        return true;
       }
       else return false;
     }
@@ -171,12 +170,12 @@ class DataTypes {
 
     static bool bound(Y_t *Y){
       if(*Y < -34.){
-	*Y = -34.;
-	return true;
+        *Y = -34.;
+        return true;
       }
       else if(*Y >= 34.){
-	*Y = 33.999;
-	return true;
+        *Y = 33.999;
+        return true;
       }
       else return false;
     }
@@ -197,12 +196,12 @@ class DataTypes {
 
     static bool bound(dX_t *DX){
       if(*DX < -2.7){
-	*DX = -2.7;
-	return true;
+        *DX = -2.7;
+        return true;
       }
       else if(*DX >= 2.7){
-	*DX = 2.699;
-	return true;
+        *DX = 2.699;
+        return true;
       }
       else return false;
     }
@@ -223,12 +222,12 @@ class DataTypes {
 
     static bool bound(dY_t *DX){
       if(*DX < -2.7){
-	*DX = -2.7;
-	return true;
+        *DX = -2.7;
+        return true;
       }
       else if(*DX >= 2.7){
-	*DX = 2.699;
-	return true;
+        *DX = 2.699;
+        return true;
       }
       else return false;
     }
@@ -249,12 +248,12 @@ class DataTypes {
 
     static bool bound(int *Cycle){
       if(*Cycle < 0){
-	*Cycle = 0;
-	return true;
+        *Cycle = 0;
+        return true;
       }
       else if(*Cycle >= 72){
-	*Cycle = 71;
-	return true;
+        *Cycle = 71;
+        return true;
       }
       else return false;
     }
@@ -275,12 +274,12 @@ class DataTypes {
 
     static bool bound(int *Playernum){
       if(*Playernum < 0){
-	*Playernum = 0;
-	return true;
+        *Playernum = 0;
+        return true;
       }
       else if(*Playernum > 11){
-	*Playernum = 11;
-	return true;
+        *Playernum = 11;
+        return true;
       }
       else return false;
     }

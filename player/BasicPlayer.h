@@ -58,6 +58,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern Logger Log; /*!< This is a reference to Logger to write log info to*/
 
+class FileLock {
+private:
+  int lock;
+  std::string lockName;
+
+public:
+  FileLock(const std::string &prefix, const std::string &file, const std::string &func);
+
+  ~FileLock();
+};
+
 /*! This class defines the skills that can be used by an agent. No
     functionality is available that chooses when to execute which skill, this
     is done in the Player class. The WorldModel is used to determine the way

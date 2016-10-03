@@ -29,7 +29,7 @@ struct SharedData {
   long clearhits;
   long collisions;
 
-  double Q[MAX_ACTIONS];
+  double Q[MAX_RL_ACTIONS];
   int numTilings;
   int lastAction;
   int lastActionTime;
@@ -605,7 +605,7 @@ void LinearSarsaAgent::loadTiles(double state[]) // will change colTab->data imp
   if (jointTiling) {
     numTilings = tilingsPerGroup * getNumFeatures();
 
-    float state2[MAX_STATE_VARS];
+    float state2[MAX_RL_STATE_VARS];
     for (int v = 0; v < getNumFeatures(); v++) {
       state2[v] = (float) (state[v] / tileWidths[v]);
     }

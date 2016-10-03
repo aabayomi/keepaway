@@ -61,7 +61,9 @@ set(SOURCE_FILES
     player/WorldModelSayMsgFactory.h
     player/WorldModelSayMsgTypes.cc
     player/WorldModelSayMsgTypes.h
-    player/WorldModelUpdate.cc)
+        player/WorldModelUpdate.cc
+        player/JointActionSpace.cc
+        player/JointActionSpace.h)
 
 add_executable(keepaway_player ${SOURCE_FILES})
 target_link_libraries(keepaway_player pthread dl)
