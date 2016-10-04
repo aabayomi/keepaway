@@ -39,8 +39,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     sophisticated decision procedure to determine the next action. */
 class KeepawayPlayer : public BasicPlayer {
 protected:
-  bool bContLoop;               /*!< is server is alive             */
-
   Time m_timeLastSay;           /*!< last time communicated         */
   SMDPAgent *SA;
 
@@ -67,11 +65,11 @@ public:
   // behaviors
   SoccerCommand keeper();
 
-  SoccerCommand fullTeamKeepers();
+  SoccerCommand jolKeepers();
 
-  SoccerCommand stay(std::string error);
+  SoccerCommand idle(std::string error);
 
-  SoccerCommand execute(int action, int agentIdx, ObjectT K[]);
+  SoccerCommand jolExecute(int action, int agentIdx, ObjectT K[]);
 
   SoccerCommand taker();
 

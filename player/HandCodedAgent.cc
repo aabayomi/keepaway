@@ -73,7 +73,7 @@ int HandCodedAgent::alwaysHold()
 
 int HandCodedAgent::random(double state[])
 {
-  return JointActionSpace::ins().sample(state, getNumFeatures());
+  return jol::JointActionSpace::ins().sample(state, getNumFeatures());
 }
 
 /**

@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include "SoccerTypes.h"
 #include "Logger.h"
-#include "JointActionSpace.h"
+#include "JointOptionLearning.h"
 
 class SMDPAgent
 {
@@ -57,7 +57,7 @@ public:
   string sharedMemoryPrefix;
 
   int getNumFeatures() const { return m_numFeatures; }
-  int getNumActions()  const { return JointActionSpace::ins().numActions();  }
+  int getNumActions() const { return jol::JointActionSpace::ins().numActions(); }
 
 public:
   SMDPAgent(int numFeatures);

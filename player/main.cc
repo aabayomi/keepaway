@@ -58,6 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KeepawayPlayer.h"
 #include "HandCodedAgent.h"
 #include "LinearSarsaAgent.h"
+#include "HierarchicalFSM.h"
 
 #include "Parse.h"
 #include <string.h>   // needed for strcpy
@@ -117,7 +118,7 @@ int main(int argc, char *argv[]) {
   bool bSuppliedLogDrawFile = false;
   int iStopAfter = -1; //*met+1 8/16/05
   int iStartLearningAfter = -1;
-  bool jointTiling = false;
+  bool hierarchicalFSM = false;
   double gamma = 1.0;
 
   ofstream os;
@@ -253,7 +254,7 @@ int main(int argc, char *argv[]) {
           break;
         case 'z':
           str = &argv[i + 1][0];
-          jointTiling = Parse::parseFirstInt(&str) == 1;
+          hierarchicalFSM = Parse::parseFirstInt(&str) == 1;
           break;
         default:
           cerr << "(main) Unknown command option: " << argv[i] << endl;
@@ -269,7 +270,7 @@ int main(int argc, char *argv[]) {
          "mode : " << iMode << endl <<
          "playernr : " << iNr << endl <<
          "reconnect : " << iReconnect << endl <<
-         "joint tiling : " << jointTiling << endl <<
+         "hierarchical FSM : " << hierarchicalFSM << endl <<
          "hive mind mode : " << hiveMind << endl <<
          "gamma : " << gamma << endl <<
          "be learning : " << bLearn << endl;
@@ -296,78 +297,88 @@ int main(int argc, char *argv[]) {
   ActHandler a(&c, &wm, &ss);                // link actHandler and worldmodel
   SenseHandler s(&c, &wm, &ss, &cs);         // link senseHandler with wm
 
-  SMDPAgent *sa = NULL;
+  SMDPAgent *sa = NULL; // SMDP agent for (joint) option learner
 
   double ranges[MAX_RL_STATE_VARS];
   double minValues[MAX_RL_STATE_VARS];
   double resolutions[MAX_RL_STATE_VARS];
 
-  AtomicAction::keepers = iNumKeepers;
-  PRINT_VALUE(JointActionSpace::ins().numActions());
-  Log.log(101, "Joint Action Space: \n%s\n", JointActionSpace::ins().to_string().c_str());
-
+  jol::AtomicAction::num_keepers = iNumKeepers;
   int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                        iNumKeepers, iNumTakers);
-  if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
-    // (l)earned
-    // or "learned!" -> Don't explore at all.
-    LinearSarsaAgent *linearSarsaAgent = new LinearSarsaAgent(
-        numFeatures, bLearn, resolutions,
-        loadWeightsFile, saveWeightsFile, hiveMind, jointTiling, gamma
-    );
 
-    // Check for pure exploitation mode.
-    size_t length = strlen(strPolicy);
-    if (strPolicy[length - 1] == '!') {
-      linearSarsaAgent->setEpsilon(0.0);
-    }
+  fsm::HierarchicalFSM::num_features = numFeatures;
+  fsm::HierarchicalFSM::num_keepers = iNumKeepers;
+  fsm::HierarchicalFSM::gamma = gamma;
 
-    // Done setting up.
-    sa = linearSarsaAgent;
-  } else if (!strncmp(strPolicy, "ext=", 4)) {
-    // Load extension.
-    // Name should come after "ext=". Yes, this is hackish.
-    char *extensionName = strPolicy + 4;
-    // These parameters are based on the expected learning agent parameters
-    // above.
-    // Added WorldModel for agents needing richer/relational representation!
-    typedef SMDPAgent *(*CreateAgent)(
-        WorldModel &, int, bool, double *, string, string, int
-    );
-    CreateAgent createAgent = NULL;
+  if (!hierarchicalFSM) {
+    Log.log(101, "Joint Action Space: \n%s\n",
+            jol::JointActionSpace::ins().to_string().c_str());
+
+    if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
+      // (l)earned
+      // or "learned!" -> Don't explore at all.
+      LinearSarsaAgent *linearSarsaAgent = new LinearSarsaAgent(
+          numFeatures, bLearn, resolutions,
+          loadWeightsFile, saveWeightsFile, hiveMind, gamma
+      );
+
+      // Check for pure exploitation mode.
+      size_t length = strlen(strPolicy);
+      if (strPolicy[length - 1] == '!') {
+        linearSarsaAgent->setEpsilon(0.0);
+      }
+
+      // Done setting up.
+      sa = linearSarsaAgent;
+    } else if (!strncmp(strPolicy, "ext=", 4)) {
+      // Load extension.
+      // Name should come after "ext=". Yes, this is hackish.
+      char *extensionName = strPolicy + 4;
+      // These parameters are based on the expected learning agent parameters
+      // above.
+      // Added WorldModel for agents needing richer/relational representation!
+      typedef SMDPAgent *(*CreateAgent)(
+          WorldModel &, int, bool, double *, string, string, int
+      );
+      CreateAgent createAgent = NULL;
 #ifdef WIN32
-    // TODO
+      // TODO
 #else
-    // Load the extension.
-    void *extension = dlopen(extensionName, RTLD_NOW);
-    if (!extension) {
-      cerr << "Failed to load extension " << extensionName << endl;
-      cerr << dlerror() << endl;
-      return EXIT_FAILURE;
-    }
-    // Find the createAgent function.
-    createAgent =
-        reinterpret_cast<CreateAgent>(dlsym(extension, "createAgent"));
-    if (!createAgent) {
-      cerr << "Failed to find createAgent in " << extensionName << endl;
-      cerr << dlerror() << endl;
-      return EXIT_FAILURE;
-    }
+      // Load the extension.
+      void *extension = dlopen(extensionName, RTLD_NOW);
+      if (!extension) {
+        cerr << "Failed to load extension " << extensionName << endl;
+        cerr << dlerror() << endl;
+        return EXIT_FAILURE;
+      }
+      // Find the createAgent function.
+      createAgent =
+          reinterpret_cast<CreateAgent>(dlsym(extension, "createAgent"));
+      if (!createAgent) {
+        cerr << "Failed to find createAgent in " << extensionName << endl;
+        cerr << dlerror() << endl;
+        return EXIT_FAILURE;
+      }
 #endif
-    sa = createAgent(
-        wm, numFeatures, bLearn, resolutions,
-        loadWeightsFile, saveWeightsFile, hiveMind
-    );
+      sa = createAgent(
+          wm, numFeatures, bLearn, resolutions,
+          loadWeightsFile, saveWeightsFile, hiveMind
+      );
+    } else {
+      // (ha)nd (ho)ld (r)andom
+      sa = new HandCodedAgent(numFeatures,
+                              strPolicy, &wm);
+    }
+
+    if (!sa) {
+      cerr << "No agent!" << endl;
+      return EXIT_FAILURE;
+    }
   } else {
-    // (ha)nd (ho)ld (r)andom
-    sa = new HandCodedAgent(numFeatures,
-                            strPolicy, &wm);
+    assert(sa == 0);
   }
 
-  if (!sa) {
-    cerr << "No agent!" << endl;
-    return EXIT_FAILURE;
-  }
   KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,
                     iNumKeepers, iNumTakers, dVersion, iReconnect);
 

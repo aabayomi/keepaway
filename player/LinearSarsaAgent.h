@@ -6,16 +6,11 @@
 #include "SMDPAgent.h"
 #include "tiles2.h"
 
-#define RL_MEMORY_SIZE (2 << 20)
-#define RL_MAX_NONZERO_TRACES (2 << 17)
-#define RL_MAX_NUM_TILINGS (2 << 14)
-
 class LinearSarsaAgent : public SMDPAgent {
 protected:
   const string weightsFile;
   bool bLearning;
   bool bSaveWeights;
-  bool jointTiling;
 
   /// Hive mind indicator and file descriptor.
   int hiveFile;
@@ -90,7 +85,6 @@ public:
                    std::string loadWeightsFile,
                    std::string saveWeightsFile,
                    int hiveMind,
-                   bool jointTiling,
                    double gamma);
 
   void setEpsilon(double epsilon);
@@ -101,8 +95,6 @@ public:
   int step(int current_time, double reward_, double state[]);
 
   void endEpisode(int current_time, double reward_);
-
-  void setParams(int iCutoffEpisodes, int iStopLearningEpisodes);
 
   void shutDown();
 };

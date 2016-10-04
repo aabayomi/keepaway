@@ -55,15 +55,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Parse.h"
 #include "SayMsgDecoder.h"
 #include "WorldModelSayMsgFactory.h"
-#include <cstdlib>
 #include <cstring>
-#include <stdio.h>      // needed for sprintf
-#include <list>         // needed for list
 
 #include <sys/times.h>  // needed for times
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
 
 
 /*****************************************************************************/
@@ -633,7 +627,7 @@ void WorldModel::processQueuedCommands( SoccerCommand commands[],
     \return bool to indicate whether update succeeded. */
 bool WorldModel::updateAll( )
 {
-  //Log.log( 101, "WorldModel::updateAll" );
+  Log.log(101, "WorldModel::updateAll");
 
   static Timing timer;
   double dTimeSense = 0.0, dTimeSee = 0.0, dTimeComm=0.0, dTimeFastest = 0.0;

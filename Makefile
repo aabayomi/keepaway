@@ -24,9 +24,9 @@ tools:
 	cd tools; make
 
 cleanall: clean
-	./kill.sh 
-	killall -9 keepaway_player 1>/dev/null 2>&1
 	rm -f /run/lock/*.flock
 	rm -f /run/shm/*.q
 	rm -fr Debug Release
 	rm -fr hive*.q logs/* *.lock core core.* vgcore.* *.lock console.log nohup.out
+	./kill.sh 
+	killall -9 keepaway_player 1>/dev/null 2>&1

@@ -35,7 +35,7 @@ def launch_player(player_type, index, options):
     player_options = dict(
         i = '1', # verbose
         g = float(options.gamma),
-        z = int(options.joint_tiling),
+        z=int(options.hierarchical_fsm),
         l = options.log_level, # log level
         o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index + 1),
         e = int(getattr(options, player_type + '_learn')),
@@ -127,7 +127,7 @@ def launch_server(options):
     # Hardcoded settings for keepaway play.
     server_options += [('forbid_kick_off_offside', 0)]
     server_options += [('half_time', -1)]
-    
+
     # Either keepaway or trainer mode. Field size.
     server_options += [('keepaway', int(not options.coach))]
     server_options += [('keepaway_start', options.game_start)]
@@ -331,7 +331,7 @@ def parse_options(args = None, **defaults):
         '--fullstate', action = 'store_true', default = False,
         help = "Use fullstate information for left and right.")
     parser.add_option(
-        '--joint-tiling', action = 'store_true', default = False,
+        '--hierarchical-fsm', action='store_true', default=False,
         help = "Tiling using all state variables (not per state variable).")
     parser.add_option(
         '--gamma', type = 'float', default = 1.0,
@@ -363,7 +363,6 @@ def run(options):
     Run with an options object already given.
     Handy for calling from other scripts rather than a shell.
     """
-    from time import sleep
     # print options
     # First, make sure a server isn't already running on this port.
     if server_running(options.port):

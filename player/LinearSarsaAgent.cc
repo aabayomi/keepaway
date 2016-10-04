@@ -129,10 +129,8 @@ LinearSarsaAgent::LinearSarsaAgent(
     string loadWeightsFile,
     string saveWeightsFile,
     int hiveMind,
-    bool jointTiling,
     double gamma)
     : SMDPAgent(numFeatures),
-      jointTiling(jointTiling),
       hiveFile(-1),
       gamma(gamma) {
   bLearning = bLearn;
@@ -247,14 +245,6 @@ int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
     Log.log(101, "LinearSarsaAgent::startEpisode action: %d", lastAction);
   }
 
-#if USE_DRAW_LOG
-  char buffer[128];
-  sprintf( buffer, "Q[%d] = %.2f", lastAction, Q[lastAction] );
-  LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
-                   buffer,
-                   1, COLOR_BROWN );
-#endif
-
   for (int j = 0; j < numTilings; j++)
     setTrace(tiles[lastAction][j], 1.0);
 
@@ -282,7 +272,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
     tau = current_time - lastActionTime;
     Log.log(101, "LinearSarsaAgent::step hived lastActionTime: %d", lastActionTime);
     Log.log(101, "LinearSarsaAgent::step hived lastAction: %d %s", lastAction,
-            JointActionSpace::ins().getJointActionName(lastAction));
+            jol::JointActionSpace::ins().getJointActionName(lastAction));
     Log.log(101, "LinearSarsaAgent::step hived tau: %f", tau);
   }
 
@@ -307,30 +297,13 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
     Log.log(101, "LinearSarsaAgent::step action: %d", lastAction);
   }
 
-#if USE_DRAW_LOG
-  char buffer[128];
-  sprintf( buffer, "Q[%d] = %.2f", lastAction, Q[lastAction] );
-  LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
-                   buffer,
-                   1, COLOR_BROWN );
-#endif
-
   if (!bLearning)
     return lastAction;
 
-#if USE_DRAW_LOG
-
-    //char buffer[128];
-  sprintf( buffer, "reward: %.2f", reward );
-  LogDraw.logText( "reward", VecPosition( 25, 30 ),
-                   buffer,
-                   1, COLOR_NAVY );
-#endif
-
   assert(!std::isnan(Q[lastAction]) && !std::isinf(Q[lastAction]));
-  delta += pow(gamma, tau) * Q[lastAction]; //delta += Q_{t-1}[s_t, a_t]
+  delta += pow(gamma, tau) * Q[lastAction]; //delta += gamma**tau * Q_{t-1}[s_t, a_t]
 
-  updateWeights(delta); //Q_t <- Q_{t-1}
+  updateWeights(delta);
   Q[lastAction] = computeQ(lastAction); //need to redo because weights changed: Q_t[s_t, a_t]
 
   decayTraces(gamma * lambda);
@@ -362,14 +335,6 @@ void LinearSarsaAgent::endEpisode(int current_time, double reward_) {
       tau = current_time - lastActionTime;
       Log.log(101, "LinearSarsaAgent::endEpisode hived tau: %f", tau);
     }
-
-#if USE_DRAW_LOG
-    char buffer[128];
-      sprintf( buffer, "reward: %.2f", reward );
-      LogDraw.logText( "reward", VecPosition( 25, 30 ),
-                       buffer,
-                       1, COLOR_NAVY );
-#endif
 
     double delta = reward(tau, gamma) - Q[lastAction];
     updateWeights(delta);
@@ -437,7 +402,7 @@ int LinearSarsaAgent::selectAction(double state[]) {
 
   // Epsilon-greedy
   if (bLearning && drand48() < epsilon) {     /* explore */
-    action = JointActionSpace::ins().sample(state, getNumFeatures());
+    action = jol::JointActionSpace::ins().sample(state, getNumFeatures());
   }
   else {
     action = argmaxQ(state);
@@ -557,7 +522,7 @@ int LinearSarsaAgent::argmaxQ(double state[]) const {
   double bestValue = INT_MIN;
   int numTies = 0;
   for (int a = 0; a < getNumActions(); a++) {
-    if (JointActionSpace::ins().getJointAction(a)->tmControllBall != tmControllBall)
+    if (jol::JointActionSpace::ins().getJointAction(a)->tmControllBall != tmControllBall)
       continue;
 
     double value = Q[a];
@@ -602,31 +567,16 @@ void LinearSarsaAgent::loadTiles(double state[]) // will change colTab->data imp
 {
   const int tilingsPerGroup = 32;
 
-  if (jointTiling) {
-    numTilings = tilingsPerGroup * getNumFeatures();
+  numTilings = 0;
 
-    float state2[MAX_RL_STATE_VARS];
-    for (int v = 0; v < getNumFeatures(); v++) {
-      state2[v] = (float) (state[v] / tileWidths[v]);
-    }
-
+  /* These are the 'tiling groups'  --  play here with representations */
+  /* One tiling for each state variable */
+  for (int v = 0; v < getNumFeatures(); v++) {
     for (int a = 0; a < getNumActions(); a++) {
-      GetTiles(&(tiles[a][0]), numTilings, colTab,
-               state2, getNumFeatures(), a);
+      GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
+                (float) (state[v] / tileWidths[v]), a, v);
     }
-  }
-  else { // tiling per state variable
-    numTilings = 0;
-
-    /* These are the 'tiling groups'  --  play here with representations */
-    /* One tiling for each state variable */
-    for (int v = 0; v < getNumFeatures(); v++) {
-      for (int a = 0; a < getNumActions(); a++) {
-        GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
-                  (float) (state[v] / tileWidths[v]), a, v);
-      }
-      numTilings += tilingsPerGroup;
-    }
+    numTilings += tilingsPerGroup;
   }
 
   assert(numTilings > 0);
@@ -714,8 +664,4 @@ void LinearSarsaAgent::increaseMinTrace() {
     if (traces[f] < minimumTrace)
       clearExistentTrace(f, loc);
   }
-}
-
-void LinearSarsaAgent::setParams(int iCutoffEpisodes, int iStopLearningEpisodes) {
-  /* set learning parameters */
 }

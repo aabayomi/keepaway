@@ -8,6 +8,8 @@
 #include "BasicPlayer.h"
 #include "SoccerTypes.h"
 
+namespace jol {
+
 enum AtomicActionType {
   AAT_None,
   AAT_Hold,
@@ -39,7 +41,7 @@ struct AtomicAction {
 
   virtual AtomicAction *clone(int parameter) = 0;
 
-  static int keepers;
+  static int num_keepers;
 };
 
 #define CLONE(cls) \
@@ -114,7 +116,7 @@ struct JointAction {
   bool tmControllBall;
 
   JointAction() : id(0), tmControllBall(false) {
-    actions.resize((std::size_t) AtomicAction::keepers);
+    actions.resize((std::size_t) AtomicAction::num_keepers);
   }
 
   JointAction(const JointAction &ja) :
@@ -147,6 +149,9 @@ struct JointAction {
   }
 };
 
+/**
+ * high-level joint options
+ */
 class JointActionSpace {
 private:
   JointActionSpace();
@@ -196,5 +201,6 @@ private:
   int count;
 };
 
+}
 
 #endif //KEEPAWAY_PLAYER_JOINTACTIONSPACE_H

@@ -6,20 +6,20 @@ MONITOR=""
 SYNCH=""
 LOG=""
 LOGLEVEL="101"
-JOINTTILING=""
+HIERARCHICALFSM=""
 GAMMA="1.0"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
 QFILE2=""
 
-while getopts  "b:h:g:q:lfmsjn" flag; do
+while getopts  "b:h:g:q:lfmsnz" flag; do
     case "$flag" in
         h) HIVEMODE="$OPTARG";;
         f) FULLSTATE="--fullstate";; 
         m) MONITOR="--monitor";;
         s) SYNCH="--synch-mode";;
         l) LOG="--log-dir=logs --log-game --log-text --log-level $LOGLEVEL";;
-        j) JOINTTILING="--joint-tiling";;
+        z) HIERARCHICALFSM="--hierarchical-fsm";;
         g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`";;
         b) BUILD="$OPTARG";;
         n) LEARNING="--keeper-policy=learned!";;
@@ -39,8 +39,8 @@ if [ ! -z $FULLSTATE ]; then
     QFILE="${QFILE}_fullstate"
 fi
 
-if [ ! -z $JOINTTILING ]; then
-    QFILE="${QFILE}_jointtiling"
+if [ ! -z $HIERARCHICALFSM ]; then
+    QFILE="${QFILE}_fsm"
 fi
 
 QFILE="${QFILE}.q"
@@ -57,5 +57,5 @@ ulimit -c unlimited
 ./keepaway.py $LEARNING \
     --keeper-output=$QFILE --keeper-input=$QFILE \
     $HIVE $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
-    $JOINTTILING --gamma=$GAMMA --label=`basename $QFILE`
+    $HIERARCHICALFSM --gamma=$GAMMA --label=`basename $QFILE`
 

@@ -49,8 +49,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Parse.h"       // Parse
 
 #include <fstream>       // ifstream
-#include <stdio.h>       // printf
-#include <math.h>        // fabs
 
 /*****************************************************************************/
 /********************** CLASS PLAYERTYPEINFO *********************************/
@@ -111,8 +109,8 @@ bool PlayerTypeInfo::setValues( PlayerT pt,   double ax,   double ay,
 void PlayerTypeInfo::show( ostream &os )
 {
   os << "(" << (int)playerType << ", " << dAttrX << ", " << dAttrY << ", "
-            << dMinX           << ", " << dMaxX  << ", " << bBehindBall 
-            <<  ")" << endl;
+     << dMinX << ", " << dMaxX << ", " << bBehindBall
+     << ")" << endl;
 
 }
 
@@ -601,7 +599,7 @@ bool Formations::readFormations( const char *strFile )
             pt_info->setAttrY( Parse::parseFirstDouble( &str ) );
           }
           break;
-        case 6: // stay behind the ball for all the player types
+        case 6: // idle behind the ball for all the player types
           for( i = 0 ; i < MAX_PLAYER_TYPES ; i ++ )
           {
             pt_info = formations[iForm].getPlayerTypeInfo( i );
@@ -683,7 +681,7 @@ PlayerT Formations::getPlayerType( ObjectT obj, FormationT ft ) const
 {
   if( ft == FT_ILLEGAL )
     ft = curFormation;
-  return formations[ ft ].getPlayerType( 
+  return formations[ft].getPlayerType(
     SoccerTypes::getIndex( obj ) );
 }
 

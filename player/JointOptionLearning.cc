@@ -3,11 +3,13 @@
 //
 
 #include <sstream>
-#include "JointActionSpace.h"
+#include "JointOptionLearning.h"
 
 using namespace std;
 
-int AtomicAction::keepers = 3;
+namespace jol {
+
+int AtomicAction::num_keepers = 3;
 
 ostream &operator<<(ostream &out, const AtomicActionType value) {
   static unordered_map<int, string> strings;
@@ -66,7 +68,7 @@ bool PassTo::terminated(BasicPlayer *player, ObjectT K[]) {
 
 vector<int> PassTo::parameters() {
   vector<int> ret;
-  for (int i = 0; i < (keepers - 1) * 5; ++i) {
+  for (int i = 0; i < (num_keepers - 1) * 5; ++i) {
     ret.push_back(i);
   }
   return ret;
@@ -83,7 +85,6 @@ SoccerCommand PassTo::execute(BasicPlayer *player, ObjectT K[]) {
 
   if (player->WM->isBallKickable()) {
     VecPosition tmPos = player->WM->getGlobalPosition(K[k()]);
-    // Normal Passing
     player->ACT->putCommandInQueue(soc = player->directPass(tmPos, PASS_NORMAL));
   } else {
     if (d() == 4) {
@@ -181,15 +182,15 @@ SoccerCommand Move::execute(BasicPlayer *player, ObjectT K[]) {
 JointActionSpace::JointActionSpace()
     : count(0) {
   std::vector<std::vector<AtomicAction *>> actions[2];
-  actions[0].resize((std::size_t) AtomicAction::keepers);
-  actions[1].resize((std::size_t) AtomicAction::keepers);
+  actions[0].resize((std::size_t) AtomicAction::num_keepers);
+  actions[1].resize((std::size_t) AtomicAction::num_keepers);
 
   JointAction ja;
 
   ja.tmControllBall = true;
   actions[ja.tmControllBall][0].push_back(new Hold);
   actions[ja.tmControllBall][0].push_back(new PassTo);
-  for (int k = 1; k < AtomicAction::keepers; ++k) {
+  for (int k = 1; k < AtomicAction::num_keepers; ++k) {
     actions[ja.tmControllBall][k].push_back(new Intercept);
     actions[ja.tmControllBall][k].push_back(new Stay);
     actions[ja.tmControllBall][k].push_back(new Move);
@@ -198,7 +199,7 @@ JointActionSpace::JointActionSpace()
 
   ja.tmControllBall = false;
   actions[ja.tmControllBall][0].push_back(new Intercept);
-  for (int k = 1; k < AtomicAction::keepers; ++k) {
+  for (int k = 1; k < AtomicAction::num_keepers; ++k) {
     actions[ja.tmControllBall][k].push_back(new Stay);
     actions[ja.tmControllBall][k].push_back(new Move);
   }
@@ -208,7 +209,7 @@ JointActionSpace::JointActionSpace()
 void JointActionSpace::construct(
     bool tmControlBall, int k,
     vector<vector<AtomicAction *>> &actions, JointAction &ja) {
-  if (k >= AtomicAction::keepers) {
+  if (k >= AtomicAction::num_keepers) {
     ja.id = count++;
     jointActions[tmControlBall].push_back(new JointAction(ja));
     auto j = jointActions[tmControlBall].back();
@@ -239,4 +240,6 @@ void JointActionSpace::construct(
       }
     }
   }
+}
+
 }

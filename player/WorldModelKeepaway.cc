@@ -110,8 +110,6 @@ bool WorldModel::isNewEpisode()
 
 double WorldModel::keeperReward(int lastActionTime)
 {
-  //Log.log( 101, "WorldModel::keeperReward getTimeLastAction: %d", getTimeLastAction());
-  //Log.log( 101, "WorldModel::keeperReward getCurrentCycle: %d", getCurrentCycle());
   double reward = getCurrentCycle() - lastActionTime;
   return reward;
 }

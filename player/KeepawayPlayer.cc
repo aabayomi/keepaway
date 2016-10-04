@@ -31,11 +31,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "KeepawayPlayer.h"
 #include "SayMsgEncoder.h"
+#include "HierarchicalFSM.h"
 #include <cstring>
 
-#if USE_DRAW_LOG
-extern LoggerDraw LogDraw;
-#endif
 
 KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
                                 ServerSettings *ss, PlayerSettings *ps,
@@ -50,7 +48,6 @@ KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
   WM            = wm;
   SS            = ss;
   PS            = ps;
-  bContLoop     = true;
   WM->setTeamName( strTeamName );
   WM->setNumKeepers( iNumKeepers );
   WM->setNumTakers( iNumTakers );
@@ -71,109 +68,66 @@ KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
     puts the best soccer command in the queue of the ActHandler. */
 void KeepawayPlayer::mainLoop( )
 {
-  Timing timer;
+  bool bContLoop = true;
 
-  // wait for new information from the server
-  // cannot say bContLoop=WM->wait... since bContLoop can be changed elsewhere
-  if(!WM->waitForNewInformation())
-    bContLoop =  false;
+  // do initialization stuff
+  if (!WM->waitForNewInformation()) bContLoop = false;
+  if (bContLoop) WM->updateAll();
 
-  while( bContLoop )                                 // as long as server alive
-  {
-    Log.logWithTime( 3, "  start update_all" );
-    Log.setHeader( WM->getCurrentCycle() );
+  if (WM->getSide() == SIDE_RIGHT || SA) { // joint option learner or taker
+    if (!WM->waitForNewInformation()) bContLoop = false;
 
-#if USE_DRAW_LOG
-    LogDraw.setTime( WM->getCurrentCycle() );
-#endif
-
-    if(WM->updateAll( ))
+    while (bContLoop)                                 // as long as server alive
     {
-      //Log.log( 101, "KeepawayPlayer::mainLoop: keeper/taker main loop" );
+      Log.logWithTime(3, "  start update_all");
+      Log.setHeader(WM->getCurrentCycle());
 
-      timer.restartTime();
-      SoccerCommand soc;
+      if (WM->updateAll()) {
+        SoccerCommand soc;
 
-      if ( WM->getSide() == SIDE_LEFT )
-        soc = keeper();
-      else
-        soc = taker();
+        if (WM->getSide() == SIDE_LEFT)
+          soc = keeper();
+        else
+          soc = taker();
 
-      if(shallISaySomething())           // shall I communicate
-      {
-        m_timeLastSay = WM->getCurrentTime();
-        char strMsg[MAX_SAY_MSG];
-        makeSayMessage( soc, strMsg );
-        if( strlen( strMsg ) != 0 )
-          Log.log( 600, "send communication string: %s", strMsg );
-        WM->setCommunicationString( strMsg );
-      }
-
-      Log.logWithTime( 3, "  determined action; waiting for new info" );
-      // directly after see message, will not get better info, so send commands
-      if( WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
-          (SS->getSynchMode() && WM->getRecvThink()))
-      {
-        Log.logWithTime( 3, "  send messages directly" );
-        ACT->sendCommands( );
-        Log.logWithTime( 3, "  sent messages directly" );
-        if(SS->getSynchMode())
+        if (shallISaySomething())           // shall I communicate
         {
-          WM->processRecvThink( false );
-          ACT->sendMessageDirect( "(done)" );
+          m_timeLastSay = WM->getCurrentTime();
+          char strMsg[MAX_SAY_MSG];
+          makeSayMessage(soc, strMsg);
+          if (strlen(strMsg) != 0)
+            Log.log(600, "send communication string: %s", strMsg);
+          WM->setCommunicationString(strMsg);
         }
+
+        Log.logWithTime(3, "  determined action; waiting for new info");
+        // directly after see message, will not get better info, so send commands
+        if (WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
+            (SS->getSynchMode() && WM->getRecvThink())) {
+          Log.logWithTime(3, "  send messages directly");
+          ACT->sendCommands();
+          Log.logWithTime(3, "  sent messages directly");
+          if (SS->getSynchMode()) {
+            WM->processRecvThink(false);
+            ACT->sendMessageDirect("(done)");
+          }
+        }
+      } else {
+        Log.logWithTime(3, "  HOLE no action determined; waiting for new info");
       }
-    }
-    else
-      Log.logWithTime( 3, "  HOLE no action determined; waiting for new info");
 
-#if USE_DRAW_LOG
-    int iIndex;
-    double dConfThr = PS->getPlayerConfThr();
-    char buffer[128];
-    for( ObjectT o = WM->iterateObjectStart( iIndex, OBJECT_SET_TEAMMATES, dConfThr);
-         o != OBJECT_ILLEGAL;
-         o = WM->iterateObjectNext ( iIndex, OBJECT_SET_TEAMMATES, dConfThr ) ) {
-      LogDraw.logCircle( "Players", WM->getGlobalPosition( o ), 1.6, 80,
-                         false,
-                         COLOR_ORANGE, WM->getConfidence( o ) );
-      sprintf( buffer, "%d", SoccerTypes::getIndex( o ) + 1 );
-      LogDraw.logText( "Players", WM->getGlobalPosition( o ),
-                       buffer,
-                       80, COLOR_ORANGE );
+      // wait for new information from the server cannot say
+      // bContLoop=WM->wait... since bContLoop can be changed elsewhere
+      if (!WM->waitForNewInformation())
+        bContLoop = false;
     }
-    // Me
-    ObjectT o = WM->getAgentObjectType();
-    LogDraw.logCircle( "Players", WM->getGlobalPosition( o ), 1.6, 81,
-                       false,
-                       COLOR_PURPLE, WM->getConfidence( o ) );
-    sprintf( buffer, "%d", SoccerTypes::getIndex( o ) + 1 );
-    LogDraw.logText( "Players", WM->getGlobalPosition( o ),
-                     buffer,
-                     81, COLOR_PURPLE );
-    for( ObjectT o = WM->iterateObjectStart( iIndex, OBJECT_SET_OPPONENTS, dConfThr);
-         o != OBJECT_ILLEGAL;
-         o = WM->iterateObjectNext ( iIndex, OBJECT_SET_OPPONENTS, dConfThr ) ) {
-      LogDraw.logCircle( "Players", WM->getGlobalPosition( o ), 1.6, 80,
-                         false,
-                         COLOR_PINK, WM->getConfidence( o ) );
-      sprintf( buffer, "%d", SoccerTypes::getIndex( o ) + 1 );
-      LogDraw.logText( "Players", WM->getGlobalPosition( o ),
-                       buffer,
-                       80, COLOR_PINK );
-    }
-
-    Log.logWithTime( 604, "time for action: %f", timer.getElapsedTime()*1000 );
-#endif
-
-    // wait for new information from the server cannot say
-    // bContLoop=WM->wait... since bContLoop can be changed elsewhere
-    if(!WM->waitForNewInformation())
-      bContLoop =  false;
+  } else { // hierarchical FSM learner
+    fsm::Keeper *keeper = new fsm::Keeper(this);
+    fsm::Run(keeper).operator()();
   }
 
   // shutdown, print hole and number of players seen statistics
-  SA->shutDown();
+  if (SA) SA->shutDown();
   printf("Shutting down player %d\n", WM->getPlayerNumber() );
   printf("   Number of holes: %d (%f)\n", WM->iNrHoles,
          ((double)WM->iNrHoles/WM->getCurrentCycle())*100 );
@@ -310,10 +264,10 @@ SoccerCommand KeepawayPlayer::keeper()
     return soc;
   }
 
-  return fullTeamKeepers();
+  return jolKeepers();
 }
 
-SoccerCommand KeepawayPlayer::fullTeamKeepers()
+SoccerCommand KeepawayPlayer::jolKeepers()
 {
   static double state[MAX_RL_STATE_VARS];
   memset(state, 0, sizeof(state));
@@ -322,7 +276,7 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
 
   int features = WM->keeperStateVars(state);
   assert(features == 0 || features == SA->getNumFeatures());
-  if (features != SA->getNumFeatures()) return stay("features != SA->getNumFeatures()"); // do nothing
+  if (features != SA->getNumFeatures()) return idle("features != SA->getNumFeatures()"); // do nothing
 
   bool tmControllBall = state[SA->getNumFeatures() - 1] > 0.5;
   Log.log(101, "tmControllBall %f:%d", state[SA->getNumFeatures() - 1], tmControllBall);
@@ -334,33 +288,33 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
 
   ObjectT K0 = WM->getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
-  if (!WM->sortClosestTo(K, numK, K0)) return stay("!WM->sortClosestTo(K, numK, K0)");
-  if (K0 != K[0]) return stay("K0 != K[0]");
+  if (!WM->sortClosestTo(K, numK, K0)) return idle("!WM->sortClosestTo(K, numK, K0)");
+  if (K0 != K[0]) return idle("K0 != K[0]");
 
   int agentIdx = 0;
   while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
   assert(agentIdx < numK);
   Log.log(101, "agentIdx %d", agentIdx);
 
-  if (agentIdx >= numK) return stay("agentIdx >= numK");
+  if (agentIdx >= numK) return idle("agentIdx >= numK");
 
   // if running an option
   if (SA->lastAction >= 0 && !WM->isNewEpisode()) {
-    auto ja = JointActionSpace::ins().getJointAction(SA->lastAction);
+    auto ja = jol::JointActionSpace::ins().getJointAction(SA->lastAction);
     auto aa = ja->actions[0]; // the action of the leading agent
 
     int idx = 0;
     while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
     assert(idx < numK);
-    if (idx >= numK) return stay("idx >= numK");
+    if (idx >= numK) return idle("idx >= numK");
 
     if (!aa->terminated(this, SA->K)) {
       Log.log(101, "continue option %d:%s [%d]", SA->lastAction,
-              JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
-      return execute(SA->lastAction, idx, SA->K);
+              jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
+      return jolExecute(SA->lastAction, idx, SA->K);
     } else {
       Log.log(101, "terminated option %d:%s [%d]", SA->lastAction,
-              JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
+              jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
     }
   }
 
@@ -381,13 +335,13 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
     }
 
     Log.log(101, "execute option %d:%s [%d]", action,
-            JointActionSpace::ins().getJointActionName(action), agentIdx);
+            jol::JointActionSpace::ins().getJointActionName(action), agentIdx);
 
     memcpy(SA->K, K, sizeof(K)); // save K[]
     Log.log(101, "sync save K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
 
     SA->sync(false); // save shared memory
-    return execute(action, agentIdx, SA->K);
+    return jolExecute(action, agentIdx, SA->K);
   } else {
     SA->lastAction = -1;
     if (WM->isNewEpisode()) {
@@ -409,31 +363,31 @@ SoccerCommand KeepawayPlayer::fullTeamKeepers()
 
       int idx = 0;
       while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
-      if (idx >= numK) return stay("idx >= numK after having waited for K0");
+      if (idx >= numK) return idle("idx >= numK after having waited for K0");
 
       Log.log(101, "execute option %d:%s [%d]", SA->lastAction,
-              JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
-      return execute(SA->lastAction, idx, SA->K);
+              jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
+      return jolExecute(SA->lastAction, idx, SA->K);
     } else {
-      return stay("wait for K0 timeout");
+      return idle("wait for K0 timeout");
     }
   }
 }
 
-SoccerCommand KeepawayPlayer::execute(int action, int agentIdx, ObjectT K[])
+SoccerCommand KeepawayPlayer::jolExecute(int action, int agentIdx, ObjectT K[])
 {
-  auto ja = JointActionSpace::ins().getJointAction(action);
+  auto ja = jol::JointActionSpace::ins().getJointAction(action);
   auto aa = ja->actions[agentIdx];
 
   return aa->execute(this, K);
 }
 
-SoccerCommand KeepawayPlayer::stay(string error)
+SoccerCommand KeepawayPlayer::idle(string error)
 {
   SoccerCommand soc;
   ACT->putCommandInQueue( soc = turnBodyToObject( OBJECT_BALL ) );
   ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
-  Log.log(101, "stay (error: %s)", error.c_str());
+  Log.log(101, "idle (error: %s)", error.c_str());
   return soc;
 }
 
