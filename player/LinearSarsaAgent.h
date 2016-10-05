@@ -6,6 +6,8 @@
 #include "SMDPAgent.h"
 #include "tiles2.h"
 
+namespace jol {
+
 class LinearSarsaAgent : public SMDPAgent {
 protected:
   const string weightsFile;
@@ -74,6 +76,7 @@ protected:
   void loadSharedData(double *weights);
 
   void saveSharedData(double *weights);
+
   virtual void sync(bool load);
 
   double reward(double tau, double gamma);
@@ -99,4 +102,5 @@ public:
   void shutDown();
 };
 
+}
 #endif

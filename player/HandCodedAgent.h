@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 
 // hand coded agent for K1
-class HandCodedAgent:public SMDPAgent
+class HandCodedAgent : public jol::SMDPAgent
 {
   WorldModel *WM;
   int alwaysHold();

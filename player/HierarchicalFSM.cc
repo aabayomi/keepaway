@@ -10,7 +10,7 @@
 
 namespace std {
 
-string to_string(fsm::HierarchicalFSM *m) {
+const string &to_string(fsm::HierarchicalFSM *m) {
   return m->getName();
 }
 
@@ -18,28 +18,58 @@ string to_string(fsm::HierarchicalFSM *m) {
 
 namespace fsm {
 
+Memory::Memory() {
+  bAlive = true;
+
+  resetState();
+  newEpisode();
+}
+
+Memory &Memory::ins() {
+  static Memory memory;
+  return memory;
+}
+
+void Memory::resetState() {
+  memset(state, 0, sizeof(state));
+  memset(K, 0, sizeof(K));
+  agentIdx = 0;
+}
+
+void Memory::newEpisode() {
+  makeChoice(-1, "None");
+}
+
+void Memory::makeChoice(int choice, const string &choice_name) {
+  Log.log(101, "Memory::makeChoice %d [name %s]", choice, choice_name.c_str());
+  lastChoice = choice;
+  lastChoiceName = choice_name;
+  cumulativeReward = 0.0;
+  cumulativeGamma = HierarchicalFSM::gamma;
+}
+
+void Memory::show(std::ostream &os) {
+  auto State = vector<double>(state, state + HierarchicalFSM::num_features);
+  auto k = vector<ObjectT>(K, K + HierarchicalFSM::num_keepers);
+
+  PRINT_VALUE_STREAM(os, State);
+  PRINT_VALUE_STREAM(os, k);
+  PRINT_VALUE_STREAM(os, agentIdx);
+  PRINT_VALUE_STREAM(os, stack);
+  PRINT_VALUE_STREAM(os, lastChoice);
+  PRINT_VALUE_STREAM(os, lastChoiceName);
+  PRINT_VALUE_STREAM(os, cumulativeReward);
+  PRINT_VALUE_STREAM(os, cumulativeGamma);
+}
+
 int HierarchicalFSM::num_features;
 int HierarchicalFSM::num_keepers;
 double HierarchicalFSM::gamma;
 
-double HierarchicalFSM::state[MAX_RL_STATE_VARS];
-ObjectT HierarchicalFSM::K[11];
-vector<string> HierarchicalFSM::stack;
-int HierarchicalFSM::agentIdx;
-bool HierarchicalFSM::bAlive = true;
-double HierarchicalFSM::cumulativeReward;
-double HierarchicalFSM::cumulativeGamma;
-LinearSarsaLearner *HierarchicalFSM::learner;
-
-double HierarchicalFSM::lastState[MAX_RL_STATE_VARS]; // last choice state
-int HierarchicalFSM::lastChoice; // last choice
-vector<string> HierarchicalFSM::lastChoiceStack; // last choice stack
-
-
 void HierarchicalFSM::action() {
-  Log.log(101, "interaction with env with stack %s", getCallStackStr().c_str());
+  Log.log(101, "action with stack %s", getStackStr().c_str());
 
-  while (bAlive) {
+  while (Memory::ins().bAlive) {
     if (WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
         (SS->getSynchMode() && WM->getRecvThink())) {
       Log.log(101, "send commands");
@@ -53,11 +83,12 @@ void HierarchicalFSM::action() {
 
     // wait for new information from the server cannot say
     // bContLoop=WM->wait... since bContLoop can be changed elsewhere
-    bAlive = WM->waitForNewInformation();
+    Memory::ins().bAlive = WM->waitForNewInformation();
     Log.setHeader(WM->getCurrentCycle());
     WM->updateAll();
-    cumulativeReward += cumulativeGamma * WM->keeperReward(WM->getCurrentCycle() - 1);
-    cumulativeGamma *= gamma;
+    Memory::ins().cumulativeReward +=
+        Memory::ins().cumulativeGamma * WM->keeperReward(WM->getCurrentCycle() - 1);
+    Memory::ins().cumulativeGamma *= gamma;
 
     auto e = getState();
     if (e.length()) idle(e); // error in getState
@@ -74,26 +105,12 @@ void HierarchicalFSM::idle(const std::string error) {
   Log.log(101, "idle (error: %s)", error.c_str());
 }
 
-void HierarchicalFSM::reset() {
-  memset(state, 0, sizeof(state));
-  memset(K, 0, sizeof(K));
-  agentIdx = 0;
-}
-
-void HierarchicalFSM::choicePoint(int choice) {
-  memcpy(lastState, state, sizeof(state));
-  lastChoice = choice;
-  lastChoiceStack = stack;
-  cumulativeReward = 0.0;
-  cumulativeGamma = gamma;
-}
-
 bool HierarchicalFSM::tmControllBall() {
-  return state[num_features - 1] > 0.5;
+  return Memory::ins().state[num_features - 1] > 0.5;
 }
 
 string HierarchicalFSM::getState() {
-  reset();
+  Memory::ins().resetState();
 
   if (WM->getConfidence(OBJECT_BALL) < PS->getBallConfThr()) {
     ACT->putCommandInQueue(player->searchBall());
@@ -103,24 +120,23 @@ string HierarchicalFSM::getState() {
 
   int numK = WM->getNumKeepers();
 
-  int features = WM->keeperStateVars(state);
+  int features = WM->keeperStateVars(Memory::ins().state);
   assert(features == 0 || features == num_features);
   if (features != num_features) return "features != SA->getNumFeatures()";
 
-  Log.log(101, "tmControllBall %d", tmControllBall());
-
   for (int i = 0; i < numK; i++)
-    K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
+    Memory::ins().K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
 
   ObjectT K0 = WM->getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
-  if (!WM->sortClosestTo(K, numK, K0)) return "!WM->sortClosestTo(K, numK, K0)";
-  if (K0 != K[0]) return "K0 != K[0]";
+  if (!WM->sortClosestTo(Memory::ins().K, numK, K0)) return "!WM->sortClosestTo(K, numK, K0)";
+  if (K0 != Memory::ins().K[0]) return "K0 != K[0]";
 
-  while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
-  assert(agentIdx < numK);
-  Log.log(101, "agentIdx %d", agentIdx);
+  while (Memory::ins().agentIdx < numK &&
+         Memory::ins().K[Memory::ins().agentIdx] != WM->getAgentObjectType())
+    Memory::ins().agentIdx += 1;
+  assert(Memory::ins().agentIdx < numK);
 
-  if (agentIdx >= numK) return "agentIdx >= numK";
+  if (Memory::ins().agentIdx >= numK) return "agentIdx >= numK";
   return "";
 }
 
@@ -129,18 +145,28 @@ const string &HierarchicalFSM::getName() const {
 }
 
 bool HierarchicalFSM::running() {
-  return bAlive && !WM->isNewEpisode();
+  return Memory::ins().bAlive && !WM->isNewEpisode();
 }
 
-string HierarchicalFSM::getCallStackStr() {
+string HierarchicalFSM::getStackStr() {
   stringstream ss;
-  ss << stack;
+  ss << Memory::ins().stack;
   return ss.str();
 }
 
-Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "Keeper") {
-  learner = new LinearSarsaLearner(this);
+void HierarchicalFSM::initialize(int numFeatures,
+                                 int numKeepers,
+                                 bool bLearn,
+                                 double widths[],
+                                 double Gamma) {
+  num_features = numFeatures;
+  num_keepers = numKeepers;
+  gamma = Gamma;
+  LinearSarsaLearner::ins().setLearning(bLearn);
+  LinearSarsaLearner::ins().setWidth(widths);
+}
 
+Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "Keeper") {
   pass = new Pass(p);
   hold = new Hold(p);
   move = new Move(p);
@@ -163,13 +189,13 @@ Keeper::~Keeper() {
 }
 
 void Keeper::run() {
-  cumulativeReward = 0.0;
-  cumulativeGamma = gamma;
-
   action(); // initialize state
 
-  while (bAlive) {
+  while (Memory::ins().bAlive) {
+    assert(Memory::ins().stack.size() == 1);
     if (WM->isNewEpisode()) {
+      LinearSarsaLearner::ins().endEpisode();
+      Memory::ins().newEpisode();
       WM->setNewEpisode(false);
     }
 
@@ -177,6 +203,8 @@ void Keeper::run() {
     auto m = c();
     Run(m).operator()();
   }
+
+  Log.log(101, "Keeper::run exit");
 }
 
 Move::Move(BasicPlayer *p) : HierarchicalFSM(p, "Move") {
@@ -281,7 +309,7 @@ void Pass::run() {
   auto k = c();
 
   while (running() && WM->isBallKickable()) {
-    VecPosition tmPos = WM->getGlobalPosition(K[k]);
+    VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[k]);
     ACT->putCommandInQueue(player->directPass(tmPos, PASS_NORMAL));
     action();
   }

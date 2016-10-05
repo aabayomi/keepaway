@@ -17,6 +17,8 @@ extern Logger Log;
 extern LoggerDraw LogDraw;
 #endif
 
+namespace jol {
+
 /**
  * Designed specifically to match the serialization format for collision_table.
  * See collision_table::save and collision_table::restore.
@@ -164,8 +166,7 @@ LinearSarsaAgent::LinearSarsaAgent(
         dst.close();
       }
     }
-  }
-  else {
+  } else {
     bSaveWeights = false;
   }
 
@@ -179,22 +180,21 @@ LinearSarsaAgent::LinearSarsaAgent(
   nonzeroTracesInverse = nonzeroTracesInverseRaw;
 
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
+  fill(weights, weights + RL_MEMORY_SIZE, 1.0);
 
   numTilings = 0;
   minimumTrace = 0.01;
   numNonzeroTraces = 0;
 
-  for (int i = 0; i < RL_MEMORY_SIZE; i++) {
-    weights[i] = 0;
-    traces[i] = 0;
-  }
   srand((unsigned int) 0);
+  srand48((unsigned int) 0);
   int tmp[2];
   float tmpf[2];
   colTab = new collision_table(RL_MEMORY_SIZE, 1);
 
   GetTiles(tmp, 1, 1, tmpf, 0);  // A dummy call to set the hashing table
   srand((unsigned int) time(NULL));
+  srand48((unsigned int) time(NULL));
 
   if (loadWeightsFile.length() > 0)
     loadWeights(loadWeightsFile.c_str());
@@ -355,8 +355,7 @@ size_t LinearSarsaAgent::mmapSize() {
            sizeof(tracesRaw) +
            sizeof(nonzeroTracesRaw) +
            sizeof(nonzeroTracesInverseRaw);
-  }
-  else {
+  } else {
     return sizeof(weightsRaw) +
            sizeof(SharedData) +
            colTab->m * sizeof(long);
@@ -403,8 +402,7 @@ int LinearSarsaAgent::selectAction(double state[]) {
   // Epsilon-greedy
   if (bLearning && drand48() < epsilon) {     /* explore */
     action = jol::JointActionSpace::ins().sample(state, getNumFeatures());
-  }
-  else {
+  } else {
     action = argmaxQ(state);
   }
 
@@ -468,7 +466,7 @@ bool LinearSarsaAgent::loadWeights(const char *filename) {
       colTab->reset();
 
       if (!fileFound) {
-        fill(weights, weights + RL_MEMORY_SIZE, 0.0);
+        fill(weights, weights + RL_MEMORY_SIZE, 1.0);
         saveWeights(weightsFile.c_str());
       }
     }
@@ -529,8 +527,7 @@ int LinearSarsaAgent::argmaxQ(double state[]) const {
     if (value > bestValue) {
       bestValue = value;
       bestAction = a;
-    }
-    else if (value == bestValue) {
+    } else if (value == bestValue) {
       numTies++;
       if (rand() % (numTies + 1) == 0) {
         bestValue = value;
@@ -569,12 +566,11 @@ void LinearSarsaAgent::loadTiles(double state[]) // will change colTab->data imp
 
   numTilings = 0;
 
-  /* These are the 'tiling groups'  --  play here with representations */
-  /* One tiling for each state variable */
-  for (int v = 0; v < getNumFeatures(); v++) {
+  auto tmControllBall = state[getNumFeatures() - 1] > 0.5; // the last bit of state
+  for (int v = 0; v < getNumFeatures() - 1; v++) {
     for (int a = 0; a < getNumActions(); a++) {
       GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
-                (float) (state[v] / tileWidths[v]), a, v);
+                (float) (state[v] / tileWidths[v]), a, v, tmControllBall);
     }
     numTilings += tilingsPerGroup;
   }
@@ -608,8 +604,7 @@ void LinearSarsaAgent::clearExistentTrace(int f, int loc) {
     numNonzeroTraces--;
     nonzeroTraces[loc] = nonzeroTraces[numNonzeroTraces];
     nonzeroTracesInverse[nonzeroTraces[loc]] = loc;
-  }
-  else {
+  } else {
     fill(traces, traces + RL_MEMORY_SIZE, 0.0);
     assert(numNonzeroTraces == 0);
   }
@@ -639,8 +634,7 @@ void LinearSarsaAgent::setTrace(int f, float newTraceValue) {
 
   if (traces[f] >= minimumTrace) {
     traces[f] = newTraceValue;         // trace already exists
-  }
-  else {
+  } else {
     while (numNonzeroTraces >= RL_MAX_NONZERO_TRACES) {
       increaseMinTrace(); // ensure room for new trace
     }
@@ -664,4 +658,6 @@ void LinearSarsaAgent::increaseMinTrace() {
     if (traces[f] < minimumTrace)
       clearExistentTrace(f, loc);
   }
+}
+
 }

@@ -71,6 +71,12 @@ using namespace std;
   std::cerr << #x " = '" << x << "'" << std::endl; \
   } while(0)
 
+#define PRINT_VALUE_STREAM(os, x) \
+  do { \
+  os << #x " = '" << x << "'" << std::endl; \
+  } while(0)
+
+
 
 #define MAX_LOG_LINE 8192 /*!< maximum size of a log message */
 #define MAX_HEADER   512  /*!< maximum size of the header    */

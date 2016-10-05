@@ -290,14 +290,12 @@ int main(int argc, char *argv[]) {
 
   Log.restartTimer();
 
-  //Formations fs( strFormations, (FormationT)cs.getInitialFormation(), iNr-1 );
-  // read formations file
   WorldModel wm(&ss, &cs, NULL);              // create worldmodel
   Connection c(strHost, iPort, MAX_MSG);     // make connection with server
   ActHandler a(&c, &wm, &ss);                // link actHandler and worldmodel
   SenseHandler s(&c, &wm, &ss, &cs);         // link senseHandler with wm
 
-  SMDPAgent *sa = NULL; // SMDP agent for (joint) option learner
+  jol::SMDPAgent *sa = NULL; // SMDP agent for (joint) option learner
 
   double ranges[MAX_RL_STATE_VARS];
   double minValues[MAX_RL_STATE_VARS];
@@ -307,9 +305,8 @@ int main(int argc, char *argv[]) {
   int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                        iNumKeepers, iNumTakers);
 
-  fsm::HierarchicalFSM::num_features = numFeatures;
-  fsm::HierarchicalFSM::num_keepers = iNumKeepers;
-  fsm::HierarchicalFSM::gamma = gamma;
+  fsm::HierarchicalFSM::initialize(
+      numFeatures, iNumKeepers, bLearn, resolutions, gamma);
 
   if (!hierarchicalFSM) {
     Log.log(101, "Joint Action Space: \n%s\n",
@@ -318,7 +315,7 @@ int main(int argc, char *argv[]) {
     if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
       // (l)earned
       // or "learned!" -> Don't explore at all.
-      LinearSarsaAgent *linearSarsaAgent = new LinearSarsaAgent(
+      auto linearSarsaAgent = new jol::LinearSarsaAgent(
           numFeatures, bLearn, resolutions,
           loadWeightsFile, saveWeightsFile, hiveMind, gamma
       );
@@ -338,7 +335,7 @@ int main(int argc, char *argv[]) {
       // These parameters are based on the expected learning agent parameters
       // above.
       // Added WorldModel for agents needing richer/relational representation!
-      typedef SMDPAgent *(*CreateAgent)(
+      typedef jol::SMDPAgent *(*CreateAgent)(
           WorldModel &, int, bool, double *, string, string, int
       );
       CreateAgent createAgent = NULL;

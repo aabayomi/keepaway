@@ -5,6 +5,8 @@
 
 using namespace std;
 
+namespace jol {
+
 string getexepath() {
   char result[PATH_MAX];
   ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
@@ -26,4 +28,6 @@ SMDPAgent::SMDPAgent(int numFeatures) {
 
   fileLockPrefix = "/run/lock/" + exepath + "_";
   sharedMemoryPrefix = "/run/shm/" + exepath + "_";
+}
+
 }

@@ -35,10 +35,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstring>
 
 
-KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
-                                ServerSettings *ss, PlayerSettings *ps,
-                                char* strTeamName, int iNumKeepers, int iNumTakers,
-                                double dVersion, int iReconnect )
+KeepawayPlayer::KeepawayPlayer(jol::SMDPAgent *sa, ActHandler *act, WorldModel *wm,
+                               ServerSettings *ss, PlayerSettings *ps,
+                               char* strTeamName, int iNumKeepers, int iNumTakers,
+                               double dVersion, int iReconnect )
 
 {
   char str[MAX_MSG];
@@ -68,6 +68,7 @@ KeepawayPlayer::KeepawayPlayer( SMDPAgent* sa, ActHandler* act, WorldModel *wm,
     puts the best soccer command in the queue of the ActHandler. */
 void KeepawayPlayer::mainLoop( )
 {
+  Log.setHeader(-1);
   bool bContLoop = true;
 
   // do initialization stuff

@@ -24,8 +24,8 @@ public:
   }
 
   T choose() {
-    auto i = HierarchicalFSM::learner->step((int) choices.size());
-    HierarchicalFSM::choicePoint(i);
+    auto i = LinearSarsaLearner::ins().step((int) choices.size());
+    Memory::ins().makeChoice(i, "#" + to_string(choices[i]));
     return choices[i];
   }
 

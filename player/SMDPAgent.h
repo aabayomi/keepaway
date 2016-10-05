@@ -45,8 +45,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Logger.h"
 #include "JointOptionLearning.h"
 
-class SMDPAgent
-{
+namespace jol {
+
+class SMDPAgent {
 public:
   int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
   int lastAction;
@@ -57,20 +58,27 @@ public:
   string sharedMemoryPrefix;
 
   int getNumFeatures() const { return m_numFeatures; }
+
   int getNumActions() const { return jol::JointActionSpace::ins().numActions(); }
 
 public:
   SMDPAgent(int numFeatures);
+
   virtual ~SMDPAgent() {}
 
   // abstract methods to be supplied by implementing class
   virtual void sync(bool load) = 0;
-  virtual int  startEpisode( int current_time, double state[] ) = 0;
-  virtual int  step( int current_time, double reward, double state[] ) = 0;
-  virtual void endEpisode( int current_time, double reward ) = 0;
+
+  virtual int startEpisode(int current_time, double state[]) = 0;
+
+  virtual int step(int current_time, double reward, double state[]) = 0;
+
+  virtual void endEpisode(int current_time, double reward) = 0;
 
   // Optional customization point.
   virtual void shutDown() {}
-} ;
+};
+
+}
 
 #endif

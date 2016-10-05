@@ -13,23 +13,29 @@
 
 namespace fsm {
 class HierarchicalFSM;
-}
 
 /**
  * Linear SARSA agent learning to make choice conditioned on env and machine states
  */
 class LinearSarsaLearner {
+private:
+  LinearSarsaLearner();
+
 public:
-  LinearSarsaLearner(fsm::HierarchicalFSM *machine);
+  static LinearSarsaLearner &ins();
+
+  void setLearning(bool learning);
+
+  void setWidth(double *width);
 
   int step(int num_choices);
 
+  void endEpisode();
+
 private:
-  fsm::HierarchicalFSM *machine;
   bool bLearning;
 
   double alpha;
-  double gamma;
   double lambda;
   double epsilon;
 
@@ -50,7 +56,7 @@ private:
   collision_table *colTab;
 
   void loadTiles(
-      double state[], const vector<string> &stack, int num_choices);
+      double state[], const vector<string> &stack, int agentIdx, int num_choices);
 
   int selectChoice(int num_choices);
 
@@ -58,7 +64,7 @@ private:
 
   int argmaxQ(int num_choices);
 
-  void updateWeights(double delta);
+  void updateWeights(double delta, int last_choice);
 
   void decayTraces(double decayRate);
 
@@ -69,7 +75,11 @@ private:
   void setTrace(int f, float newTraceValue);
 
   void increaseMinTrace();
+
+  std::string getQStr(int num_choice);
+
+  void loadQ(int num_choices);
 };
 
-
+}
 #endif //KEEPAWAY_PLAYER_LINEARSARSALEARNER_H

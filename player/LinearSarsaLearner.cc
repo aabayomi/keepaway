@@ -8,84 +8,126 @@
 #include "LinearSarsaLearner.h"
 #include "HierarchicalFSM.h"
 
-LinearSarsaLearner::LinearSarsaLearner(fsm::HierarchicalFSM *machine) :
-    machine(machine) {
-  gamma = machine->gamma;
+namespace fsm {
+
+LinearSarsaLearner &LinearSarsaLearner::ins() {
+  static LinearSarsaLearner learner;
+  return learner;
+}
+
+LinearSarsaLearner::LinearSarsaLearner() {
   alpha = 0.125;
   lambda = 0.0;
   epsilon = 0.01;
 
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
+  fill(weights, weights + RL_MEMORY_SIZE, 1.0);
 
-  for (int i = 0; i < RL_MEMORY_SIZE; i++) {
-    weights[i] = 0;
-    traces[i] = 0;
-  }
   srand((unsigned int) 0);
+  srand48((unsigned int) 0);
   int tmp[2];
   float tmpf[2];
   colTab = new collision_table(RL_MEMORY_SIZE, 1);
 
   GetTiles(tmp, 1, 1, tmpf, 0);  // A dummy call to set the hashing table
-  srand((unsigned int) time(NULL));
+  srand48((unsigned int) time(NULL));
 
   numTilings = 0;
   minimumTrace = 0.01;
   numNonzeroTraces = 0;
 }
 
-int LinearSarsaLearner::step(int num_choices) {
-  assert(machine->lastChoice >= 0);
-  double delta = machine->cumulativeReward - Q[machine->lastChoice]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
+void LinearSarsaLearner::setLearning(bool learning) {
+  bLearning = learning;
+}
 
-  loadTiles(machine->state, machine->stack, num_choices); //s_t, m_t
+void LinearSarsaLearner::setWidth(double width[]) {
+  for (int i = 0; i < HierarchicalFSM::num_features; i++) {
+    tileWidths[i] = width[i];
+  }
+}
+
+void LinearSarsaLearner::loadQ(int num_choices) {
+  loadTiles(Memory::ins().state, Memory::ins().stack, Memory::ins().agentIdx, num_choices);
+  Log.log(101, "LinearSarsaLearner::loadQ numTilings: %d", numTilings);
   for (int a = 0; a < num_choices; a++) {
-    Q[a] = computeQ(a); //Q_{t-1}[s_t, *]
+    Q[a] = computeQ(a);
   }
+}
 
-  machine->lastChoice = selectChoice(num_choices); //a_t
+int LinearSarsaLearner::step(int num_choices) {
+  Log.log(101, "LinearSarsaLearner::step memory:");
+  Memory::ins().show(Log.getOutputStream());
 
-  if (!bLearning)
-    return machine->lastChoice;
+  auto last_choice = Memory::ins().lastChoice; // the last choice
+  auto choice = -1;
 
-  assert(!std::isnan(Q[machine->lastChoice]) && !std::isinf(Q[machine->lastChoice]));
-  delta += machine->cumulativeGamma * Q[machine->lastChoice]; //delta += gamma**tau * Q_{t-1}[s_t, a_t]
+  if (last_choice >= 0) {
+    double delta = Memory::ins().cumulativeReward - Q[last_choice];
+    loadQ(num_choices);
+    choice = selectChoice(num_choices); // the new choice
 
-  updateWeights(delta);
-  Q[machine->lastChoice] = computeQ(machine->lastChoice); //need to redo because weights changed: Q_t[s_t, a_t]
+    if (!bLearning) return choice;
 
-  decayTraces(gamma * lambda);
+    assert(!std::isnan(Q[choice]) && !std::isinf(Q[choice]));
+    delta += Memory::ins().cumulativeGamma * Q[choice];
 
-  for (int a = 0; a < num_choices; a++) {  //clear other than F[a]
-    if (a != machine->lastChoice) {
-      for (int j = 0; j < numTilings; j++)
-        clearTrace(tiles[a][j]);
+    updateWeights(delta, last_choice);
+    Q[choice] = computeQ(choice); // update Q[choice]
+    decayTraces(HierarchicalFSM::gamma * lambda);
+
+    for (int a = 0; a < num_choices; a++) {
+      if (a != choice) {
+        for (int j = 0; j < numTilings; j++)
+          clearTrace(tiles[a][j]);
+      }
     }
+  } else { // new episode
+    decayTraces(0.0);
+    assert(numNonzeroTraces == 0);
+
+    loadQ(num_choices);
+    choice = selectChoice(num_choices);
   }
 
-  for (int j = 0; j < numTilings; j++)      //replace/set traces F[a]
-    setTrace(tiles[machine->lastChoice][j], 1.0);
+  assert(choice >= 0 && choice < num_choices);
+  if (choice >= 0 && choice < num_choices) {
+    for (int j = 0; j < numTilings; j++)
+      setTrace(tiles[choice][j], 1.0);
+  }
 
   Log.log(101, "LinearSarsaLearner::step saved numNonzeroTraces: %d", numNonzeroTraces);
-  return machine->lastChoice;
+  Log.log(101, "LinearSarsaLearner::step choice made %d", choice);
+  return choice;
+}
+
+void LinearSarsaLearner::endEpisode() {
+  Log.log(101, "LinearSarsaLearner::step memory:");
+  Memory::ins().show(Log.getOutputStream());
+
+  auto last_choice = Memory::ins().lastChoice;
+  if (bLearning && last_choice != -1) {
+    double delta = Memory::ins().cumulativeReward - Q[last_choice];
+    updateWeights(delta, last_choice);
+  }
 }
 
 void LinearSarsaLearner::loadTiles(
-    double state[], const vector<string> &stack, int num_choices) { // TODO: use stack
+    double state[], const vector<string> &stack, int agentIdx, int num_choices) {
   const int tilingsPerGroup = 32;
 
   stringstream ss;
   ss << stack;
-  auto h = std::hash<string>().operator()(ss.str());
+  int h = (int) (std::hash<string>().operator()(ss.str()) % INT_MAX);
+  Log.log(101, "LinearSarsaLearner::loadTiles stack %s hash %d", ss.str().c_str(), h);
 
   numTilings = 0;
 
-  /* These are the 'tiling groups'  --  play here with representations */
-  /* One tiling for each state variable */
-  for (int v = 0; v < machine->num_features; v++) {
+  auto tmControllBall = HierarchicalFSM::tmControllBall(); // the last bit of state
+  for (int v = 0; v < HierarchicalFSM::num_features - 1; v++) {
     for (int a = 0; a < num_choices; a++) {
       GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
-                (float) (state[v] / tileWidths[v]), a, v, h);
+                (float) (state[v] / tileWidths[v]), a, v, h, agentIdx, tmControllBall);
     }
     numTilings += tilingsPerGroup;
   }
@@ -94,7 +136,6 @@ void LinearSarsaLearner::loadTiles(
   assert(numTilings < RL_MAX_NUM_TILINGS);
 }
 
-// Compute an action value from current F and theta
 double LinearSarsaLearner::computeQ(int a) {
   double q = 0;
   for (int j = 0; j < numTilings; j++) {
@@ -107,19 +148,21 @@ double LinearSarsaLearner::computeQ(int a) {
 int LinearSarsaLearner::selectChoice(int num_choices) {
   int action;
 
-  // Epsilon-greedy
   if (bLearning && drand48() < epsilon) {     /* explore */
     action = rand() % num_choices;
+    Log.log(101, "explore choice %d in %d", action, num_choices);
   } else {
     action = argmaxQ(num_choices);
+    Log.log(101, "argmaxQ choice %d in %d", action, num_choices);
   }
 
   assert(action >= 0);
   return action;
 }
 
-// Returns index (action) of largest entry in Q array, breaking ties randomly
 int LinearSarsaLearner::argmaxQ(int num_choices) {
+  Log.log(101, "Q[0..%d) %s", num_choices, getQStr(num_choices).c_str());
+
   int bestAction = 0;
   double bestValue = INT_MIN;
   int numTies = 0;
@@ -140,7 +183,10 @@ int LinearSarsaLearner::argmaxQ(int num_choices) {
   return bestAction;
 }
 
-void LinearSarsaLearner::updateWeights(double delta) {
+void LinearSarsaLearner::updateWeights(double delta, int last_choice) {
+  Log.log(101, "LinearSarsaLearner::updateWeights delta %f", delta);
+  Log.log(101, "LinearSarsaLearner::updateWeights before Q[%d] = %f", last_choice, Q[last_choice]);
+
   assert(numTilings > 0);
   double tmp = delta * alpha / numTilings;
 
@@ -159,6 +205,9 @@ void LinearSarsaLearner::updateWeights(double delta) {
     assert(!std::isnan(weights[f]));
     assert(!std::isinf(weights[f]));
   }
+
+  Q[last_choice] = computeQ(last_choice); // update Q[choice]
+  Log.log(101, "LinearSarsaLearner::updateWeights after Q[%d] = %f", last_choice, Q[last_choice]);
 }
 
 void LinearSarsaLearner::decayTraces(double decayRate) {
@@ -175,8 +224,6 @@ void LinearSarsaLearner::decayTraces(double decayRate) {
   }
 }
 
-
-// Clear any trace for feature f
 void LinearSarsaLearner::clearTrace(int f) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
     cerr << "ClearTrace: f out of range " << f << endl;
@@ -187,7 +234,6 @@ void LinearSarsaLearner::clearTrace(int f) {
     clearExistentTrace(f, nonzeroTracesInverse[f]);
 }
 
-// Clear the trace for feature f at location loc in the list of nonzero traces
 void LinearSarsaLearner::clearExistentTrace(int f, int loc) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
     cerr << "ClearExistentTrace: f out of range " << f << endl;
@@ -236,4 +282,12 @@ void LinearSarsaLearner::increaseMinTrace() {
     if (traces[f] < minimumTrace)
       clearExistentTrace(f, loc);
   }
+}
+
+string LinearSarsaLearner::getQStr(int num_choice) {
+  stringstream ss;
+  ss << vector<double>(Q, Q + num_choice);
+  return ss.str();
+}
+
 }

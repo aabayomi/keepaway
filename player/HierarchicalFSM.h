@@ -17,7 +17,7 @@ class HierarchicalFSM;
 
 namespace std {
 
-string to_string(fsm::HierarchicalFSM *m);
+const string &to_string(fsm::HierarchicalFSM *m);
 
 }
 
@@ -25,6 +25,36 @@ namespace fsm {
 
 template<class T>
 class ChoicePoint;
+
+/**
+ * global memory among all machines
+ */
+class Memory {
+private:
+  Memory();
+
+public:
+  static Memory &ins();
+
+  void resetState();
+
+  void newEpisode();
+
+  void makeChoice(int choice, const std::string &choice_name);
+
+  void show(std::ostream &os = cout);
+
+  bool bAlive;
+  double state[MAX_RL_STATE_VARS]; // current state
+  ObjectT K[11]; // current mapping from index to players
+  int agentIdx; // agent index
+  std::vector<string> stack; // call stack
+
+  int lastChoice; // index of last choice
+  std::string lastChoiceName;
+  double cumulativeReward; // cumulative reward since last choice
+  double cumulativeGamma; // cumulative discount
+};
 
 /**
  * hierarchical finite state machines
@@ -66,15 +96,11 @@ protected:
 
   void idle(const std::string error);
 
-  static void reset();
-
-  static void choicePoint(int choice);
-
-  bool tmControllBall();
-
   bool running();
 
-  static std::string getCallStackStr();
+  static bool tmControllBall();
+
+  static std::string getStackStr();
 
 protected:
   BasicPlayer *player;
@@ -83,25 +109,17 @@ protected:
 public:
   const std::string &getName() const;
 
+  static void initialize(int numFeatures,
+                         int numKeepers,
+                         bool bLearn,
+                         double widths[],
+                         double gamma);
+
 protected:
   ActHandler *ACT; /*!< ActHandler to which commands can be sent        */
   WorldModel *WM;  /*!< WorldModel that contains information of world   */
   ServerSettings *SS;  /*!< All parameters used by the server               */
   PlayerSettings *PS;  /*!< All parameters used for the player              */
-
-public:
-  static double state[MAX_RL_STATE_VARS]; // current state
-  static ObjectT K[11]; // current mapping from index to players
-  static std::vector<string> stack; // call stack
-  static int agentIdx; // agent index
-  static bool bAlive;
-
-  static double lastState[MAX_RL_STATE_VARS]; // last choice state
-  static int lastChoice; // index of last choice
-  static std::vector<string> lastChoiceStack; // last choice stack
-  static double cumulativeReward; // cumulative reward since last choice
-  static double cumulativeGamma; // cumulative discount
-  static LinearSarsaLearner *learner;
 
 public:
   static int num_features;
@@ -178,7 +196,7 @@ template<class T>
 class MakeChoice {
 public:
   MakeChoice(ChoicePoint<T> *cp) : c(cp->choose()) {
-    HierarchicalFSM::stack.push_back("#" + to_string(c));
+    Memory::ins().stack.push_back("#" + to_string(c));
   }
 
   T operator()() {
@@ -186,7 +204,7 @@ public:
   }
 
   ~MakeChoice() {
-    HierarchicalFSM::stack.pop_back();
+    Memory::ins().stack.pop_back();
   }
 
 private:
@@ -199,7 +217,7 @@ private:
 class Run {
 public:
   Run(HierarchicalFSM *m) : m(m) {
-    HierarchicalFSM::stack.push_back(m->getName());
+    Memory::ins().stack.push_back(m->getName());
   }
 
   void operator()() {
@@ -207,7 +225,7 @@ public:
   }
 
   ~Run() {
-    HierarchicalFSM::stack.pop_back();
+    Memory::ins().stack.pop_back();
   }
 
 private:

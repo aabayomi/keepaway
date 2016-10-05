@@ -1,11 +1,9 @@
 #include "SMDPAgent.h"
-#include "WorldModel.h"
-#include <iostream>
 
 
 namespace keepaway_demo {
 
-class DemoAgent: public virtual SMDPAgent {
+class DemoAgent : public virtual jol::SMDPAgent {
 public:
 
   DemoAgent(WorldModel& world, int numFeatures);
@@ -28,7 +26,7 @@ using namespace std;
 
 extern "C" {
 
-SMDPAgent* createAgent(
+jol::SMDPAgent *createAgent(
   WorldModel& world,
   int numFeatures, bool learning, double widths[],
   char* inputFile, char* outputFile, bool hiveMind

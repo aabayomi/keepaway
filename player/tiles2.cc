@@ -23,10 +23,9 @@ random integers, of which we use only the low-order bytes.
 
 #include <iostream>
 #include "tiles2.h"
-#include "stdlib.h"
 #include "math.h"
 
-int mod(int n, int k) {return (n >= 0) ? n%k : k-1-((-n-1)%k);}
+int mod(int n, int k) { return (n >= 0) ? n % k : k - 1 - ((-n - 1) % k); }
 
 void GetTiles(
     int tiles[],               // provided array contains returned tiles (tile indices)
@@ -37,30 +36,27 @@ void GetTiles(
     int ints[],       // array of integer variables
     int num_ints)              // number of integer variables
 {
-  int i,j;
+  int i, j;
   int qstate[MAX_NUM_VARS];
   int base[MAX_NUM_VARS];
   int coordinates[MAX_NUM_VARS * 2 + 1];   /* one interval number per relevant dimension */
   int num_coordinates = num_floats + num_ints + 1;
 
-  for (int i=0; i<num_ints; i++)
-    coordinates[num_floats+1+i] = ints[i];
+  for (int i = 0; i < num_ints; i++)
+    coordinates[num_floats + 1 + i] = ints[i];
 
   /* quantize state to integers (henceforth, tile widths == num_tilings) */
-  for (i = 0; i < num_floats; i++)
-  {
+  for (i = 0; i < num_floats; i++) {
     qstate[i] = (int) floor(floats[i] * num_tilings);
     base[i] = 0;
   }
 
   /*compute the tile numbers */
-  for (j = 0; j < num_tilings; j++)
-  {
+  for (j = 0; j < num_tilings; j++) {
     /* loop over each relevant dimension */
-    for (i = 0; i < num_floats; i++)
-    {
+    for (i = 0; i < num_floats; i++) {
       /* find coordinates of activated tile in tiling space */
-      coordinates[i] = qstate[i] - mod(qstate[i]-base[i],num_tilings);
+      coordinates[i] = qstate[i] - mod(qstate[i] - base[i], num_tilings);
 
       /* compute displacement of next tiling in quantized space */
       base[i] += 1 + (2 * i);
@@ -83,30 +79,27 @@ void GetTiles(
     int ints[],       // array of integer variables
     int num_ints)              // number of integer variables
 {
-  int i,j;
+  int i, j;
   int qstate[MAX_NUM_VARS];
   int base[MAX_NUM_VARS];
   int coordinates[MAX_NUM_VARS * 2 + 1];   /* one interval number per relevant dimension */
   int num_coordinates = num_floats + num_ints + 1;
 
-  for (int i=0; i<num_ints; i++)
-    coordinates[num_floats+1+i] = ints[i];
+  for (int i = 0; i < num_ints; i++)
+    coordinates[num_floats + 1 + i] = ints[i];
 
   /* quantize state to integers (henceforth, tile widths == num_tilings) */
-  for (i = 0; i < num_floats; i++)
-  {
+  for (i = 0; i < num_floats; i++) {
     qstate[i] = (int) floor(floats[i] * num_tilings);
     base[i] = 0;
   }
 
   /*compute the tile numbers */
-  for (j = 0; j < num_tilings; j++)
-  {
+  for (j = 0; j < num_tilings; j++) {
     /* loop over each relevant dimension */
-    for (i = 0; i < num_floats; i++)
-    {
+    for (i = 0; i < num_floats; i++) {
       /* find coordinates of activated tile in tiling space */
-      coordinates[i] = qstate[i] - mod(qstate[i]-base[i], num_tilings);
+      coordinates[i] = qstate[i] - mod(qstate[i] - base[i], num_tilings);
 
       /* compute displacement of next tiling in quantized space */
       base[i] += 1 + (2 * i);
@@ -125,28 +118,24 @@ void GetTiles(
 */
 
 
-int hash_UNH(int *ints, int num_ints, long m, int increment)
-{
+int hash_UNH(int *ints, int num_ints, long m, int increment) {
   static unsigned int rndseq[2048];
-  static int first_call =  1;
-  int i,k;
+  static int first_call = 1;
+  int i, k;
   long index;
   long sum = 0;
 
   /* if first call to hashing, initialize table of random numbers */
-  if (first_call)
-  {
-    for (k = 0; k < 2048; k++)
-    {
+  if (first_call) {
+    for (k = 0; k < 2048; k++) {
       rndseq[k] = 0;
-      for (i=0; i < (int)sizeof(int); ++i)
+      for (i = 0; i < (int) sizeof(int); ++i)
         rndseq[k] = (rndseq[k] << 8) | (rand() & 0xff);
     }
     first_call = 0;
   }
 
-  for (i = 0; i < num_ints; i++)
-  {
+  for (i = 0; i < num_ints; i++) {
     /* add random table offset for this dimension and wrap around */
     index = ints[i];
     index += (increment * i);
@@ -155,9 +144,9 @@ int hash_UNH(int *ints, int num_ints, long m, int increment)
       index += 2048;
 
     /* add selected random number to sum */
-    sum += (long)rndseq[(int)index];
+    sum += (long) rndseq[(int) index];
   }
-  index = (int)(sum % m);
+  index = (int) (sum % m);
   while (index < 0)
     index += m;
 
@@ -170,8 +159,7 @@ int hash(int *ints, int num_ints, collision_table *ct);
 /* hash
    Takes an array of integers and returns the corresponding tile after hashing
 */
-int hash(int *ints, int num_ints, collision_table *ct)
-{
+int hash(int *ints, int num_ints, collision_table *ct) {
   int j;
   long ccheck;
 
@@ -181,31 +169,25 @@ int hash(int *ints, int num_ints, collision_table *ct)
 
   if (ccheck == ct->data[j])
     ct->clearhits++;
-  else if (ct->data[j] == -1)
-  {
+  else if (ct->data[j] == -1) {
     ct->clearhits++;
     ct->data[j] = ccheck;
-  }
-  else if (ct->safe == 0)
+  } else if (ct->safe == 0)
     ct->collisions++;
-  else
-  {
-    long h2 = 1 + 2 * hash_UNH(ints,num_ints,(MaxLONGINT)/4,449);
+  else {
+    long h2 = 1 + 2 * hash_UNH(ints, num_ints, (MaxLONGINT) / 4, 449);
     int i = 0;
-    while (++i)
-    {
+    while (++i) {
       ct->collisions++;
-      j = (j+h2) % (ct->m);
+      j = (j + h2) % (ct->m);
       //printf("(%d)",j);
-      if (i > ct->m)
-      {
+      if (i > ct->m) {
         printf("\nOut of Memory");
         break;
       }
       if (ccheck == ct->data[j])
         break;
-      if (ct->data[j] == -1)
-      {
+      if (ct->data[j] == -1) {
         ct->data[j] = ccheck;
         break;
       }
@@ -214,23 +196,19 @@ int hash(int *ints, int num_ints, collision_table *ct)
   return j;
 }
 
-void collision_table::reset()
-{
-  for (int i=0; i<m; i++)
+void collision_table::reset() {
+  for (int i = 0; i < m; i++)
     data[i] = -1;
   calls = 0;
   clearhits = 0;
   collisions = 0;
 }
 
-collision_table::collision_table(int size, int safety): m(size), safe(safety)
-{
+collision_table::collision_table(int size, int safety) : m(size), safe(safety) {
   int tmp = size;
-  while (tmp > 2)
-  {
-    if (tmp % 2 != 0)
-    {
-      printf("\nSize of collision table must be power of 2 %d",size);
+  while (tmp > 2) {
+    if (tmp % 2 != 0) {
+      printf("\nSize of collision table must be power of 2 %d", size);
       exit(0);
     }
     tmp /= 2;
@@ -240,38 +218,34 @@ collision_table::collision_table(int size, int safety): m(size), safe(safety)
   reset();
 }
 
-collision_table::~collision_table()
-{
+collision_table::~collision_table() {
   delete[] data;
 }
 
-int collision_table::usage()
-{
+int collision_table::usage() {
   int count = 0;
-  for (int i=0; i<m; i++)
+  for (int i = 0; i < m; i++)
     if (data[i] != -1)
       count++;
   return count;
 }
 
-void collision_table::save(int file)
-{
+void collision_table::save(int file) {
   write(file, (char *) &m, sizeof(long));
   write(file, (char *) &safe, sizeof(int));
   write(file, (char *) &calls, sizeof(long));
   write(file, (char *) &clearhits, sizeof(long));
   write(file, (char *) &collisions, sizeof(long));
-  write(file, (char *) data, m*sizeof(long));
+  write(file, (char *) data, m * sizeof(long));
 }
 
-void collision_table::restore(int file)
-{
+void collision_table::restore(int file) {
   read(file, (char *) &m, sizeof(long));
   read(file, (char *) &safe, sizeof(int));
   read(file, (char *) &calls, sizeof(long));
   read(file, (char *) &clearhits, sizeof(long));
   read(file, (char *) &collisions, sizeof(long));
-  read(file, (char *) data, m*sizeof(long));
+  read(file, (char *) data, m * sizeof(long));
 }
 
 /*
@@ -289,188 +263,211 @@ int i_tmp_arr[MAX_NUM_VARS];
 float f_tmp_arr[MAX_NUM_VARS];
 
 // No ints
-void GetTiles(int tiles[],int nt,int memory,float floats[],int nf)
-{
-  GetTiles(tiles,nt,memory,floats,nf,i_tmp_arr,0);
+void GetTiles(int tiles[], int nt, int memory, float floats[], int nf) {
+  GetTiles(tiles, nt, memory, floats, nf, i_tmp_arr, 0);
 }
-void GetTiles(int tiles[],int nt,collision_table *ct,float floats[],int nf)
-{
-  GetTiles(tiles,nt,ct,floats,nf,i_tmp_arr,0);
+
+void GetTiles(int tiles[], int nt, collision_table *ct, float floats[], int nf) {
+  GetTiles(tiles, nt, ct, floats, nf, i_tmp_arr, 0);
 }
 
 //one int
-void GetTiles(int tiles[],int nt,int memory,float floats[],int nf,int h1)
-{
-  i_tmp_arr[0]=h1;
-  GetTiles(tiles,nt,memory,floats,nf,i_tmp_arr,1);
+void GetTiles(int tiles[], int nt, int memory, float floats[], int nf, int h1) {
+  i_tmp_arr[0] = h1;
+  GetTiles(tiles, nt, memory, floats, nf, i_tmp_arr, 1);
 }
-void GetTiles(int tiles[],int nt,collision_table *ct,float floats[],int nf,int h1)
-{
-  i_tmp_arr[0]=h1;
-  GetTiles(tiles,nt,ct,floats,nf,i_tmp_arr,1);
+
+void GetTiles(int tiles[], int nt, collision_table *ct, float floats[], int nf, int h1) {
+  i_tmp_arr[0] = h1;
+  GetTiles(tiles, nt, ct, floats, nf, i_tmp_arr, 1);
 }
 
 // two ints
-void GetTiles(int tiles[],int nt,int memory,float floats[],int nf,int h1,int h2)
-{
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  GetTiles(tiles,nt,memory,floats,nf,i_tmp_arr,2);
+void GetTiles(int tiles[], int nt, int memory, float floats[], int nf, int h1, int h2) {
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  GetTiles(tiles, nt, memory, floats, nf, i_tmp_arr, 2);
 }
-void GetTiles(int tiles[],int nt,collision_table *ct,float floats[],int nf,int h1,int h2)
-{
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  GetTiles(tiles,nt,ct,floats,nf,i_tmp_arr,2);
+
+void GetTiles(int tiles[], int nt, collision_table *ct, float floats[], int nf, int h1, int h2) {
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  GetTiles(tiles, nt, ct, floats, nf, i_tmp_arr, 2);
 }
 
 // three ints
-void GetTiles(int tiles[],int nt,int memory,float floats[],int nf,int h1,int h2,int h3)
-{
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  i_tmp_arr[2]=h3;
-  GetTiles(tiles,nt,memory,floats,nf,i_tmp_arr,3);
+void GetTiles(int tiles[], int nt, int memory, float floats[], int nf, int h1, int h2, int h3) {
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  GetTiles(tiles, nt, memory, floats, nf, i_tmp_arr, 3);
 }
-void GetTiles(int tiles[],int nt,collision_table *ct,float floats[],int nf,int h1,int h2,int h3)
-{
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  i_tmp_arr[2]=h3;
-  GetTiles(tiles,nt,ct,floats,nf,i_tmp_arr,3);
+
+void GetTiles(int tiles[], int nt, collision_table *ct, float floats[], int nf, int h1, int h2, int h3) {
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  GetTiles(tiles, nt, ct, floats, nf, i_tmp_arr, 3);
 }
 
 // one float, No ints
-void GetTiles1(int tiles[],int nt,int memory,float f1)
-{
-  f_tmp_arr[0]=f1;
-  GetTiles(tiles,nt,memory,f_tmp_arr,1,i_tmp_arr,0);
+void GetTiles1(int tiles[], int nt, int memory, float f1) {
+  f_tmp_arr[0] = f1;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 1, i_tmp_arr, 0);
 }
-void GetTiles1(int tiles[],int nt,collision_table *ct,float f1)
-{
-  f_tmp_arr[0]=f1;
-  GetTiles(tiles,nt,ct,f_tmp_arr,1,i_tmp_arr,0);
+
+void GetTiles1(int tiles[], int nt, collision_table *ct, float f1) {
+  f_tmp_arr[0] = f1;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 1, i_tmp_arr, 0);
 }
 
 // one float, one int
-void GetTiles1(int tiles[],int nt,int memory,float f1,int h1)
-{
-  f_tmp_arr[0]=f1;
-  i_tmp_arr[0]=h1;
-  GetTiles(tiles,nt,memory,f_tmp_arr,1,i_tmp_arr,1);
+void GetTiles1(int tiles[], int nt, int memory, float f1, int h1) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 1, i_tmp_arr, 1);
 }
 
-void GetTiles1(int tiles[],int nt,collision_table *ct,float f1,int h1)
-{
-  f_tmp_arr[0]=f1;
-  i_tmp_arr[0]=h1;
-  GetTiles(tiles,nt,ct,f_tmp_arr,1,i_tmp_arr,1);
+void GetTiles1(int tiles[], int nt, collision_table *ct, float f1, int h1) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 1, i_tmp_arr, 1);
 }
 
 // one float, two ints
-void GetTiles1(int tiles[],int nt,int memory,float f1,int h1,int h2)
-{
-  f_tmp_arr[0]=f1;
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  GetTiles(tiles,nt,memory,f_tmp_arr,1,i_tmp_arr,2);
+void GetTiles1(int tiles[], int nt, int memory, float f1, int h1, int h2) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 1, i_tmp_arr, 2);
 }
 
-void GetTiles1(int tiles[],int nt,collision_table *ct,float f1,int h1,int h2)
-{
-  f_tmp_arr[0]=f1;
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  GetTiles(tiles,nt,ct,f_tmp_arr,1,i_tmp_arr,2);
+void GetTiles1(int tiles[], int nt, collision_table *ct, float f1, int h1, int h2) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 1, i_tmp_arr, 2);
 }
 
 // one float, three ints
-void GetTiles1(int tiles[],int nt,int memory,float f1,int h1,int h2,int h3)
-{
-  f_tmp_arr[0]=f1;
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  i_tmp_arr[2]=h3;
-  GetTiles(tiles,nt,memory,f_tmp_arr,1,i_tmp_arr,3);
+void GetTiles1(int tiles[], int nt, int memory, float f1, int h1, int h2, int h3) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 1, i_tmp_arr, 3);
 }
 
-void GetTiles1(int tiles[],int nt,collision_table *ct,float f1,int h1,int h2,int h3)
-{
-  f_tmp_arr[0]=f1;
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  i_tmp_arr[2]=h3;
-  GetTiles(tiles,nt,ct,f_tmp_arr,1,i_tmp_arr,3);
+void GetTiles1(int tiles[], int nt, collision_table *ct, float f1, int h1, int h2, int h3) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 1, i_tmp_arr, 3);
+}
+
+// one float, four ints
+void GetTiles1(int tiles[], int nt, int memory, float f1, int h1, int h2, int h3, int h4) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  i_tmp_arr[3] = h4;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 1, i_tmp_arr, 4);
+}
+
+void GetTiles1(int tiles[], int nt, collision_table *ct, float f1, int h1, int h2, int h3, int h4) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  i_tmp_arr[3] = h4;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 1, i_tmp_arr, 4);
+}
+
+// one float, five ints
+void GetTiles1(int tiles[], int nt, int memory, float f1, int h1, int h2, int h3, int h4, int h5) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  i_tmp_arr[3] = h4;
+  i_tmp_arr[4] = h5;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 1, i_tmp_arr, 5);
+}
+
+void GetTiles1(int tiles[], int nt, collision_table *ct, float f1, int h1, int h2, int h3, int h4, int h5) {
+  f_tmp_arr[0] = f1;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  i_tmp_arr[3] = h4;
+  i_tmp_arr[4] = h5;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 1, i_tmp_arr, 5);
 }
 
 // two floats, No ints
-void GetTiles2(int tiles[],int nt,int memory,float f1,float f2)
-{
-  f_tmp_arr[0]=f1;
-  f_tmp_arr[1]=f2;
-  GetTiles(tiles,nt,memory,f_tmp_arr,2,i_tmp_arr,0);
+void GetTiles2(int tiles[], int nt, int memory, float f1, float f2) {
+  f_tmp_arr[0] = f1;
+  f_tmp_arr[1] = f2;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 2, i_tmp_arr, 0);
 }
-void GetTiles2(int tiles[],int nt,collision_table *ct,float f1,float f2)
-{
-  f_tmp_arr[0]=f1;
-  f_tmp_arr[1]=f2;
-  GetTiles(tiles,nt,ct,f_tmp_arr,2,i_tmp_arr,0);
+
+void GetTiles2(int tiles[], int nt, collision_table *ct, float f1, float f2) {
+  f_tmp_arr[0] = f1;
+  f_tmp_arr[1] = f2;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 2, i_tmp_arr, 0);
 }
 
 // two floats, one int
-void GetTiles2(int tiles[],int nt,int memory,float f1,float f2,int h1)
-{
-  f_tmp_arr[0]=f1;
-  f_tmp_arr[1]=f2;
-  i_tmp_arr[0]=h1;
-  GetTiles(tiles,nt,memory,f_tmp_arr,2,i_tmp_arr,1);
+void GetTiles2(int tiles[], int nt, int memory, float f1, float f2, int h1) {
+  f_tmp_arr[0] = f1;
+  f_tmp_arr[1] = f2;
+  i_tmp_arr[0] = h1;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 2, i_tmp_arr, 1);
 }
-void GetTiles2(int tiles[],int nt,collision_table *ct,float f1,float f2,int h1)
-{
-  f_tmp_arr[0]=f1;
-  f_tmp_arr[1]=f2;
-  i_tmp_arr[0]=h1;
-  GetTiles(tiles,nt,ct,f_tmp_arr,2,i_tmp_arr,1);
+
+void GetTiles2(int tiles[], int nt, collision_table *ct, float f1, float f2, int h1) {
+  f_tmp_arr[0] = f1;
+  f_tmp_arr[1] = f2;
+  i_tmp_arr[0] = h1;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 2, i_tmp_arr, 1);
 }
 
 // two floats, two ints
-void GetTiles2(int tiles[],int nt,int memory,float f1,float f2,int h1,int h2)
-{
-  f_tmp_arr[0]=f1;
-  f_tmp_arr[1]=f2;
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  GetTiles(tiles,nt,memory,f_tmp_arr,2,i_tmp_arr,2);
+void GetTiles2(int tiles[], int nt, int memory, float f1, float f2, int h1, int h2) {
+  f_tmp_arr[0] = f1;
+  f_tmp_arr[1] = f2;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 2, i_tmp_arr, 2);
 }
 
-void GetTiles2(int tiles[],int nt,collision_table *ct,float f1,float f2,int h1,int h2)
-{
-  f_tmp_arr[0]=f1;
-  f_tmp_arr[1]=f2;
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  GetTiles(tiles,nt,ct,f_tmp_arr,2,i_tmp_arr,2);
+void GetTiles2(int tiles[], int nt, collision_table *ct, float f1, float f2, int h1, int h2) {
+  f_tmp_arr[0] = f1;
+  f_tmp_arr[1] = f2;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 2, i_tmp_arr, 2);
 }
 
 // two floats, three ints
-void GetTiles2(int tiles[],int nt,int memory,float f1,float f2,int h1,int h2,int h3)
-{
-  f_tmp_arr[0]=f1;
-  f_tmp_arr[1]=f2;
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  i_tmp_arr[2]=h3;
-  GetTiles(tiles,nt,memory,f_tmp_arr,2,i_tmp_arr,3);
+void GetTiles2(int tiles[], int nt, int memory, float f1, float f2, int h1, int h2, int h3) {
+  f_tmp_arr[0] = f1;
+  f_tmp_arr[1] = f2;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  GetTiles(tiles, nt, memory, f_tmp_arr, 2, i_tmp_arr, 3);
 }
 
-void GetTiles2(int tiles[],int nt,collision_table *ct,float f1,float f2,int h1,int h2,int h3)
-{
-  f_tmp_arr[0]=f1;
-  f_tmp_arr[1]=f2;
-  i_tmp_arr[0]=h1;
-  i_tmp_arr[1]=h2;
-  i_tmp_arr[2]=h3;
-  GetTiles(tiles,nt,ct,f_tmp_arr,2,i_tmp_arr,3);
+void GetTiles2(int tiles[], int nt, collision_table *ct, float f1, float f2, int h1, int h2, int h3) {
+  f_tmp_arr[0] = f1;
+  f_tmp_arr[1] = f2;
+  i_tmp_arr[0] = h1;
+  i_tmp_arr[1] = h2;
+  i_tmp_arr[2] = h3;
+  GetTiles(tiles, nt, ct, f_tmp_arr, 2, i_tmp_arr, 3);
 }
 
 void GetTilesWrap(
@@ -483,33 +480,30 @@ void GetTilesWrap(
     int ints[],      // array of integer variables
     int num_ints)             // number of integer variables
 {
-  int i,j;
+  int i, j;
   int qstate[MAX_NUM_VARS];
   int base[MAX_NUM_VARS];
   int wrap_widths_times_num_tilings[MAX_NUM_VARS];
   int coordinates[MAX_NUM_VARS * 2 + 1];   /* one interval number per relevant dimension */
   int num_coordinates = num_floats + num_ints + 1;
 
-  for (int i=0; i<num_ints; i++)
-    coordinates[num_floats+1+i] = ints[i];
+  for (int i = 0; i < num_ints; i++)
+    coordinates[num_floats + 1 + i] = ints[i];
 
   /* quantize state to integers (henceforth, tile widths == num_tilings) */
-  for (i = 0; i < num_floats; i++)
-  {
+  for (i = 0; i < num_floats; i++) {
     qstate[i] = (int) floor(floats[i] * num_tilings);
     base[i] = 0;
     wrap_widths_times_num_tilings[i] = wrap_widths[i] * num_tilings;
   }
 
   /*compute the tile numbers */
-  for (j = 0; j < num_tilings; j++)
-  {
+  for (j = 0; j < num_tilings; j++) {
     /* loop over each relevant dimension */
-    for (i = 0; i < num_floats; i++)
-    {
+    for (i = 0; i < num_floats; i++) {
       /* find coordinates of activated tile in tiling space */
-      coordinates[i] = qstate[i] - mod(qstate[i]-base[i],num_tilings);
-      if (wrap_widths[i]!=0)
+      coordinates[i] = qstate[i] - mod(qstate[i] - base[i], num_tilings);
+      if (wrap_widths[i] != 0)
         coordinates[i] = coordinates[i] % wrap_widths_times_num_tilings[i];
       /* compute displacement of next tiling in quantized space */
       base[i] += 1 + (2 * i);
@@ -532,36 +526,33 @@ void GetTilesWrap(
     int ints[],                // array of integer variables
     int num_ints)              // number of integer variables
 {
-  int i,j;
+  int i, j;
   int qstate[MAX_NUM_VARS];
   int base[MAX_NUM_VARS];
   int wrap_widths_times_num_tilings[MAX_NUM_VARS];
   int coordinates[MAX_NUM_VARS * 2 + 1];   /* one interval number per relevant dimension */
   int num_coordinates = num_floats + num_ints + 1;
 
-  for (int i=0; i<num_ints; i++)
-    coordinates[num_floats+1+i] = ints[i];
+  for (int i = 0; i < num_ints; i++)
+    coordinates[num_floats + 1 + i] = ints[i];
 
   /* quantize state to integers (henceforth, tile widths == num_tilings) */
-  for (i = 0; i < num_floats; i++)
-  {
+  for (i = 0; i < num_floats; i++) {
     qstate[i] = (int) floor(floats[i] * num_tilings);
     base[i] = 0;
     wrap_widths_times_num_tilings[i] = wrap_widths[i] * num_tilings;
   }
 
   /*compute the tile numbers */
-  for (j = 0; j < num_tilings; j++)
-  {
+  for (j = 0; j < num_tilings; j++) {
 
     /* loop over each relevant dimension */
-    for (i = 0; i < num_floats; i++)
-    {
+    for (i = 0; i < num_floats; i++) {
 
       /* find coordinates of activated tile in tiling space */
-      coordinates[i] = qstate[i] - mod(qstate[i]-base[i],num_tilings);
+      coordinates[i] = qstate[i] - mod(qstate[i] - base[i], num_tilings);
 
-      if (wrap_widths[i]!=0)
+      if (wrap_widths[i] != 0)
         coordinates[i] = mod(coordinates[i], wrap_widths_times_num_tilings[i]);
       /* compute displacement of next tiling in quantized space */
       base[i] += 1 + (2 * i);
@@ -569,15 +560,14 @@ void GetTilesWrap(
     /* add additional indices for tiling and hashing_set so they hash differently */
     coordinates[i] = j;
 
-    tiles[j] = hash(coordinates, num_coordinates,ctable);
+    tiles[j] = hash(coordinates, num_coordinates, ctable);
   }
   return;
 }
 
 // no ints
-void GetTilesWrap(int tiles[],int num_tilings,int memory_size,float floats[],
-                  int num_floats,int wrap_widths[])
-{
-  GetTilesWrap(tiles,num_tilings,memory_size,floats,
-               num_floats,wrap_widths,i_tmp_arr,0);
+void GetTilesWrap(int tiles[], int num_tilings, int memory_size, float floats[],
+                  int num_floats, int wrap_widths[]) {
+  GetTilesWrap(tiles, num_tilings, memory_size, floats,
+               num_floats, wrap_widths, i_tmp_arr, 0);
 }
