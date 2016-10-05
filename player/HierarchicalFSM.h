@@ -42,7 +42,7 @@ public:
 
   void makeChoice(int choice, const std::string &choice_name);
 
-  void show(std::ostream &os = cout);
+  std::string to_string();
 
   bool bAlive;
   double state[MAX_RL_STATE_VARS]; // current state

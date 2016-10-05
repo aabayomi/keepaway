@@ -48,18 +48,21 @@ void Memory::makeChoice(int choice, const string &choice_name) {
   cumulativeGamma = HierarchicalFSM::gamma;
 }
 
-void Memory::show(std::ostream &os) {
+string Memory::to_string() {
+  std::stringstream ss;
   auto State = vector<double>(state, state + HierarchicalFSM::num_features);
   auto k = vector<ObjectT>(K, K + HierarchicalFSM::num_keepers);
 
-  PRINT_VALUE_STREAM(os, State);
-  PRINT_VALUE_STREAM(os, k);
-  PRINT_VALUE_STREAM(os, agentIdx);
-  PRINT_VALUE_STREAM(os, stack);
-  PRINT_VALUE_STREAM(os, lastChoice);
-  PRINT_VALUE_STREAM(os, lastChoiceName);
-  PRINT_VALUE_STREAM(os, cumulativeReward);
-  PRINT_VALUE_STREAM(os, cumulativeGamma);
+  PRINT_VALUE_STREAM(ss, State);
+  PRINT_VALUE_STREAM(ss, k);
+  PRINT_VALUE_STREAM(ss, agentIdx);
+  PRINT_VALUE_STREAM(ss, stack);
+  PRINT_VALUE_STREAM(ss, lastChoice);
+  PRINT_VALUE_STREAM(ss, lastChoiceName);
+  PRINT_VALUE_STREAM(ss, cumulativeReward);
+  PRINT_VALUE_STREAM(ss, cumulativeGamma);
+
+  return ss.str();
 }
 
 int HierarchicalFSM::num_features;

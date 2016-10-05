@@ -29,11 +29,11 @@ exec 1>console.log 2>&1
 for hive in `seq 2 2`; do
     for lookahead in `seq 1 10`; do
         gamma=`echo 1.0 - 1.0 / 2^$lookahead | bc -l`
-        ./train.sh -b none -h $hive -sf -g $gamma &
+        ./train.sh -b none -h $hive -sf -g $gamma $* &
         sleep $SLEEP
     done
 
-    ./train.sh -b none -h $hive -sf &
+    ./train.sh -b none -h $hive -sf $* &
 done
 
 wait

@@ -56,8 +56,9 @@ void LinearSarsaLearner::loadQ(int num_choices) {
 }
 
 int LinearSarsaLearner::step(int num_choices) {
-  Log.log(101, "LinearSarsaLearner::step memory:");
-  Memory::ins().show(Log.getOutputStream());
+  if (Log.isInLogLevel(101))
+    Log.log(101, "LinearSarsaLearner::step memory: \n%s",
+            Memory::ins().to_string().c_str());
 
   auto last_choice = Memory::ins().lastChoice; // the last choice
   auto choice = -1;
@@ -102,8 +103,9 @@ int LinearSarsaLearner::step(int num_choices) {
 }
 
 void LinearSarsaLearner::endEpisode() {
-  Log.log(101, "LinearSarsaLearner::step memory:");
-  Memory::ins().show(Log.getOutputStream());
+  if (Log.isInLogLevel(101))
+    Log.log(101, "LinearSarsaLearner::endEpisode memory: \n%s",
+            Memory::ins().to_string().c_str());
 
   auto last_choice = Memory::ins().lastChoice;
   if (bLearning && last_choice != -1) {
