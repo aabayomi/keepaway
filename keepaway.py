@@ -81,7 +81,7 @@ def launch_player(player_type, index, options):
     player_options = list(chain(*player_options))
 
     # Build keepaway_player command, and fork it off.
-    if False and player_type == 'keeper' and index == 0:
+    if options.memory_check:
         command = ['valgrind', relative('./player/keepaway_player')] + player_options
     else:
         command = [relative('./player/keepaway_player')] + player_options
@@ -336,6 +336,9 @@ def parse_options(args = None, **defaults):
     parser.add_option(
         '--gamma', type = 'float', default = 1.0,
         help = "Discount factor gamma.")
+    parser.add_option(
+        '--memory-check', action='store_true', default=False,
+        help="Use valgrind to check memory bugs.")
 
     options = parser.parse_args(args)[0]
     # Set coach_port and online_coach_port here, if not set previously.

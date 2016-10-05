@@ -45,12 +45,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include"Objects.h"
 
-#include<stdlib.h>       // needed for free
-#include<iostream>       // needed for cout
 #ifdef Solaris
   #include <strings.h>   // needed for strdup
 #else
-  #include <string.h>    // needed for strdup
 #endif
 
 /*****************************************************************************/
@@ -473,6 +470,7 @@ PlayerObject::PlayerObject( ): DynamicObject( )
 {
   angGlobalBodyAngle   = UnknownAngleValue;
   angGlobalNeckAngle   = UnknownAngleValue;
+  angGlobalBodyAngleLastSee = UnknownAngleValue;
   isKnownPlayer        = false;
   isGoalie             = false;
 

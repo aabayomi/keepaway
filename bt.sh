@@ -4,7 +4,7 @@ CMDS=`mktemp`
 
 echo -e "bt\nq" > $CMDS
 
-for i in `ls core.*`; do
+for i in `ls core.* vgcore.*`; do
 	gdb -c $i -x $CMDS player/keepaway_player
 	rm -f $i
 done
