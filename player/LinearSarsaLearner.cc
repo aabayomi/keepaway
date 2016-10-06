@@ -125,11 +125,10 @@ void LinearSarsaLearner::loadTiles(
 
   numTilings = 0;
 
-  auto tmControllBall = HierarchicalFSM::tmControllBall(); // the last bit of state
-  for (int v = 0; v < HierarchicalFSM::num_features - 1; v++) {
+  for (int v = 0; v < HierarchicalFSM::num_features; v++) {
     for (int a = 0; a < num_choices; a++) {
       GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
-                (float) (state[v] / tileWidths[v]), a, v, h, agentIdx, tmControllBall);
+                (float) (state[v] / tileWidths[v]), a, v, h, agentIdx);
     }
     numTilings += tilingsPerGroup;
   }

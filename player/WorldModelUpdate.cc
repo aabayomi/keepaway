@@ -2910,8 +2910,7 @@ void WorldModel::checkParticlesBall( VecPosition posArray[],
     {
       bIllegal = true;
     }
-    if( fabs( VecPosition::normalizeAngle(pos_rel.getDirection() - angBall) )
-         > 0.5 )
+    if (fabs(VecPosition::normalizeAngle(pos_rel.getDirection() - angBall)) > 0.5)
     {
       bIllegal = true;
     }

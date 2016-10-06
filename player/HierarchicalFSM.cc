@@ -108,10 +108,6 @@ void HierarchicalFSM::idle(const std::string error) {
   Log.log(101, "idle (error: %s)", error.c_str());
 }
 
-bool HierarchicalFSM::tmControllBall() {
-  return Memory::ins().state[num_features - 1] > 0.5;
-}
-
 string HierarchicalFSM::getState() {
   Memory::ins().resetState();
 
@@ -222,8 +218,8 @@ void Move::run() {
   MakeChoice<int> c(moveTo);
   auto d = c();
 
-  bool flag = tmControllBall();
-  while (running() && flag == tmControllBall()) {
+  bool flag = WM->tmControllBall();
+  while (running() && flag == WM->tmControllBall()) {
     SoccerCommand soc;
     VecPosition target = WM->getAgentGlobalPosition() +
                          (WM->getBallPos() -
@@ -273,8 +269,8 @@ Stay::Stay(BasicPlayer *p) : HierarchicalFSM(p, "Stay") {
 }
 
 void Stay::run() {
-  bool flag = tmControllBall();
-  while (running() && flag == tmControllBall()) {
+  bool flag = WM->tmControllBall();
+  while (running() && flag == WM->tmControllBall()) {
     SoccerCommand soc;
     ACT->putCommandInQueue(soc = player->turnBodyToObject(OBJECT_BALL));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));

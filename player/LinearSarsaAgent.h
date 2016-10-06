@@ -6,6 +6,8 @@
 #include "SMDPAgent.h"
 #include "tiles2.h"
 
+class WorldModel;
+
 namespace jol {
 
 class LinearSarsaAgent : public SMDPAgent {
@@ -82,7 +84,8 @@ protected:
   double reward(double tau, double gamma);
 
 public:
-  LinearSarsaAgent(int numFeatures,
+  LinearSarsaAgent(WorldModel *wm,
+                   int numFeatures,
                    bool bLearn,
                    double widths[],
                    std::string loadWeightsFile,

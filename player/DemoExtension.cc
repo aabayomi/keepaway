@@ -42,7 +42,7 @@ namespace keepaway_demo {
 
 
 DemoAgent::DemoAgent(WorldModel& world_, int numFeatures):
-  SMDPAgent(numFeatures), world(world_)
+    SMDPAgent(numFeatures, &world_), world(world_)
 {
   cout
     << "DemoAgent(world, " << numFeatures << ")" << endl;

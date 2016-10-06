@@ -170,11 +170,6 @@ public:
     return jointActions[tmControlBall][rand() % jointActions[tmControlBall].size()]->id;
   }
 
-  int sample(double state[], int num_features) const {
-    bool tmControllBall = state[num_features - 1] > 0.5;
-    return sample(tmControllBall);
-  }
-
   int numActions() const { return count; }
 
   std::string to_string() {

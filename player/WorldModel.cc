@@ -56,8 +56,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef WIN32
   #include<windows.h>
 #else
-  #include<strings.h>  // needed for strcpy
-  #include<pthread.h>  // needed for pthread_mutex_init
+
+#include<pthread.h>  // needed for pthread_mutex_init
 #endif
 #include<string.h>   // needed for strcpy
 #include<math.h>     // needed for erf
@@ -2357,3 +2357,10 @@ bool WorldModel::setFeature( FeatureT type, Feature feature )
   return true;
 }
 
+bool WorldModel::tmControllBall() {
+  ObjectT K0 = getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
+  VecPosition B = getBallPos();
+  double WK0_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
+  bool tmControllBall = WK0_dist_to_B < getMaximalKickDist(K0);
+  return tmControllBall;
+}

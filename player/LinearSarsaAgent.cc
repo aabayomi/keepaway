@@ -13,10 +13,6 @@
 
 extern Logger Log;
 
-#if USE_DRAW_LOG
-extern LoggerDraw LogDraw;
-#endif
-
 namespace jol {
 
 /**
@@ -125,6 +121,7 @@ void LinearSarsaAgent::saveSharedData(double *weights) {
 }
 
 LinearSarsaAgent::LinearSarsaAgent(
+    WorldModel *wm,
     int numFeatures,
     bool bLearn,
     double widths[],
@@ -132,7 +129,7 @@ LinearSarsaAgent::LinearSarsaAgent(
     string saveWeightsFile,
     int hiveMind,
     double gamma)
-    : SMDPAgent(numFeatures),
+    : SMDPAgent(numFeatures, wm),
       hiveFile(-1),
       gamma(gamma) {
   bLearning = bLearn;
@@ -401,7 +398,7 @@ int LinearSarsaAgent::selectAction(double state[]) {
 
   // Epsilon-greedy
   if (bLearning && drand48() < epsilon) {     /* explore */
-    action = jol::JointActionSpace::ins().sample(state, getNumFeatures());
+    action = jol::JointActionSpace::ins().sample(WM->tmControllBall());
   } else {
     action = argmaxQ(state);
   }
@@ -514,7 +511,7 @@ double LinearSarsaAgent::computeQ(int a) {
 
 // Returns index (action) of largest entry in Q array, breaking ties randomly
 int LinearSarsaAgent::argmaxQ(double state[]) const {
-  bool tmControllBall = state[getNumFeatures() - 1] > 0.5;
+  bool tmControllBall = WM->tmControllBall();
 
   int bestAction = 0;
   double bestValue = INT_MIN;
@@ -566,11 +563,10 @@ void LinearSarsaAgent::loadTiles(double state[]) // will change colTab->data imp
 
   numTilings = 0;
 
-  auto tmControllBall = state[getNumFeatures() - 1] > 0.5; // the last bit of state
-  for (int v = 0; v < getNumFeatures() - 1; v++) {
+  for (int v = 0; v < getNumFeatures(); v++) {
     for (int a = 0; a < getNumActions(); a++) {
       GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
-                (float) (state[v] / tileWidths[v]), a, v, tmControllBall);
+                (float) (state[v] / tileWidths[v]), a, v);
     }
     numTilings += tilingsPerGroup;
   }

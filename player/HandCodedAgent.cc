@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 HandCodedAgent::HandCodedAgent( int numFeatures,
 				char *strPolicy, WorldModel *wm ):
-  SMDPAgent( numFeatures )
+    SMDPAgent(numFeatures, wm)
 {
   strcpy( policy, strPolicy );
   WM = wm;
@@ -73,7 +73,7 @@ int HandCodedAgent::alwaysHold()
 
 int HandCodedAgent::random(double state[])
 {
-  return jol::JointActionSpace::ins().sample(state, getNumFeatures());
+  return jol::JointActionSpace::ins().sample(WM->tmControllBall());
 }
 
 /**

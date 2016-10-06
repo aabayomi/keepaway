@@ -29,170 +29,166 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cstring>
 #include "WorldModel.h"
-#include "SMDPAgent.h"
 
-int WorldModel::getNumKeepers()
-{
+int WorldModel::getNumKeepers() {
   return m_numKeepers;
 }
 
-void WorldModel::setNumKeepers( int iNum )
-{
+void WorldModel::setNumKeepers(int iNum) {
   m_numKeepers = iNum;
 }
 
-int WorldModel::getNumTakers()
-{
+int WorldModel::getNumTakers() {
   return m_numTakers;
 }
 
-void WorldModel::setNumTakers( int iNum )
-{
+void WorldModel::setNumTakers(int iNum) {
   m_numTakers = iNum;
 }
 
-double WorldModel::congestion( VecPosition pos, bool considerMe )
-{
+double WorldModel::congestion(VecPosition pos, bool considerMe) {
   double congest = 0;
-  if ( considerMe && pos != getAgentGlobalPosition() )
-    congest = 1 / getAgentGlobalPosition().getDistanceTo( pos );
+  if (considerMe && pos != getAgentGlobalPosition())
+    congest = 1 / getAgentGlobalPosition().getDistanceTo(pos);
 
   VecPosition playerPos;
 
   int iIndex;
-  for( ObjectT obj = iterateObjectStart( iIndex, OBJECT_SET_PLAYERS );
+  for (ObjectT obj = iterateObjectStart(iIndex, OBJECT_SET_PLAYERS);
        obj != OBJECT_ILLEGAL;
-       obj = iterateObjectNext ( iIndex, OBJECT_SET_PLAYERS ) ) {
-    if ( ( playerPos = getGlobalPosition( obj ) ) != pos )
-      if ( obj != getAgentObjectType() )
+       obj = iterateObjectNext(iIndex, OBJECT_SET_PLAYERS)) {
+    if ((playerPos = getGlobalPosition(obj)) != pos)
+      if (obj != getAgentObjectType())
         /* Don't want to count a player in its own congestion measure */
-        congest += 1/playerPos.getDistanceTo( pos );
+        congest += 1 / playerPos.getDistanceTo(pos);
   }
 
   return congest;
 }
 
-void WorldModel::resetEpisode()
-{
+void WorldModel::resetEpisode() {
 #if USE_DRAW_LOG
   LogDraw.logText( "episode", VecPosition( 0, 0 ), "Reset",
-		      40, COLOR_WHITE );
+          40, COLOR_WHITE );
 #endif
 
-  Ball.setTimeLastSeen( -1 );
-  for ( int i = 0; i < MAX_TEAMMATES; i++ )
-    Teammates[i].setTimeLastSeen( -1 );
-  for ( int i = 0; i < MAX_OPPONENTS; i++ )
-    Opponents[i].setTimeLastSeen( -1 );
-  for ( int i = 0; i < MAX_TEAMMATES+MAX_OPPONENTS; i++ )
-    UnknownPlayers[i].setTimeLastSeen( -1 );
+  Ball.setTimeLastSeen(-1);
+  for (int i = 0; i < MAX_TEAMMATES; i++)
+    Teammates[i].setTimeLastSeen(-1);
+  for (int i = 0; i < MAX_OPPONENTS; i++)
+    Opponents[i].setTimeLastSeen(-1);
+  for (int i = 0; i < MAX_TEAMMATES + MAX_OPPONENTS; i++)
+    UnknownPlayers[i].setTimeLastSeen(-1);
   iNrUnknownPlayers = 0;
-  for ( int i = 0; i < MAX_FLAGS; i++ )
-    Flags[i].setTimeLastSeen( -1 );
-  for ( int i = 0; i < MAX_LINES; i++ )
-    Lines[i].setTimeLastSeen( -1 );
+  for (int i = 0; i < MAX_FLAGS; i++)
+    Flags[i].setTimeLastSeen(-1);
+  for (int i = 0; i < MAX_LINES; i++)
+    Lines[i].setTimeLastSeen(-1);
 
-  setNewEpisode( true );
+  setNewEpisode(true);
 }
 
-void WorldModel::setNewEpisode( bool bNewEp )
-{
+void WorldModel::setNewEpisode(bool bNewEp) {
   //Log.log( 101, "WorldModel::setNewEpisode bNewEp: %d", bNewEp);
   m_newEpisode = bNewEp;
 }
 
-bool WorldModel::isNewEpisode()
-{
+bool WorldModel::isNewEpisode() {
   return m_newEpisode;
 }
 
-double WorldModel::keeperReward(int lastActionTime)
-{
+double WorldModel::keeperReward(int lastActionTime) {
   double reward = getCurrentCycle() - lastActionTime;
   return reward;
 }
 
-int WorldModel::keeperStateVars( double state[] )
-{
-  ObjectT K0 = getClosestInSetTo( OBJECT_SET_TEAMMATES, OBJECT_BALL );
+int WorldModel::keeperStateVars(double state[]) {
+  ObjectT K0 = getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
+  VecPosition C = getKeepawayRect().getPosCenter();
 
   VecPosition B = getBallPos();
-  double WK0_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
-  bool tmControllBall = WK0_dist_to_B < getMaximalKickDist(K0);
+  double dist_to_K0_B = getGlobalPosition(K0).getDistanceTo(B);
+  double dist_to_C_B = B.getDistanceTo(C);
 
-  VecPosition C = getKeepawayRect().getPosCenter();
-  double WK0_dist_to_C = getGlobalPosition( K0 ).getDistanceTo( C );
+  double WK0_dist_to_C = getGlobalPosition(K0).getDistanceTo(C);
 
   int numK = getNumKeepers();
   int numT = getNumTakers();
 
-  ObjectT K[ numK ];
-  for ( int i = 0; i < numK; i++ )
-    K[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
+  ObjectT K[numK];
+  for (int i = 0; i < numK; i++)
+    K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
 
-  ObjectT T[ numT ];
-  for ( int i = 0; i < numT; i++ )
-    T[ i ] = SoccerTypes::getOpponentObjectFromIndex( i );
+  ObjectT T[numT];
+  for (int i = 0; i < numT; i++)
+    T[i] = SoccerTypes::getOpponentObjectFromIndex(i);
 
-  double WB_dist_to_K[ numK ];
-  if ( !sortClosestTo( K, numK, K0, WB_dist_to_K ) )
+  double dist_to_K0_K[numK];
+  if (!sortClosestTo(K, numK, K0, dist_to_K0_K))
     return 0;
 
-  double WB_dist_to_T[ numT ];
-  if ( !sortClosestTo( T, numT, K0, WB_dist_to_T ) )
+  double dist_to_K0_T[numT];
+  if (!sortClosestTo(T, numT, K0, dist_to_K0_T))
     return 0;
 
-  double dist_to_C_K[ numK ];
-  for ( int i = 1; i < numK; i++ ) {
-    dist_to_C_K[ i ] = getGlobalPosition( K[ i ] ).getDistanceTo( C );
+  double dist_to_C_K[numK];
+  for (int i = 1; i < numK; i++) {
+    dist_to_C_K[i] = getGlobalPosition(K[i]).getDistanceTo(C);
   }
 
-  double dist_to_C_T[ numT ];
-  for ( int i = 0; i < numT; i++ ) {
-    dist_to_C_T[ i ] = getGlobalPosition( T[ i ] ).getDistanceTo( C );
+  double dist_to_C_T[numT];
+  for (int i = 0; i < numT; i++) {
+    dist_to_C_T[i] = getGlobalPosition(T[i]).getDistanceTo(C);
   }
 
-  double nearest_Opp_dist_K[ numK ];
-  VecPosition posPB = getGlobalPosition( K0 );
-  for ( int i = 1; i < numK; i++ ) {
-    VecPosition pos = getGlobalPosition( K[ i ] );
-    for ( int j = 0; j < numT; j++ ) {
-      double tmp = getGlobalPosition( T[ j ] ).getDistanceTo( pos );
-      if ( j == 0 || tmp < nearest_Opp_dist_K[ i ] ) {
-        nearest_Opp_dist_K[ i ] = tmp;
+  double nearest_Opp_dist_K[numK];
+  VecPosition posPB = getGlobalPosition(K0);
+  for (int i = 1; i < numK; i++) {
+    VecPosition pos = getGlobalPosition(K[i]);
+    for (int j = 0; j < numT; j++) {
+      double tmp = getGlobalPosition(T[j]).getDistanceTo(pos);
+      if (j == 0 || tmp < nearest_Opp_dist_K[i]) {
+        nearest_Opp_dist_K[i] = tmp;
       }
     }
   }
 
-  double nearest_Opp_ang_K[ numK ];
-  for ( int i = 1; i < numK; i++ ) {
-    VecPosition pos = getGlobalPosition( K[ i ] );
-    for ( int j = 0; j < numT; j++ ) {
-      double tmp = posPB.getAngleBetweenPoints( pos, getGlobalPosition( T[ j ] ) );
-      if ( j == 0 || tmp < nearest_Opp_ang_K[ i ] ) {
-        nearest_Opp_ang_K[ i ] = tmp;
+  double nearest_Opp_ang_K[numK];
+  for (int i = 1; i < numK; i++) {
+    VecPosition pos = getGlobalPosition(K[i]);
+    for (int j = 0; j < numT; j++) {
+      double tmp = posPB.getAngleBetweenPoints(pos, getGlobalPosition(T[j]));
+      if (j == 0 || tmp < nearest_Opp_ang_K[i]) {
+        nearest_Opp_ang_K[i] = tmp;
       }
     }
   }
 
   int j = 0;
-  state[ j++ ] = WK0_dist_to_C;
-  for ( int i = 1; i < numK; i++ )
-    state[ j++ ] = WB_dist_to_K[ i ];
-  for ( int i = 0; i < numT; i++ )
-    state[ j++ ] = WB_dist_to_T[ i ];
-  for ( int i = 1; i < numK; i++ )
-    state[ j++ ] = dist_to_C_K[ i ];
-  for ( int i = 0; i < numT; i++ )
-    state[ j++ ] = dist_to_C_T[ i ];
-  for ( int i = 1; i < numK; i++ )
-    state[ j++ ] = nearest_Opp_dist_K[ i ];
-  for ( int i = 1; i < numK; i++ )
-    state[ j++ ] = nearest_Opp_ang_K[ i ];
+  state[j++] = WK0_dist_to_C;
 
-  state[j++] = tmControllBall ? 1.0 : 0.0;
+  for (int i = 1; i < numK; i++)
+    state[j++] = dist_to_K0_K[i];
+
+  for (int i = 0; i < numT; i++)
+    state[j++] = dist_to_K0_T[i];
+
+  for (int i = 1; i < numK; i++)
+    state[j++] = dist_to_C_K[i];
+
+  for (int i = 0; i < numT; i++)
+    state[j++] = dist_to_C_T[i];
+
+  for (int i = 1; i < numK; i++)
+    state[j++] = nearest_Opp_dist_K[i];
+
+  for (int i = 1; i < numK; i++)
+    state[j++] = nearest_Opp_ang_K[i];
+
+  state[j++] = dist_to_K0_B;
+
+  state[j++] = dist_to_C_B;
 
   return j;
 }
@@ -210,15 +206,14 @@ int WorldModel::keeperStateRangesAndResolutions(
     double ranges[],
     double minValues[],
     double resolutions[],
-    int numK, int numT )
-{
-  if ( numK < 3 ) {
+    int numK, int numT) {
+  if (numK < 3) {
     cerr << "keeperTileWidths: num keepers must be at least 3, found: "
          << numK << endl;
     return 0;
   }
 
-  if ( numT < 2 ) {
+  if (numT < 2) {
     cerr << "keeperTileWidths: num takers must be at least 2, found: "
          << numT << endl;
     return 0;
@@ -226,66 +221,73 @@ int WorldModel::keeperStateRangesAndResolutions(
 
   int j = 0;
 
-  double maxRange = hypot( 25, 25 );
+  double maxRange = hypot(25, 25);
 
-  ranges[ j ] = maxRange / 2.0;        // WB_dist_to_center
-  minValues[ j ] = 0;
-  resolutions[ j++ ] = 2.0;
-  for ( int i = 1; i < numK; i++ ) {     // WB_dist_to_T
-    ranges[ j ] = maxRange;
-    minValues[ j ] = 0;
-    resolutions[ j++ ] = 2.0 + ( i - 1 ) / ( numK - 2 );
+  ranges[j] = maxRange / 2.0;        // dist_to_K0_center
+  minValues[j] = 0;
+  resolutions[j++] = 2.0;
+
+  for (int i = 1; i < numK; i++) {     // dist_to_K0_Teammate
+    ranges[j] = maxRange;
+    minValues[j] = 0;
+    resolutions[j++] = 2.0 + (i - 1) / (numK - 2);
   }
-  for ( int i = 0; i < numT; i++ ) {     // WB_dist_to_O
-    ranges[ j ] = maxRange;
-    minValues[ j ] = 0;
-    resolutions[ j++ ] = 3.0 + ( i - 1 ) / ( numT - 1 );
+
+  for (int i = 0; i < numT; i++) {     // dist_to_K0_Opponent
+    ranges[j] = maxRange;
+    minValues[j] = 0;
+    resolutions[j++] = 3.0 + (i - 1) / (numT - 1);
   }
-  for ( int i = 1; i < numK; i++ ) {     // dist_to_center_T
-    ranges[ j ] = maxRange / 2.0;
-    minValues[ j ] = 0;
-    resolutions[ j++ ] = 2.0 + ( i - 1 ) / ( numK - 2 );
+
+  for (int i = 1; i < numK; i++) {     // dist_to_center_Teammate
+    ranges[j] = maxRange / 2.0;
+    minValues[j] = 0;
+    resolutions[j++] = 2.0 + (i - 1) / (numK - 2);
   }
-  for ( int i = 0; i < numT; i++ ) {     // dist_to_center_O
-    ranges[ j ] = maxRange / 2.0;
-    minValues[ j ] = 0;
-    resolutions[ j++ ] = 3.0;
+
+  for (int i = 0; i < numT; i++) {     // dist_to_center_Opponent
+    ranges[j] = maxRange / 2.0;
+    minValues[j] = 0;
+    resolutions[j++] = 3.0;
   }
-  for ( int i = 1; i < numK; i++ ) {     // nearest_Opp_dist_T
-    ranges[ j ] = maxRange / 2.0;
-    minValues[ j ] = 0;
-    resolutions[ j++ ] = 4.0;
+
+  for (int i = 1; i < numK; i++) {     // nearest_Opp_dist_Teammate
+    ranges[j] = maxRange / 2.0;
+    minValues[j] = 0;
+    resolutions[j++] = 4.0;
   }
-  for ( int i = 1; i < numK; i++ ) {     // nearest_Opp_ang_T
-    ranges[ j ] = 180;
-    minValues[ j ] = 0;
-    resolutions[ j++ ] = 10.0;
+
+  for (int i = 1; i < numK; i++) {     // nearest_Opp_ang_Teammate
+    ranges[j] = 180;
+    minValues[j] = 0;
+    resolutions[j++] = 10.0;
   }
-  ranges[ j ] = 1.0;        // tmControllBall
-  minValues[ j ] = 0.0;
-  resolutions[ j++ ] = 1.0;
+
+  ranges[j] = maxRange;        // dist_to_K0_B
+  minValues[j] = 0.0;
+  resolutions[j++] = 1.0;
+
+  ranges[j] = maxRange / 2.0;        // dist_to_C_B
+  minValues[j] = 0.0;
+  resolutions[j++] = 2.0;
 
   return j;
 }
 
 
-void WorldModel::setMoveSpeed( double speed )
-{
+void WorldModel::setMoveSpeed(double speed) {
   m_moveSpeed = speed;
 }
 
-double WorldModel::getMoveSpeed()
-{
+double WorldModel::getMoveSpeed() {
   return m_moveSpeed;
 }
 
-void WorldModel::setKeepawayRect( VecPosition pos1, VecPosition pos2 )
-{
-  m_keepawayRect.setRectanglePoints( pos1, pos2 );
+void WorldModel::setKeepawayRect(VecPosition pos1, VecPosition pos2) {
+  m_keepawayRect.setRectanglePoints(pos1, pos2);
 }
 
-Rect WorldModel::getKeepawayRect()
-{
+Rect WorldModel::getKeepawayRect() {
   return m_keepawayRect;
 }
 

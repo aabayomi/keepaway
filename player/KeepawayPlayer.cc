@@ -278,9 +278,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
   int features = WM->keeperStateVars(state);
   assert(features == 0 || features == SA->getNumFeatures());
   if (features != SA->getNumFeatures()) return idle("features != SA->getNumFeatures()"); // do nothing
-
-  bool tmControllBall = state[SA->getNumFeatures() - 1] > 0.5;
-  Log.log(101, "tmControllBall %f:%d", state[SA->getNumFeatures() - 1], tmControllBall);
+  Log.log(101, "tmControllBall %d", WM->tmControllBall());
 
   ObjectT K[11];
   memset(K, 0, sizeof(K));
@@ -321,7 +319,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
 
   // K0 makes the decision or !hiveMind
   if (agentIdx == 0 || SA->hiveMind <= 1) {
-    assert(agentIdx != 0 || !tmControllBall || WM->isBallKickable());
+    assert(agentIdx != 0 || !WM->tmControllBall() || WM->isBallKickable());
 
     if (WM->isNewEpisode()) {
       SA->endEpisode(WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime));

@@ -45,10 +45,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Logger.h"
 #include "JointOptionLearning.h"
 
+class WorldModel;
+
 namespace jol {
 
 class SMDPAgent {
 public:
+  WorldModel *WM;
   int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
   int lastAction;
   int lastActionTime;
@@ -62,7 +65,7 @@ public:
   int getNumActions() const { return jol::JointActionSpace::ins().numActions(); }
 
 public:
-  SMDPAgent(int numFeatures);
+  SMDPAgent(int numFeatures, WorldModel *WM);
 
   virtual ~SMDPAgent() {}
 

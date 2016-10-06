@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
       // (l)earned
       // or "learned!" -> Don't explore at all.
       auto linearSarsaAgent = new jol::LinearSarsaAgent(
-          numFeatures, bLearn, resolutions,
+          &wm, numFeatures, bLearn, resolutions,
           loadWeightsFile, saveWeightsFile, hiveMind, gamma
       );
 

@@ -98,8 +98,6 @@ protected:
 
   bool running();
 
-  static bool tmControllBall();
-
   static std::string getStackStr();
 
 protected:

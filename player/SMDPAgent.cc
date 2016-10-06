@@ -2,6 +2,7 @@
 
 #include "SMDPAgent.h"
 #include <linux/limits.h>
+#include <cstring>
 
 using namespace std;
 
@@ -17,11 +18,13 @@ string getexepath() {
   }
 }
 
-SMDPAgent::SMDPAgent(int numFeatures) {
+SMDPAgent::SMDPAgent(int numFeatures, WorldModel *WM) : WM(WM) {
   m_numFeatures = numFeatures;
   lastAction = -1;
   lastActionTime = UnknownTime;
   hiveMind = 0;
+
+  memset(K, 0, sizeof(K));
 
   string exepath = getexepath();
   replace(exepath.begin(), exepath.end(), '/', '_');
