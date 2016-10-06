@@ -177,7 +177,7 @@ LinearSarsaAgent::LinearSarsaAgent(
   nonzeroTracesInverse = nonzeroTracesInverseRaw;
 
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-  fill(weights, weights + RL_MEMORY_SIZE, 1.0);
+  fill(weights, weights + RL_MEMORY_SIZE, 0.0);
 
   numTilings = 0;
   minimumTrace = 0.01;
@@ -226,6 +226,7 @@ int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
 
   loadTiles(state);
   for (int a = 0; a < getNumActions(); a++) {
+    if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
     Q[a] = computeQ(a);
   }
 
@@ -235,6 +236,7 @@ int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
   {
     stringstream ss;
     for (int a = 0; a < getNumActions(); ++a) {
+      if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
       ss << a << ":" << Q[a] << ", ";
     }
     Log.log(101, "LinearSarsaAgent::startEpisode numTilings: %d", numTilings);
@@ -269,7 +271,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
     tau = current_time - lastActionTime;
     Log.log(101, "LinearSarsaAgent::step hived lastActionTime: %d", lastActionTime);
     Log.log(101, "LinearSarsaAgent::step hived lastAction: %d %s", lastAction,
-            jol::JointActionSpace::ins().getJointActionName(lastAction));
+            JointActionSpace::ins().getJointActionName(lastAction));
     Log.log(101, "LinearSarsaAgent::step hived tau: %f", tau);
   }
 
@@ -278,6 +280,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
 
   loadTiles(state); //s_t
   for (int a = 0; a < getNumActions(); a++) {
+    if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
     Q[a] = computeQ(a); //Q_{t-1}[s_t, *]
   }
 
@@ -287,6 +290,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
   {
     stringstream ss;
     for (int a = 0; a < getNumActions(); ++a) {
+      if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
       ss << a << ":" << Q[a] << ", ";
     }
     Log.log(101, "LinearSarsaAgent::step numTilings: %d", numTilings);
@@ -398,9 +402,9 @@ int LinearSarsaAgent::selectAction(double state[]) {
 
   // Epsilon-greedy
   if (bLearning && drand48() < epsilon) {     /* explore */
-    action = jol::JointActionSpace::ins().sample(WM->tmControllBall());
+    action = JointActionSpace::ins().sample(WM->tmControllBall());
   } else {
-    action = argmaxQ(state);
+    action = argmaxQ();
   }
 
   assert(action >= 0);
@@ -463,7 +467,7 @@ bool LinearSarsaAgent::loadWeights(const char *filename) {
       colTab->reset();
 
       if (!fileFound) {
-        fill(weights, weights + RL_MEMORY_SIZE, 1.0);
+        fill(weights, weights + RL_MEMORY_SIZE, 0.0);
         saveWeights(weightsFile.c_str());
       }
     }
@@ -510,15 +514,12 @@ double LinearSarsaAgent::computeQ(int a) {
 }
 
 // Returns index (action) of largest entry in Q array, breaking ties randomly
-int LinearSarsaAgent::argmaxQ(double state[]) const {
-  bool tmControllBall = WM->tmControllBall();
-
+int LinearSarsaAgent::argmaxQ() const {
   int bestAction = 0;
   double bestValue = INT_MIN;
   int numTies = 0;
   for (int a = 0; a < getNumActions(); a++) {
-    if (jol::JointActionSpace::ins().getJointAction(a)->tmControllBall != tmControllBall)
-      continue;
+    if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
 
     double value = Q[a];
     if (value > bestValue) {
@@ -562,9 +563,9 @@ void LinearSarsaAgent::loadTiles(double state[]) // will change colTab->data imp
   const int tilingsPerGroup = 32;
 
   numTilings = 0;
-
   for (int v = 0; v < getNumFeatures(); v++) {
     for (int a = 0; a < getNumActions(); a++) {
+      if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
       GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
                 (float) (state[v] / tileWidths[v]), a, v);
     }

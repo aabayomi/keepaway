@@ -21,7 +21,7 @@ LinearSarsaLearner::LinearSarsaLearner() {
   epsilon = 0.01;
 
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-  fill(weights, weights + RL_MEMORY_SIZE, 1.0);
+  fill(weights, weights + RL_MEMORY_SIZE, 0.0);
 
   srand((unsigned int) 0);
   srand48((unsigned int) 0);

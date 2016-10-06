@@ -56,7 +56,7 @@ protected:
 
   double computeQ(int a);
 
-  int argmaxQ(double state[]) const;
+  int argmaxQ() const;
 
   void updateWeights(double delta);
 

@@ -28,7 +28,7 @@ cp hist.gnuplot.template hist.gnuplot
 for var in "$@"; do
     output="`echo $var | sed -e 's/-/ /g' | awk '{$1 = ""; print $0;}' | sed -e 's/ //g'`"
     output="`basename $output .kwy`"
-    output="`echo $output | sed -e 's/_/-/g' -e 's/-fs//g' -e 's/Q-//g'`"
+    output="`echo $output | sed -e 's/_/-/g'`"
     ./winsum.sh $var $output
     ./hist.sh $var $output
 done
