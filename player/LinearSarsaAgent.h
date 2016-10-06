@@ -52,7 +52,7 @@ protected:
   bool saveWeights(const char *filename);
 
   // Value function methods for CMACs
-  int selectAction(double state[]);
+  int selectAction();
 
   double computeQ(int a);
 
@@ -82,6 +82,8 @@ protected:
   virtual void sync(bool load);
 
   double reward(double tau, double gamma);
+
+  const std::vector<int> &validActions() const;
 
 public:
   LinearSarsaAgent(WorldModel *wm,

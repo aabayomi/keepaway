@@ -22,8 +22,11 @@ random integers, of which we use only the low-order bytes.
 */
 
 #include <iostream>
+#include <climits>
 #include "tiles2.h"
-#include "math.h"
+#include "Logger.h"
+
+extern Logger Log;
 
 int mod(int n, int k) { return (n >= 0) ? n % k : k - 1 - ((-n - 1) % k); }
 
@@ -42,7 +45,7 @@ void GetTiles(
   int coordinates[MAX_NUM_VARS * 2 + 1];   /* one interval number per relevant dimension */
   int num_coordinates = num_floats + num_ints + 1;
 
-  for (int i = 0; i < num_ints; i++)
+  for (i = 0; i < num_ints; i++)
     coordinates[num_floats + 1 + i] = ints[i];
 
   /* quantize state to integers (henceforth, tile widths == num_tilings) */
@@ -66,7 +69,6 @@ void GetTiles(
 
     tiles[j] = hash_UNH(coordinates, num_coordinates, memory_size, 449);
   }
-  return;
 }
 
 
@@ -85,7 +87,7 @@ void GetTiles(
   int coordinates[MAX_NUM_VARS * 2 + 1];   /* one interval number per relevant dimension */
   int num_coordinates = num_floats + num_ints + 1;
 
-  for (int i = 0; i < num_ints; i++)
+  for (i = 0; i < num_ints; i++)
     coordinates[num_floats + 1 + i] = ints[i];
 
   /* quantize state to integers (henceforth, tile widths == num_tilings) */
@@ -107,9 +109,8 @@ void GetTiles(
     /* add additional indices for tiling and hashing_set so they hash differently */
     coordinates[i] = j;
 
-    tiles[j] = hash(coordinates, num_coordinates, ctable);
+    tiles[j] = (int) (hash_safe(coordinates, num_coordinates, ctable) % INT_MAX);
   }
-  return;
 }
 
 
@@ -118,7 +119,7 @@ void GetTiles(
 */
 
 
-int hash_UNH(int *ints, int num_ints, long m, int increment) {
+long hash_UNH(int *ints, int num_ints, long m, int increment) {
   static unsigned int rndseq[2048];
   static int first_call = 1;
   int i, k;
@@ -150,17 +151,14 @@ int hash_UNH(int *ints, int num_ints, long m, int increment) {
   while (index < 0)
     index += m;
 
-  return (int) index;
+  return index;
 }
-
-
-int hash(int *ints, int num_ints, collision_table *ct);
 
 /* hash
    Takes an array of integers and returns the corresponding tile after hashing
 */
-int hash(int *ints, int num_ints, collision_table *ct) {
-  int j;
+long hash_safe(int *ints, int num_ints, collision_table *ct) {
+  long j;
   long ccheck;
 
   ct->calls++;
@@ -176,13 +174,14 @@ int hash(int *ints, int num_ints, collision_table *ct) {
     ct->collisions++;
   else {
     long h2 = 1 + 2 * hash_UNH(ints, num_ints, (MaxLONGINT) / 4, 449);
-    int i = 0;
+    long i = 0;
     while (++i) {
       ct->collisions++;
       j = (j + h2) % (ct->m);
-      //printf("(%d)",j);
-      if (i > ct->m) {
+      if (i > ct->m - 1) {
         printf("\nOut of Memory");
+        Log.log(101, "tiles hash out of memory");
+        const_cast<int &>(ct->safe) = 0;
         break;
       }
       if (ccheck == ct->data[j])
@@ -192,13 +191,13 @@ int hash(int *ints, int num_ints, collision_table *ct) {
         break;
       }
     }
+    if (i > 10) Log.log(101, "tiles hash collision resolved after %d tryings", i);
   }
   return j;
 }
 
 void collision_table::reset() {
-  for (int i = 0; i < m; i++)
-    data[i] = -1;
+  fill(data, data + m, -1);
   calls = 0;
   clearhits = 0;
   collisions = 0;
@@ -560,7 +559,7 @@ void GetTilesWrap(
     /* add additional indices for tiling and hashing_set so they hash differently */
     coordinates[i] = j;
 
-    tiles[j] = hash(coordinates, num_coordinates, ctable);
+    tiles[j] = (int) (hash_safe(coordinates, num_coordinates, ctable) % INT_MAX);
   }
   return;
 }

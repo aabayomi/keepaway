@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #define MAX_NUM_VARS 64        // Maximum number of variables in a grid-tiling
-#define MAX_NUM_COORDS 100     // Maximum number of hashing coordinates
 #define MaxLONGINT 2147483647
 
 class collision_table {
@@ -74,9 +73,9 @@ void GetTilesWrap(
 void GetTilesWrap(int tiles[], int num_tilings, int memory_size, float floats[],
                   int num_floats, int wrap_widths[]);
 
-int hash_UNH(int *ints, int num_ints, long m, int increment);
+long hash_UNH(int *ints, int num_ints, long m, int increment);
 
-int hash(int *ints, int num_ints, collision_table *ctable);
+long hash_safe(int *ints, int num_ints, collision_table *ctable);
 
 // no ints
 void GetTiles(int tiles[], int nt, int memory, float floats[], int nf);

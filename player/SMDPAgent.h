@@ -62,7 +62,7 @@ public:
 
   int getNumFeatures() const { return m_numFeatures; }
 
-  int getNumActions() const { return jol::JointActionSpace::ins().numActions(); }
+  int getNumActions() const { return JointActionSpace::ins().numActions(); }
 
 public:
   SMDPAgent(int numFeatures, WorldModel *WM);

@@ -49,7 +49,7 @@ int HandCodedAgent::startEpisode( int current_time, double state[] )
 int HandCodedAgent::step( int current_time, double reward, double state[] )
 {
   if ( policy[0] == 'r' ) {      // (r)andom
-    return random(state);
+    return random();
   }
   else if ( policy[1] == 'o' ) { // h(o)ld
     return alwaysHold();
@@ -71,7 +71,7 @@ int HandCodedAgent::alwaysHold()
   return 0;
 }
 
-int HandCodedAgent::random(double state[])
+int HandCodedAgent::random()
 {
   return jol::JointActionSpace::ins().sample(WM->tmControllBall());
 }

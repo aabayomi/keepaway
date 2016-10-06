@@ -34,6 +34,11 @@ struct SharedData {
   ObjectT K[11]; // mapping from index to player obj
   double minimumTrace;
   int numNonzeroTraces;
+
+  SharedData() {
+    fill(Q, Q + MAX_RL_ACTIONS, 0.0);
+    fill(K, K + 11, OBJECT_MAX_OBJECTS);
+  }
 };
 #pragma pack(pop)
 #define VERBOSE_HIVE_MIND false
@@ -65,8 +70,8 @@ void LinearSarsaAgent::loadSharedData(double *weights) {
   colTab->calls = shared->calls;
   colTab->clearhits = shared->clearhits;
   colTab->collisions = shared->collisions;
-  *const_cast<long *>(&colTab->m) = shared->m;
-  *const_cast<int *>(&colTab->safe) = shared->safe;
+  const_cast<long &>(colTab->m) = shared->m;
+  const_cast<int &>(colTab->safe) = shared->safe;
 
   if (hiveMind > 1) {
     memcpy(Q, shared->Q, sizeof(shared->Q));
@@ -177,7 +182,8 @@ LinearSarsaAgent::LinearSarsaAgent(
   nonzeroTracesInverse = nonzeroTracesInverseRaw;
 
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-  fill(weights, weights + RL_MEMORY_SIZE, 0.0);
+  fill(weights, weights + RL_MEMORY_SIZE, 0.1);
+  fill(Q, Q + MAX_RL_ACTIONS, 0.0);
 
   numTilings = 0;
   minimumTrace = 0.01;
@@ -225,18 +231,16 @@ int LinearSarsaAgent::startEpisode(int current_time, double state[]) {
   assert(numNonzeroTraces == 0);
 
   loadTiles(state);
-  for (int a = 0; a < getNumActions(); a++) {
-    if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
+  for (int a : validActions()) {
     Q[a] = computeQ(a);
   }
 
-  lastAction = selectAction(state); // share Q[lastAction] in hive mind mode
+  lastAction = selectAction(); // share Q[lastAction] in hive mind mode
   lastActionTime = current_time;
 
   {
     stringstream ss;
-    for (int a = 0; a < getNumActions(); ++a) {
-      if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
+    for (int a : validActions()) {
       ss << a << ":" << Q[a] << ", ";
     }
     Log.log(101, "LinearSarsaAgent::startEpisode numTilings: %d", numTilings);
@@ -279,18 +283,16 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
   double delta = reward(tau, gamma) - Q[lastAction]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
 
   loadTiles(state); //s_t
-  for (int a = 0; a < getNumActions(); a++) {
-    if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
+  for (int a : validActions()) {
     Q[a] = computeQ(a); //Q_{t-1}[s_t, *]
   }
 
-  lastAction = selectAction(state); //a_t
+  lastAction = selectAction(); //a_t
   lastActionTime = current_time;
 
   {
     stringstream ss;
-    for (int a = 0; a < getNumActions(); ++a) {
-      if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
+    for (int a : validActions()) {
       ss << a << ":" << Q[a] << ", ";
     }
     Log.log(101, "LinearSarsaAgent::step numTilings: %d", numTilings);
@@ -309,7 +311,7 @@ int LinearSarsaAgent::step(int current_time, double reward_, double state[]) {
 
   decayTraces(gamma * lambda);
 
-  for (int a = 0; a < getNumActions(); a++) {  //clear other than F[a]
+  for (int a : validActions()) {
     if (a != lastAction) {
       for (int j = 0; j < numTilings; j++)
         clearTrace(tiles[a][j]);
@@ -397,8 +399,8 @@ void LinearSarsaAgent::shutDown() {
   }
 }
 
-int LinearSarsaAgent::selectAction(double state[]) {
-  int action;
+int LinearSarsaAgent::selectAction() {
+  int action = -1;
 
   // Epsilon-greedy
   if (bLearning && drand48() < epsilon) {     /* explore */
@@ -408,6 +410,8 @@ int LinearSarsaAgent::selectAction(double state[]) {
   }
 
   assert(action >= 0);
+  assert(action < getNumActions());
+  assert(JointActionSpace::ins().getJointAction(action)->tmControllBall == WM->tmControllBall());
   return action;
 }
 
@@ -467,7 +471,7 @@ bool LinearSarsaAgent::loadWeights(const char *filename) {
       colTab->reset();
 
       if (!fileFound) {
-        fill(weights, weights + RL_MEMORY_SIZE, 0.0);
+        fill(weights, weights + RL_MEMORY_SIZE, 0.1);
         saveWeights(weightsFile.c_str());
       }
     }
@@ -513,14 +517,26 @@ double LinearSarsaAgent::computeQ(int a) {
   return q;
 }
 
+const vector<int> &LinearSarsaAgent::validActions() const {
+  static vector<int> actions[2];
+
+  if (actions[0].empty() || actions[1].empty()) {
+    for (int a = 0; a < getNumActions(); a++) {
+      auto tmControllBall = JointActionSpace::ins().getJointAction(a)->tmControllBall;
+      actions[tmControllBall].push_back(a);
+    }
+  }
+
+  return actions[WM->tmControllBall()];
+}
+
 // Returns index (action) of largest entry in Q array, breaking ties randomly
 int LinearSarsaAgent::argmaxQ() const {
   int bestAction = 0;
   double bestValue = INT_MIN;
   int numTies = 0;
-  for (int a = 0; a < getNumActions(); a++) {
-    if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
 
+  for (int a : validActions()) {
     double value = Q[a];
     if (value > bestValue) {
       bestValue = value;
@@ -564,8 +580,7 @@ void LinearSarsaAgent::loadTiles(double state[]) // will change colTab->data imp
 
   numTilings = 0;
   for (int v = 0; v < getNumFeatures(); v++) {
-    for (int a = 0; a < getNumActions(); a++) {
-      if (JointActionSpace::ins().getJointAction(a)->tmControllBall != WM->tmControllBall()) continue;
+    for (int a : validActions()) {
       GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
                 (float) (state[v] / tileWidths[v]), a, v);
     }

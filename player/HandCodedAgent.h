@@ -41,7 +41,8 @@ class HandCodedAgent : public jol::SMDPAgent
 {
   WorldModel *WM;
   int alwaysHold();
-  int random(double state[]);
+
+  int random();
   int handCoded( double state[] );
 
   char policy[256];

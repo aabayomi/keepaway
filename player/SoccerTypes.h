@@ -63,9 +63,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAX_RL_STATE_VARS         256
 #define MAX_RL_ACTIONS            256
 
-#define RL_MEMORY_SIZE (2 << 20)
-#define RL_MAX_NONZERO_TRACES (2 << 17)
-#define RL_MAX_NUM_TILINGS (2 << 14)
+#define RL_MEMORY_SIZE (2 << 21)
+#define RL_MAX_NONZERO_TRACES (2 << 18)
+#define RL_MAX_NUM_TILINGS (2 << 15)
 
 
 /*****************************************************************************/
