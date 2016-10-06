@@ -8,13 +8,14 @@ LOG=""
 LOGLEVEL="101"
 HIERARCHICALFSM=""
 GAMMA="1.0"
+INITIALWEIGHT="0.0"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
 LOGDIR="logs"
 QFILE2=""
 MEMORYCHECK=""
 
-while getopts  "b:h:g:q:lfmsnzM" flag; do
+while getopts  "b:h:g:q:I:lfmsnzM" flag; do
     case "$flag" in
         h) HIVEMODE="$OPTARG";;
         f) FULLSTATE="--fullstate";; 
@@ -23,6 +24,7 @@ while getopts  "b:h:g:q:lfmsnzM" flag; do
         l) LOG="--log-dir=$LOGDIR --log-game --log-text --log-level $LOGLEVEL";;
         z) HIERARCHICALFSM="--hierarchical-fsm";;
         g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`";;
+        I) INITIALWEIGHT="$OPTARG";;
         b) BUILD="$OPTARG";;
         n) LEARNING="--keeper-policy=learned!";;
         q) QFILE2="$OPTARG";;
@@ -36,6 +38,10 @@ PORT="--port=`shuf -i 2000-65000 -n 1`"
 
 if [ ! -z $GAMMA ]; then
     QFILE="${QFILE}_gamma${GAMMA}"
+fi
+
+if [ ! -z $INITIALWEIGHT ]; then
+    QFILE="${QFILE}_initialweight${INITIALWEIGHT}"
 fi
 
 if [ ! -z $FULLSTATE ]; then
@@ -62,6 +68,6 @@ ulimit -c unlimited
 ./keepaway.py $MEMORYCHECK $LEARNING \
     --keeper-output=$QFILE --keeper-input=$QFILE \
     $HIVE $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
-    $HIERARCHICALFSM --gamma=$GAMMA --label=`basename $QFILE .q` \
-    2>&1 | tee $CONSOLE_LOG
+    $HIERARCHICALFSM --gamma=$GAMMA --initial-weight=$INITIALWEIGHT \
+    --label=`basename $QFILE .q` 2>&1 | tee $CONSOLE_LOG
 

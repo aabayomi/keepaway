@@ -34,7 +34,9 @@ def launch_player(player_type, index, options):
     # TODO $klog_opts $kdraw_opts $kweight_opts
     player_options = dict(
         i = '1', # verbose
+        m = '0', # running mode
         g = float(options.gamma),
+        I = float(options.initial_weight),
         z=int(options.hierarchical_fsm),
         l = options.log_level, # log level
         o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index + 1),
@@ -339,6 +341,9 @@ def parse_options(args = None, **defaults):
     parser.add_option(
         '--memory-check', action='store_true', default=False,
         help="Use valgrind to check memory bugs.")
+    parser.add_option(
+        '--initial-weight', type = 'float', default = 0.0,
+        help = "Initial weight values.")
 
     options = parser.parse_args(args)[0]
     # Set coach_port and online_coach_port here, if not set previously.

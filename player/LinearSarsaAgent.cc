@@ -133,10 +133,12 @@ LinearSarsaAgent::LinearSarsaAgent(
     string loadWeightsFile,
     string saveWeightsFile,
     int hiveMind,
-    double gamma)
+    double gamma,
+    double initialWeight)
     : SMDPAgent(numFeatures, wm),
       hiveFile(-1),
-      gamma(gamma) {
+      gamma(gamma),
+      initialWeight(initialWeight) {
   bLearning = bLearn;
 
   for (int i = 0; i < getNumFeatures(); i++) {
@@ -182,7 +184,7 @@ LinearSarsaAgent::LinearSarsaAgent(
   nonzeroTracesInverse = nonzeroTracesInverseRaw;
 
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-  fill(weights, weights + RL_MEMORY_SIZE, 0.1);
+  fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
   fill(Q, Q + MAX_RL_ACTIONS, 0.0);
 
   numTilings = 0;
@@ -471,7 +473,7 @@ bool LinearSarsaAgent::loadWeights(const char *filename) {
       colTab->reset();
 
       if (!fileFound) {
-        fill(weights, weights + RL_MEMORY_SIZE, 0.1);
+        fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
         saveWeights(weightsFile.c_str());
       }
     }

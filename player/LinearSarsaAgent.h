@@ -23,6 +23,7 @@ protected:
   double gamma;
   double lambda;
   double epsilon;
+  double initialWeight;
 
   double tileWidths[MAX_RL_STATE_VARS];
   double Q[MAX_RL_ACTIONS];
@@ -93,7 +94,8 @@ public:
                    std::string loadWeightsFile,
                    std::string saveWeightsFile,
                    int hiveMind,
-                   double gamma);
+                   double gamma,
+                   double initialWeight);
 
   void setEpsilon(double epsilon);
 

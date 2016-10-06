@@ -24,9 +24,7 @@ private:
 public:
   static LinearSarsaLearner &ins();
 
-  void setLearning(bool learning);
-
-  void setWidth(double *width);
+  void initialize(bool learning, double width[], double weight);
 
   int step(int num_choices);
 
@@ -79,6 +77,8 @@ private:
   std::string getQStr(int num_choice);
 
   void loadQ(int num_choices);
+
+  double initialWeight;
 };
 
 }

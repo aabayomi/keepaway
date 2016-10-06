@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
   int iStartLearningAfter = -1;
   bool hierarchicalFSM = false;
   double gamma = 1.0;
+  double initialWeight = 0.0;
 
   ofstream os;
   ofstream osDraw;
@@ -181,6 +182,10 @@ int main(int argc, char *argv[]) {
         case 'i':                                   // info 1 0
           str = &argv[i + 1][0];
           bInfo = Parse::parseFirstInt(&str) == 1;
+          break;
+        case 'I': // initialWeight
+          str = &argv[i + 1][0];
+          initialWeight = Parse::parseFirstDouble(&str);
           break;
         case 'j':
           str = &argv[i + 1][0];
@@ -273,6 +278,7 @@ int main(int argc, char *argv[]) {
          "hierarchical FSM : " << hierarchicalFSM << endl <<
          "hive mind mode : " << hiveMind << endl <<
          "gamma : " << gamma << endl <<
+         "initialWeight: " << initialWeight << endl <<
          "be learning : " << bLearn << endl;
   }
 
@@ -306,7 +312,7 @@ int main(int argc, char *argv[]) {
                                                        iNumKeepers, iNumTakers);
 
   fsm::HierarchicalFSM::initialize(
-      numFeatures, iNumKeepers, bLearn, resolutions, gamma);
+      numFeatures, iNumKeepers, bLearn, resolutions, gamma, initialWeight);
 
   if (!hierarchicalFSM) {
     Log.log(101, "Joint Action Space: \n%s\n",
@@ -317,7 +323,8 @@ int main(int argc, char *argv[]) {
       // or "learned!" -> Don't explore at all.
       auto linearSarsaAgent = new jol::LinearSarsaAgent(
           &wm, numFeatures, bLearn, resolutions,
-          loadWeightsFile, saveWeightsFile, hiveMind, gamma
+          loadWeightsFile, saveWeightsFile, hiveMind,
+          gamma, initialWeight
       );
 
       // Check for pure exploitation mode.

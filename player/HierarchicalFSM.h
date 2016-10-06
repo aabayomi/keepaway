@@ -111,7 +111,8 @@ public:
                          int numKeepers,
                          bool bLearn,
                          double widths[],
-                         double gamma);
+                         double gamma,
+                         double initialWeight);
 
 protected:
   ActHandler *ACT; /*!< ActHandler to which commands can be sent        */

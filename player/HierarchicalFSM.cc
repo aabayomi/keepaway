@@ -157,12 +157,12 @@ void HierarchicalFSM::initialize(int numFeatures,
                                  int numKeepers,
                                  bool bLearn,
                                  double widths[],
-                                 double Gamma) {
+                                 double Gamma,
+                                 double initialWeight) {
   num_features = numFeatures;
   num_keepers = numKeepers;
   gamma = Gamma;
-  LinearSarsaLearner::ins().setLearning(bLearn);
-  LinearSarsaLearner::ins().setWidth(widths);
+  LinearSarsaLearner::ins().initialize(bLearn, widths, initialWeight);
 }
 
 Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "Keeper") {

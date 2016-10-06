@@ -16,12 +16,23 @@ LinearSarsaLearner &LinearSarsaLearner::ins() {
 }
 
 LinearSarsaLearner::LinearSarsaLearner() {
+
+}
+
+void LinearSarsaLearner::initialize(bool learning, double width[], double weight)
+{
+  bLearning = learning;
+  for (int i = 0; i < HierarchicalFSM::num_features; i++) {
+    tileWidths[i] = width[i];
+  }
+
+  initialWeight = weight;
   alpha = 0.125;
   lambda = 0.0;
   epsilon = 0.01;
 
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-  fill(weights, weights + RL_MEMORY_SIZE, 0.1);
+  fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
 
   srand((unsigned int) 0);
   srand48((unsigned int) 0);
@@ -35,16 +46,6 @@ LinearSarsaLearner::LinearSarsaLearner() {
   numTilings = 0;
   minimumTrace = 0.01;
   numNonzeroTraces = 0;
-}
-
-void LinearSarsaLearner::setLearning(bool learning) {
-  bLearning = learning;
-}
-
-void LinearSarsaLearner::setWidth(double width[]) {
-  for (int i = 0; i < HierarchicalFSM::num_features; i++) {
-    tileWidths[i] = width[i];
-  }
 }
 
 void LinearSarsaLearner::loadQ(int num_choices) {
