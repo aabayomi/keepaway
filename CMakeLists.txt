@@ -69,4 +69,4 @@ set(SOURCE_FILES
         player/ChoicePoint.h player/LinearSarsaLearner.cc player/LinearSarsaLearner.h)
 
 add_executable(keepaway_player ${SOURCE_FILES})
-target_link_libraries(keepaway_player pthread dl)
+target_link_libraries(keepaway_player pthread dl rt)

@@ -8,16 +8,28 @@
 
 class WorldModel;
 
+/**
+ * Designed specifically to match the serialization format for collision_table.
+ * See collision_table::save and collision_table::restore.
+ */
+#pragma pack(push, 1)
+struct SharedData {
+  int lastAction;
+  int lastActionTime;
+};
+#pragma pack(pop)
+
 namespace jol {
 
 class LinearSarsaAgent : public SMDPAgent {
 protected:
-  const string weightsFile;
+  string saveWeightsFile;
   bool bLearning;
   bool bSaveWeights;
 
-  /// Hive mind indicator and file descriptor.
-  int hiveFile;
+  string fileLockPrefix;
+  string sharedMemoryName;
+  SharedData *sharedData;
 
   double alpha;
   double gamma;
@@ -28,8 +40,7 @@ protected:
   double tileWidths[MAX_RL_STATE_VARS];
   double Q[MAX_RL_ACTIONS];
 
-  double *weights;
-  double weightsRaw[RL_MEMORY_SIZE];
+  double weights[RL_MEMORY_SIZE];
 
   int tiles[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
   int numTilings;
@@ -37,13 +48,9 @@ protected:
   double minimumTrace;
   int numNonzeroTraces;
 
-  double *traces;
-  int *nonzeroTraces;
-  int *nonzeroTracesInverse;
-
-  double tracesRaw[RL_MEMORY_SIZE];
-  int nonzeroTracesRaw[RL_MAX_NONZERO_TRACES];
-  int nonzeroTracesInverseRaw[RL_MEMORY_SIZE];
+  double traces[RL_MEMORY_SIZE];
+  int nonzeroTraces[RL_MAX_NONZERO_TRACES];
+  int nonzeroTracesInverse[RL_MEMORY_SIZE];
 
   collision_table *colTab;
 
@@ -74,11 +81,9 @@ protected:
 
   void increaseMinTrace();
 
-  size_t mmapSize();
+  void loadSharedData(SharedData *address);
 
-  void loadSharedData(double *weights);
-
-  void saveSharedData(double *weights);
+  void saveSharedData(SharedData *address);
 
   virtual void sync(bool load);
 
@@ -93,18 +98,19 @@ public:
                    double widths[],
                    std::string loadWeightsFile,
                    std::string saveWeightsFile,
-                   int hiveMind,
                    double gamma,
                    double initialWeight);
+
+  virtual ~LinearSarsaAgent();
 
   void setEpsilon(double epsilon);
 
   // SMDP Sarsa implementation
-  int startEpisode(int current_time, double state[]);
+  int startEpisode(double state[]);
 
-  int step(int current_time, double reward_, double state[]);
+  int step(double reward_, double state[]);
 
-  void endEpisode(int current_time, double reward_);
+  void endEpisode(double reward_);
 
   void shutDown();
 };

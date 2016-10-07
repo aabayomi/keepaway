@@ -9,9 +9,12 @@ public:
   DemoAgent(WorldModel& world, int numFeatures);
 
   virtual void sync(bool load) {}
-  virtual int startEpisode(int current_time, double state[]);
-  virtual int step(int current_time, double reward, double state[]);
-  virtual void endEpisode(int current_time, double reward);
+
+  virtual int startEpisode(double state[]);
+
+  virtual int step(double reward, double state[]);
+
+  virtual void endEpisode(double reward);
   virtual void setParams(int iCutoffEpisodes, int iStopLearningEpisodes);
 
   WorldModel& world;
@@ -49,7 +52,7 @@ DemoAgent::DemoAgent(WorldModel& world_, int numFeatures):
 }
 
 
-int DemoAgent::startEpisode(int current_time, double state[]) {
+int DemoAgent::startEpisode(double state[]) {
   // TODO Print state!
   cout << "startEpisode(...)" << endl;
   // Always a hold action here.
@@ -57,7 +60,7 @@ int DemoAgent::startEpisode(int current_time, double state[]) {
 }
 
 
-int DemoAgent::step(int current_time, double reward, double state[]) {
+int DemoAgent::step(double reward, double state[]) {
   VecPosition position = world.getGlobalPosition(
     SoccerTypes::getTeammateObjectFromIndex(world.getAgentIndex())
   );
@@ -68,7 +71,7 @@ int DemoAgent::step(int current_time, double reward, double state[]) {
 }
 
 
-void DemoAgent::endEpisode(int current_time, double reward) {
+void DemoAgent::endEpisode(double reward) {
   cout << "endEpisode(" << reward << ")" << endl;
 }
 

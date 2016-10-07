@@ -61,7 +61,7 @@ int LinearSarsaLearner::step(int num_choices) {
     Log.log(101, "LinearSarsaLearner::step memory: \n%s",
             Memory::ins().to_string().c_str());
 
-  auto last_choice = Memory::ins().lastChoice; // the last choice
+  auto last_choice = Memory::ins().lastChoice.first; // the last choice
   auto choice = -1;
 
   if (last_choice >= 0) {
@@ -74,7 +74,7 @@ int LinearSarsaLearner::step(int num_choices) {
     assert(!std::isnan(Q[choice]) && !std::isinf(Q[choice]));
     delta += Memory::ins().cumulativeGamma * Q[choice];
 
-    updateWeights(delta, last_choice);
+    updateWeights(delta);
     Q[choice] = computeQ(choice); // update Q[choice]
     decayTraces(HierarchicalFSM::gamma * lambda);
 
@@ -108,10 +108,10 @@ void LinearSarsaLearner::endEpisode() {
     Log.log(101, "LinearSarsaLearner::endEpisode memory: \n%s",
             Memory::ins().to_string().c_str());
 
-  auto last_choice = Memory::ins().lastChoice;
+  auto last_choice = Memory::ins().lastChoice.first;
   if (bLearning && last_choice != -1) {
     double delta = Memory::ins().cumulativeReward - Q[last_choice];
-    updateWeights(delta, last_choice);
+    updateWeights(delta);
   }
 }
 
@@ -185,9 +185,8 @@ int LinearSarsaLearner::argmaxQ(int num_choices) {
   return bestAction;
 }
 
-void LinearSarsaLearner::updateWeights(double delta, int last_choice) {
+void LinearSarsaLearner::updateWeights(double delta) {
   Log.log(101, "LinearSarsaLearner::updateWeights delta %f", delta);
-  Log.log(101, "LinearSarsaLearner::updateWeights before Q[%d] = %f", last_choice, Q[last_choice]);
 
   assert(numTilings > 0);
   double tmp = delta * alpha / numTilings;
@@ -207,9 +206,6 @@ void LinearSarsaLearner::updateWeights(double delta, int last_choice) {
     assert(!std::isnan(weights[f]));
     assert(!std::isinf(weights[f]));
   }
-
-  Q[last_choice] = computeQ(last_choice); // update Q[choice]
-  Log.log(101, "LinearSarsaLearner::updateWeights after Q[%d] = %f", last_choice, Q[last_choice]);
 }
 
 void LinearSarsaLearner::decayTraces(double decayRate) {

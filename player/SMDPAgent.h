@@ -55,10 +55,7 @@ public:
   int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
   int lastAction;
   int lastActionTime;
-  ObjectT K[11]; // mapping from index to player obj
-  int hiveMind; // 1: hive mind, 2: full hive mind
-  string fileLockPrefix;
-  string sharedMemoryPrefix;
+  int agentIdx;
 
   int getNumFeatures() const { return m_numFeatures; }
 
@@ -69,14 +66,11 @@ public:
 
   virtual ~SMDPAgent() {}
 
-  // abstract methods to be supplied by implementing class
-  virtual void sync(bool load) = 0;
+  virtual int startEpisode(double state[]) = 0;
 
-  virtual int startEpisode(int current_time, double state[]) = 0;
+  virtual int step(double reward, double state[]) = 0;
 
-  virtual int step(int current_time, double reward, double state[]) = 0;
-
-  virtual void endEpisode(int current_time, double reward) = 0;
+  virtual void endEpisode(double reward) = 0;
 
   // Optional customization point.
   virtual void shutDown() {}

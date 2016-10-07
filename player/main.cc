@@ -61,7 +61,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "HierarchicalFSM.h"
 
 #include "Parse.h"
-#include <string.h>   // needed for strcpy
 
 #ifdef WIN32
 #include <windows.h>  // needed for CreateThread
@@ -112,7 +111,6 @@ int main(int argc, char *argv[]) {
   bool bLearn = false;
   string loadWeightsFile;
   string saveWeightsFile;
-  int hiveMind = 0;
   bool bInfo = false;
   bool bSuppliedLogFile = false;
   bool bSuppliedLogDrawFile = false;
@@ -171,10 +169,6 @@ int main(int argc, char *argv[]) {
           if (strlen(argv[i]) > 2 && argv[i][2] == 'e') {
             printOptions();
             exit(0);
-          }
-          else if (strlen(argv[i]) > 2 && argv[i][2] == 'i') {
-            str = &argv[i + 1][0];
-            hiveMind = Parse::parseFirstInt(&str);
           }
           else
             strcpy(strHost, argv[i + 1]);
@@ -276,7 +270,6 @@ int main(int argc, char *argv[]) {
          "playernr : " << iNr << endl <<
          "reconnect : " << iReconnect << endl <<
          "hierarchical FSM : " << hierarchicalFSM << endl <<
-         "hive mind mode : " << hiveMind << endl <<
          "gamma : " << gamma << endl <<
          "initialWeight: " << initialWeight << endl <<
          "be learning : " << bLearn << endl;
@@ -323,7 +316,7 @@ int main(int argc, char *argv[]) {
       // or "learned!" -> Don't explore at all.
       auto linearSarsaAgent = new jol::LinearSarsaAgent(
           &wm, numFeatures, bLearn, resolutions,
-          loadWeightsFile, saveWeightsFile, hiveMind,
+          loadWeightsFile, saveWeightsFile,
           gamma, initialWeight
       );
 
@@ -343,8 +336,7 @@ int main(int argc, char *argv[]) {
       // above.
       // Added WorldModel for agents needing richer/relational representation!
       typedef jol::SMDPAgent *(*CreateAgent)(
-          WorldModel &, int, bool, double *, string, string, int
-      );
+          WorldModel &, int, bool, double *, string, string);
       CreateAgent createAgent = NULL;
 #ifdef WIN32
       // TODO
@@ -367,8 +359,7 @@ int main(int argc, char *argv[]) {
 #endif
       sa = createAgent(
           wm, numFeatures, bLearn, resolutions,
-          loadWeightsFile, saveWeightsFile, hiveMind
-      );
+          loadWeightsFile, saveWeightsFile);
     } else {
       // (ha)nd (ho)ld (r)andom
       sa = new HandCodedAgent(numFeatures,

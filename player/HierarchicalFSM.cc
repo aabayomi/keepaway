@@ -42,8 +42,7 @@ void Memory::newEpisode() {
 
 void Memory::makeChoice(int choice, const string &choice_name) {
   Log.log(101, "Memory::makeChoice %d [name %s]", choice, choice_name.c_str());
-  lastChoice = choice;
-  lastChoiceName = choice_name;
+  lastChoice = {choice, choice_name};
   cumulativeReward = 0.0;
   cumulativeGamma = HierarchicalFSM::gamma;
 }
@@ -58,7 +57,6 @@ string Memory::to_string() {
   PRINT_VALUE_STREAM(ss, agentIdx);
   PRINT_VALUE_STREAM(ss, stack);
   PRINT_VALUE_STREAM(ss, lastChoice);
-  PRINT_VALUE_STREAM(ss, lastChoiceName);
   PRINT_VALUE_STREAM(ss, cumulativeReward);
   PRINT_VALUE_STREAM(ss, cumulativeGamma);
 

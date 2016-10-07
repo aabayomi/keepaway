@@ -58,6 +58,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unordered_map>
 #include "Geometry.h"     // needed for AngDeg
 #include "ServerSettings.h"
+#include <linux/limits.h>
+#include <cstring>
+#include <unistd.h>
 
 
 #define MAX_RL_STATE_VARS         256
@@ -67,6 +70,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RL_MAX_NONZERO_TRACES (2 << 18)
 #define RL_MAX_NUM_TILINGS (2 << 15)
 
+inline std::string getexepath() {
+  char result[PATH_MAX];
+  ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+  if (count > 0) {
+    return std::string(result, (size_t) count);
+  } else {
+    return std::string(result, 0);
+  }
+}
 
 /*****************************************************************************/
 /********************* DEFINES ***********************************************/

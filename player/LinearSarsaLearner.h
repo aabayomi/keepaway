@@ -62,7 +62,7 @@ private:
 
   int argmaxQ(int num_choices);
 
-  void updateWeights(double delta, int last_choice);
+  void updateWeights(double delta);
 
   void decayTraces(double decayRate);
 

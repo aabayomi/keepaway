@@ -1,4 +1,4 @@
 #!/bin/bash
 
-./run.sh -sfm -h 2 $*
+./run.sh -sfm $*
 

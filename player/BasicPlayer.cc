@@ -53,12 +53,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "BasicPlayer.h"
 #include <fcntl.h>
-#include <zconf.h>
 
 
-FileLock::FileLock(const string &prefix, const string &file, const string &func) {
+FileLock::FileLock(const string &prefix, const string &name) {
   static const timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
-  lockName = prefix + "_" + file + "_" + func + ".flock";
+  lockName = prefix + name + ".flock";
 
   for (;;) {
     lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
@@ -71,7 +70,6 @@ FileLock::~FileLock() {
   unlink(lockName.c_str());
   close(lock);
 }
-
 
 /********************** LOW-LEVEL SKILLS *************************************/
 

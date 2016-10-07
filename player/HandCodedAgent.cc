@@ -41,12 +41,12 @@ HandCodedAgent::HandCodedAgent( int numFeatures,
 }
 
 
-int HandCodedAgent::startEpisode( int current_time, double state[] )
+int HandCodedAgent::startEpisode(double state[])
 {
-  return step( current_time, 0, state );
+  return step(0, state);
 }
 
-int HandCodedAgent::step( int current_time, double reward, double state[] )
+int HandCodedAgent::step(double reward, double state[])
 {
   if ( policy[0] == 'r' ) {      // (r)andom
     return random();
@@ -59,7 +59,7 @@ int HandCodedAgent::step( int current_time, double reward, double state[] )
   }
 }
 
-void HandCodedAgent::endEpisode( int current_time, double reward )
+void HandCodedAgent::endEpisode(double reward)
 {
   // Do nothing
 }

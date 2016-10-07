@@ -50,8 +50,7 @@ public:
   int agentIdx; // agent index
   std::vector<string> stack; // call stack
 
-  int lastChoice; // index of last choice
-  std::string lastChoiceName;
+  std::pair<int, std::string> lastChoice; // index of last choice
   double cumulativeReward; // cumulative reward since last choice
   double cumulativeGamma; // cumulative discount
 };

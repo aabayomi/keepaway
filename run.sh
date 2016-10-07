@@ -1,6 +1,5 @@
 #!/bin/bash
 
-HIVEMODE="0"
 FULLSTATE=""
 MONITOR=""
 SYNCH=""
@@ -12,12 +11,12 @@ INITIALWEIGHT="0.0"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
 LOGDIR="logs"
+QFILE=""
 QFILE2=""
 MEMORYCHECK=""
 
-while getopts  "b:h:g:q:I:lfmsnzM" flag; do
+while getopts  "b:g:q:I:lfmsnzM" flag; do
     case "$flag" in
-        h) HIVEMODE="$OPTARG";;
         f) FULLSTATE="--fullstate";; 
         m) MONITOR="--monitor";;
         s) SYNCH="--synch-mode";;
@@ -32,12 +31,10 @@ while getopts  "b:h:g:q:I:lfmsnzM" flag; do
     esac
 done
 
-HIVE="--keeper-hive $HIVEMODE"
-QFILE="hive${HIVEMODE}"
 PORT="--port=`shuf -i 2000-65000 -n 1`"
 
 if [ ! -z $GAMMA ]; then
-    QFILE="${QFILE}_gamma${GAMMA}"
+    QFILE="${QFILE}gamma${GAMMA}"
 fi
 
 if [ ! -z $INITIALWEIGHT ]; then
@@ -67,7 +64,7 @@ CONSOLE_LOG="$LOGDIR/`basename $QFILE .q`.console"
 ulimit -c unlimited
 ./keepaway.py $MEMORYCHECK $LEARNING \
     --keeper-output=$QFILE --keeper-input=$QFILE \
-    $HIVE $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
+    $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
     $HIERARCHICALFSM --gamma=$GAMMA --initial-weight=$INITIALWEIGHT \
     --label=`basename $QFILE .q` 2>&1 | tee $CONSOLE_LOG
 

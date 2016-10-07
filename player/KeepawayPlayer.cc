@@ -32,7 +32,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KeepawayPlayer.h"
 #include "SayMsgEncoder.h"
 #include "HierarchicalFSM.h"
-#include <cstring>
 
 
 KeepawayPlayer::KeepawayPlayer(jol::SMDPAgent *sa, ActHandler *act, WorldModel *wm,
@@ -270,11 +269,11 @@ SoccerCommand KeepawayPlayer::keeper()
 
 SoccerCommand KeepawayPlayer::jolKeepers()
 {
+  static ObjectT savedK[11];
   static double state[MAX_RL_STATE_VARS];
   memset(state, 0, sizeof(state));
 
   int numK = WM->getNumKeepers();
-
   int features = WM->keeperStateVars(state);
   assert(features == 0 || features == SA->getNumFeatures());
   if (features != SA->getNumFeatures()) return idle("features != SA->getNumFeatures()"); // do nothing
@@ -290,7 +289,8 @@ SoccerCommand KeepawayPlayer::jolKeepers()
   if (!WM->sortClosestTo(K, numK, K0)) return idle("!WM->sortClosestTo(K, numK, K0)");
   if (K0 != K[0]) return idle("K0 != K[0]");
 
-  int agentIdx = 0;
+  int &agentIdx = SA->agentIdx;
+  agentIdx = 0;
   while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
   assert(agentIdx < numK);
   Log.log(101, "agentIdx %d", agentIdx);
@@ -303,74 +303,43 @@ SoccerCommand KeepawayPlayer::jolKeepers()
     auto aa = ja->actions[0]; // the action of the leading agent
 
     int idx = 0;
-    while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
+    while (idx < numK && savedK[idx] != WM->getAgentObjectType()) idx += 1;
     assert(idx < numK);
     if (idx >= numK) return idle("idx >= numK");
 
-    if (!aa->terminated(this, SA->K)) {
+    if (!aa->terminated(this, savedK)) {
       Log.log(101, "continue option %d:%s [%d]", SA->lastAction,
               jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
-      return jolExecute(SA->lastAction, idx, SA->K);
+      return jolExecute(SA->lastAction, idx, savedK);
     } else {
       Log.log(101, "terminated option %d:%s [%d]", SA->lastAction,
               jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
     }
   }
 
-  // K0 makes the decision or !hiveMind
-  if (agentIdx == 0 || SA->hiveMind <= 1) {
-    assert(agentIdx != 0 || !WM->tmControllBall() || WM->isBallKickable());
+  assert(agentIdx != 0 || !WM->tmControllBall() || WM->isBallKickable());
 
-    if (WM->isNewEpisode()) {
-      SA->endEpisode(WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime));
-      WM->setNewEpisode(false);
-    }
-
-    int action;
-    if (SA->lastActionTime == UnknownTime) {
-      action = SA->startEpisode(WM->getCurrentCycle(), state);
-    } else { // Call step() on all but first SMDP step
-      action = SA->step(WM->getCurrentCycle(), WM->keeperReward(SA->lastActionTime), state);
-    }
-
-    Log.log(101, "execute option %d:%s [%d]", action,
-            jol::JointActionSpace::ins().getJointActionName(action), agentIdx);
-
-    memcpy(SA->K, K, sizeof(K)); // save K[]
-    Log.log(101, "sync save K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
-
-    SA->sync(false); // save shared memory
-    return jolExecute(action, agentIdx, SA->K);
-  } else {
-    SA->lastAction = -1;
-    if (WM->isNewEpisode()) {
-      WM->setNewEpisode(false);
-    }
-
-    int loops = 75;
-    while (loops-- &&
-           (SA->lastAction == -1 ||
-            SA->lastActionTime != WM->getCurrentCycle())) { // wait for K0
-      Log.log(101, "wait for K0");
-      static const timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
-      nanosleep(&sleepTime, NULL);
-      SA->sync(true); // load shared memory
-    }
-
-    if (SA->lastActionTime == WM->getCurrentCycle() && SA->lastAction != -1) {
-      Log.log(101, "sync load K0:%d K1:%d K2:%d", SA->K[0], SA->K[1], SA->K[2]);
-
-      int idx = 0;
-      while (idx < numK && SA->K[idx] != WM->getAgentObjectType()) idx += 1;
-      if (idx >= numK) return idle("idx >= numK after having waited for K0");
-
-      Log.log(101, "execute option %d:%s [%d]", SA->lastAction,
-              jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
-      return jolExecute(SA->lastAction, idx, SA->K);
-    } else {
-      return idle("wait for K0 timeout");
-    }
+  if (WM->isNewEpisode()) {
+    SA->endEpisode(WM->keeperReward(SA->lastActionTime));
   }
+
+  int action;
+  if (WM->isNewEpisode() || SA->lastActionTime == UnknownTime || SA->lastAction == -1) {
+    assert(SA->lastAction == -1);
+    if (WM->isNewEpisode()) WM->setNewEpisode(false);
+    action = SA->startEpisode(state);
+  } else { // Call step() on all but first SMDP step
+    action = SA->step(WM->keeperReward(SA->lastActionTime), state);
+  }
+
+  Log.log(101, "execute option %d:%s [%d]", action,
+          jol::JointActionSpace::ins().getJointActionName(action), SA->agentIdx);
+
+  memcpy(savedK, K, sizeof(K)); // save K[]
+  Log.log(101, "sync save K0:%d K1:%d K2:%d", savedK[0], savedK[1], savedK[2]);
+
+  SA->lastActionTime = WM->getCurrentCycle();
+  return jolExecute(action, SA->agentIdx, savedK);
 }
 
 SoccerCommand KeepawayPlayer::jolExecute(int action, int agentIdx, ObjectT K[])
