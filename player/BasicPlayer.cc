@@ -55,20 +55,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 
 
-FileLock::FileLock(const string &prefix, const string &name) {
-  static const timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
-  lockName = prefix + name + ".flock";
-
-  for (;;) {
-    lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
-    if (lock >= 0) break;
-    nanosleep(&sleepTime, NULL);
-  }
+ScopedLock::ScopedLock(sem_t *sem): sem(sem) {
+  sem_wait(sem);
 }
 
-FileLock::~FileLock() {
-  unlink(lockName.c_str());
-  close(lock);
+ScopedLock::~ScopedLock() {
+  sem_post(sem);
 }
 
 /********************** LOW-LEVEL SKILLS *************************************/

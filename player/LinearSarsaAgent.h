@@ -27,7 +27,7 @@ protected:
   bool bLearning;
   bool bSaveWeights;
 
-  string fileLockPrefix;
+  std::unordered_map<std::string, sem_t*> sems;
   string sharedMemoryName;
   SharedData *sharedData;
 

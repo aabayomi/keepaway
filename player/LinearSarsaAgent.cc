@@ -16,7 +16,7 @@ extern Logger Log;
 namespace jol {
 void LinearSarsaAgent::sync(bool load) {
   if (sharedData) {
-    FileLock lock("/run/lock/", sharedMemoryName.substr(1));
+    ScopedLock lock(sems["sync"]);
     Log.log(101, "LinearSarsaAgent::sync %s", load ? "load" : "save");
 
     if (load) {
@@ -43,6 +43,11 @@ LinearSarsaAgent::~LinearSarsaAgent() {
   if (sharedData) {
     shm_unlink(sharedMemoryName.c_str());
   }
+
+  for (auto pa : sems) {
+    sem_unlink(pa.first.c_str());
+  }
+
   delete colTab;
 }
 
@@ -57,16 +62,14 @@ LinearSarsaAgent::LinearSarsaAgent(
     double initialWeight)
     : SMDPAgent(numFeatures, wm),
       saveWeightsFile(saveWeightsFile),
+      bLearning(bLearn),
       gamma(gamma),
       initialWeight(initialWeight) {
-  bLearning = bLearn;
-
   string exepath = getexepath();
   exepath += loadWeightsFile;
   exepath += saveWeightsFile;
   auto h = hash<string>().operator()(exepath); //hashing
 
-  fileLockPrefix = "/run/lock/" + to_string(h);
   sharedMemoryName = "/" + to_string(h) + ".shm";
   sharedData = 0;
 
@@ -75,7 +78,6 @@ LinearSarsaAgent::LinearSarsaAgent(
   }
 
   bSaveWeights = bLearning && saveWeightsFile.length() > 0;
-
   alpha = 0.125;
   lambda = 0.0;
   epsilon = 0.01;
@@ -98,10 +100,6 @@ LinearSarsaAgent::LinearSarsaAgent(
   srand((unsigned int) time(NULL));
   srand48((unsigned int) time(NULL));
 
-  if (loadWeightsFile.length() > 0)
-    loadWeights(loadWeightsFile.c_str());
-
-  // reset in case they have been changed in loadWeights
   numTilings = 0;
   lastAction = -1;
   lastActionTime = UnknownTime;
@@ -109,23 +107,29 @@ LinearSarsaAgent::LinearSarsaAgent(
   numNonzeroTraces = 0;
 
   if (bLearning) { // setup shared data
-    /* create the shared memory segment as if it was a file */
+    for (auto n : vector<string>{"sync", "loadWeight", "saveWeight"}) {
+      if ((sems[n] = sem_open(("/" + n + "-" + to_string(h)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
+        perror("semaphore initilization");
+        exit(1);
+      }
+    }
+
     int shm_fd = shm_open(sharedMemoryName.c_str(), O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1) {
       printf("prod: Shared memory failed: %s\n", strerror(errno));
       exit(1);
     }
 
-    /* configure the size of the shared memory segment */
     ftruncate(shm_fd, sizeof(SharedData));
-
-    /* map the shared memory segment to the address space of the process */
     sharedData = (SharedData *) mmap(0, sizeof(SharedData), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (sharedData == MAP_FAILED) {
       printf("prod: Map failed: %s\n", strerror(errno));
       exit(1);
     }
   }
+
+  if (loadWeightsFile.length() > 0)
+    loadWeights(loadWeightsFile.c_str());
 }
 
 void LinearSarsaAgent::setEpsilon(double epsilon) {
@@ -232,7 +236,7 @@ void LinearSarsaAgent::endEpisode(double reward_) {
     updateWeights(delta);
   }
 
-  if (bLearning && bSaveWeights && rand() % 200 == 0) {
+  if (bLearning && bSaveWeights && rand() % 1000 == 0) {
     saveWeights(saveWeightsFile.c_str());
   }
   lastAction = -1;
@@ -287,7 +291,7 @@ int LinearSarsaAgent::selectAction() {
 }
 
 bool LinearSarsaAgent::loadWeights(const char *filename) {
-  FileLock lock(fileLockPrefix, "loadWeights");
+  ScopedLock lock(sems["loadWeight"]);
 
   cerr << "Loading weights from " << filename << endl;
   int file = open(filename, O_RDONLY);
@@ -303,7 +307,7 @@ bool LinearSarsaAgent::loadWeights(const char *filename) {
 }
 
 bool LinearSarsaAgent::saveWeights(const char *filename) {
-  FileLock lock(fileLockPrefix, "saveWeights");
+  ScopedLock lock(sems["saveWeight"]);
 
   int file = open(filename, O_CREAT | O_WRONLY, 0664);
   if (file < 0) {

@@ -7,7 +7,7 @@ LOG=""
 LOGLEVEL="101"
 HIERARCHICALFSM=""
 GAMMA="1.0"
-INITIALWEIGHT="0.0"
+INITIALWEIGHT="1.0"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
 LOGDIR="logs"
@@ -17,17 +17,17 @@ MEMORYCHECK=""
 
 while getopts  "b:g:q:I:lfmsnzM" flag; do
     case "$flag" in
-        f) FULLSTATE="--fullstate";; 
-        m) MONITOR="--monitor";;
-        s) SYNCH="--synch-mode";;
-        l) LOG="--log-dir=$LOGDIR --log-game --log-text --log-level $LOGLEVEL";;
-        z) HIERARCHICALFSM="--hierarchical-fsm";;
-        g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`";;
-        I) INITIALWEIGHT="$OPTARG";;
-        b) BUILD="$OPTARG";;
-        n) LEARNING="--keeper-policy=learned!";;
-        q) QFILE2="$OPTARG";;
-        M) MEMORYCHECK="--memory-check";;
+        f) FULLSTATE="--fullstate" ;; 
+        m) MONITOR="--monitor" ;;
+        s) SYNCH="--synch-mode" ;;
+        l) LOG="--log-dir=$LOGDIR --log-game --log-text --log-level $LOGLEVEL" ;;
+        z) HIERARCHICALFSM="--hierarchical-fsm" ;;
+        g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
+        I) INITIALWEIGHT="$OPTARG" ;;
+        b) BUILD="$OPTARG" ;;
+        n) LEARNING="--keeper-policy=learned!" ;;
+        q) QFILE2="$OPTARG" ;;
+        M) MEMORYCHECK="--memory-check" ;;
     esac
 done
 

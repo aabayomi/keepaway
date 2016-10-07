@@ -41,6 +41,7 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double weight
   colTab = new collision_table(RL_MEMORY_SIZE, 1);
 
   GetTiles(tmp, 1, 1, tmpf, 0);  // A dummy call to set the hashing table
+  srand((unsigned int) time(NULL));
   srand48((unsigned int) time(NULL));
 
   numTilings = 0;

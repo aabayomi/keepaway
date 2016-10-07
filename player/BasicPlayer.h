@@ -55,18 +55,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _BASICPLAYER_
 
 #include "ActHandler.h"
+#include <semaphore.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
 
 extern Logger Log; /*!< This is a reference to Logger to write log info to*/
 
-class FileLock {
+class ScopedLock {
 private:
-  int lock;
-  std::string lockName;
+  sem_t *sem;
 
 public:
-  FileLock(const std::string &prefix, const std::string &name);
+  ScopedLock(sem_t *sem);
 
-  ~FileLock();
+  ~ScopedLock();
 };
 
 /*! This class defines the skills that can be used by an agent. No
