@@ -96,7 +96,7 @@ void KeepawayPlayer::mainLoop( )
           char strMsg[MAX_SAY_MSG];
           makeSayMessage(soc, strMsg);
           if (strlen(strMsg) != 0)
-            Log.log(600, "send communication string: %s", strMsg);
+            Log.logWithTime(600, "send communication string: %s", strMsg);
           WM->setCommunicationString(strMsg);
         }
 
@@ -237,7 +237,7 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
 
 SoccerCommand KeepawayPlayer::keeper()
 {
-  //Log.log( 101, "KeepawayPlayer::keeper: decision" );
+  //Log.logWithTime( 101, "KeepawayPlayer::keeper: decision" );
 
   SoccerCommand soc;
 
@@ -277,7 +277,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
   int features = WM->keeperStateVars(state);
   assert(features == 0 || features == SA->getNumFeatures());
   if (features != SA->getNumFeatures()) return idle("features != SA->getNumFeatures()"); // do nothing
-  Log.log(101, "tmControllBall %d", WM->tmControllBall());
+  Log.logWithTime(101, "tmControllBall %d", WM->tmControllBall());
 
   ObjectT K[11];
   memset(K, 0, sizeof(K));
@@ -293,7 +293,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
   agentIdx = 0;
   while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
   assert(agentIdx < numK);
-  Log.log(101, "agentIdx %d", agentIdx);
+  Log.logWithTime(101, "agentIdx %d", agentIdx);
 
   if (agentIdx >= numK) return idle("agentIdx >= numK");
 
@@ -308,12 +308,12 @@ SoccerCommand KeepawayPlayer::jolKeepers()
     if (idx >= numK) return idle("idx >= numK");
 
     if (!aa->terminated(this, savedK)) {
-      Log.log(101, "continue option %d:%s [%d]", SA->lastAction,
-              jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
+      Log.logWithTime(101, "continue option %d:%s [%d]", SA->lastAction,
+                      jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
       return jolExecute(SA->lastAction, idx, savedK);
     } else {
-      Log.log(101, "terminated option %d:%s [%d]", SA->lastAction,
-              jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
+      Log.logWithTime(101, "terminated option %d:%s [%d]", SA->lastAction,
+                      jol::JointActionSpace::ins().getJointActionName(SA->lastAction), idx);
     }
   }
 
@@ -332,11 +332,11 @@ SoccerCommand KeepawayPlayer::jolKeepers()
     action = SA->step(WM->keeperReward(SA->lastActionTime), state);
   }
 
-  Log.log(101, "execute option %d:%s [%d]", action,
-          jol::JointActionSpace::ins().getJointActionName(action), SA->agentIdx);
+  Log.logWithTime(101, "execute option %d:%s [%d]", action,
+                  jol::JointActionSpace::ins().getJointActionName(action), SA->agentIdx);
 
   memcpy(savedK, K, sizeof(K)); // save K[]
-  Log.log(101, "sync save K0:%d K1:%d K2:%d", savedK[0], savedK[1], savedK[2]);
+  Log.logWithTime(101, "sync save K0:%d K1:%d K2:%d", savedK[0], savedK[1], savedK[2]);
 
   SA->lastActionTime = WM->getCurrentCycle();
   return jolExecute(action, SA->agentIdx, savedK);
@@ -355,7 +355,7 @@ SoccerCommand KeepawayPlayer::idle(string error)
   SoccerCommand soc;
   ACT->putCommandInQueue( soc = turnBodyToObject( OBJECT_BALL ) );
   ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
-  Log.log(101, "idle (error: %s)", error.c_str());
+  Log.logWithTime(101, "idle (error: %s)", error.c_str());
   return soc;
 }
 
@@ -376,7 +376,7 @@ SoccerCommand KeepawayPlayer::taker()
        WM->getClosestInSetTo( OBJECT_SET_TEAMMATES, OBJECT_BALL) ==
        WM->getAgentObjectType() ) {
     ACT->putCommandInQueue( soc = holdBall( 0.3 ) );
-    Log.log(101, "holdBall( 0.3 )");
+    Log.logWithTime(101, "holdBall( 0.3 )");
     return soc;
   }
 
@@ -391,7 +391,7 @@ SoccerCommand KeepawayPlayer::taker()
       T[ 1 ] != WM->getAgentObjectType() ) {
     ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS,
                                               OBJECT_BALL );
-    Log.log(101, "markMostOpenOpponent( withBall )");
+    Log.logWithTime(101, "markMostOpenOpponent( withBall )");
     ACT->putCommandInQueue( soc = markMostOpenOpponent( withBall ) );
     ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
     return soc;
@@ -405,7 +405,7 @@ SoccerCommand KeepawayPlayer::taker()
   if ( SoccerTypes::isTeammate( closest ) &&
        closest != WM->getAgentObjectType() &&
        dDist < WM->getMaximalKickDist(closest)) {
-    Log.log(101, "turnBodyToObject( OBJECT_BALL )");
+    Log.logWithTime(101, "turnBodyToObject( OBJECT_BALL )");
     ACT->putCommandInQueue( soc = turnBodyToObject( OBJECT_BALL ) );
     ACT->putCommandInQueue( alignNeckWithBody() );
     return soc;
@@ -416,11 +416,11 @@ SoccerCommand KeepawayPlayer::taker()
 
   if (SoccerTypes::isOpponent(closest) &&
       dDist < WM->getMaximalKickDist(closest)) { // opp can kick
-    Log.log(101, "move to ball");
+    Log.logWithTime(101, "move to ball");
     soc = moveToPos(WM->getBallPos(), 30.0);
   }
   else {
-    Log.log(101, "intercept");
+    Log.logWithTime(101, "intercept");
     soc = intercept( false );
   }
 

@@ -308,8 +308,8 @@ int main(int argc, char *argv[]) {
       numFeatures, iNumKeepers, bLearn, resolutions, gamma, initialWeight);
 
   if (!hierarchicalFSM) {
-    Log.log(101, "Joint Action Space: \n%s\n",
-            jol::JointActionSpace::ins().to_string().c_str());
+    Log.logWithTime(101, "Joint Action Space: \n%s\n",
+                    jol::JointActionSpace::ins().to_string().c_str());
 
     if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
       // (l)earned

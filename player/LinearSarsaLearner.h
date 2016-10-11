@@ -10,8 +10,76 @@
 #include "BasicPlayer.h"
 #include <unordered_map>
 #include "tiles2.h"
+#include "HierarchicalFSM.h"
+#include <cstddef>
+#include <functional>
+
+namespace std {
+
+template<>
+struct hash<vector<int>> {
+  size_t operator()(const vector<int> &vec) const {
+    size_t seed = vec.size();
+    for (auto &i : vec) {
+      seed ^= hash<int>()(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+  }
+};
+
+}
 
 namespace fsm {
+struct SharedData {
+  double Q[MAX_RL_ACTIONS];
+  double weights[RL_MEMORY_SIZE];
+  double traces[RL_MEMORY_SIZE];
+  int nonzeroTraces[RL_MAX_NONZERO_TRACES];
+  int nonzeroTracesInverse[RL_MEMORY_SIZE];
+  collision_table colTab;
+
+  int numTilings;
+  double minimumTrace;
+  int numNonzeroTraces;
+
+  int numChoices[11]; // indexed by K0..Kn
+  int lastJointChoiceIdx;
+  int lastJointChoice[11];
+  char machineStateStr[11][1024];
+
+  vector<int> getNumChoices() const;
+
+  vector<int> getLastJointChoice() const;
+
+  vector<string> getMachineStateStr() const;
+
+  void incNumBlocked();
+
+  void decNumBlocked();
+
+  void reset();
+
+  void resetReward();
+
+private:
+  int numBlocked;
+
+public:
+  double getCumulativeReward() const;
+
+public:
+  double getCumulativeGamma() const;
+
+public:
+  double cumulativeReward;
+  double cumulativeGamma;
+
+public:
+  int getNumBlocked() const;
+
+  void clearNumBlocked();
+};
+
 class HierarchicalFSM;
 
 /**
@@ -21,46 +89,67 @@ class LinearSarsaLearner {
 private:
   LinearSarsaLearner();
 
+  ~LinearSarsaLearner();
+
 public:
   static LinearSarsaLearner &ins();
 
   void initialize(bool learning, double width[], double weight);
 
-  int step(int num_choices);
+  vector<int> step(int num_choices);
+
+  int step();
 
   void endEpisode();
 
+  void loadSharedData();
+
+  void saveSharedData();
+
+  void wait();
+
+  void notify(int i);
+
+public:
+  int agentIdx;
+  int lastJointChoiceIdx;
+  vector<string> machineStateStr;
+  vector<int> numChoices;
+  vector<int> lastJointChoice;
+
 private:
   bool bLearning;
+  SharedData *sharedData;
+  sem_t *semSignal[11];
+  sem_t *semSync;
+  bool newEpisode;
 
   double alpha;
   double lambda;
   double epsilon;
 
   double tileWidths[MAX_RL_STATE_VARS];
-  double Q[MAX_RL_ACTIONS];
-  double weights[RL_MEMORY_SIZE];
-
   int tiles[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
-  int numTilings;
 
+  double *Q;
+  double *weights;
+  double *traces;
+  int *nonzeroTraces;
+  int *nonzeroTracesInverse;
+  collision_table *colTab;
+
+  int numTilings;
   double minimumTrace;
   int numNonzeroTraces;
 
-  double traces[RL_MEMORY_SIZE];
-  int nonzeroTraces[RL_MAX_NONZERO_TRACES];
-  int nonzeroTracesInverse[RL_MEMORY_SIZE];
-
-  collision_table *colTab;
-
   void loadTiles(
-      double state[], const vector<string> &stack, int agentIdx, int num_choices);
+      double state[], const vector<string> &machine_state, const vector<int> &num_choices);
 
-  int selectChoice(int num_choices);
+  int selectChoice(const vector<int> &num_choices);
 
-  double computeQ(int c);
+  double computeQ(int choice);
 
-  int argmaxQ(int num_choices);
+  int argmaxQ(const vector<int> &num_choices);
 
   void updateWeights(double delta);
 
@@ -74,11 +163,19 @@ private:
 
   void increaseMinTrace();
 
-  std::string getQStr(int num_choice);
+  string getQStr(int num_choice);
 
-  void loadQ(int num_choices);
+  void loadQ(const vector<int> &num_choices);
+
+  const vector<int> &validChoices(const vector<int> &num_choices);
+
+  vector<vector<int>> validChoicesRaw(const vector<int> &num_choices);
 
   double initialWeight;
+  string sharedMemoryName;
+
+  unordered_map<vector<int>, vector<int>> validChoicesMap;
+  unordered_map<vector<int>, unordered_map<int, vector<int>>> jointChoicesMap;
 };
 
 }

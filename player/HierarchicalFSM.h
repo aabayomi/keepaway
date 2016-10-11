@@ -27,7 +27,7 @@ template<class T>
 class ChoicePoint;
 
 /**
- * global memory among all machines
+ * global memory among all machines from the pespective of a single machine
  */
 class Memory {
 private:
@@ -38,21 +38,12 @@ public:
 
   void resetState();
 
-  void newEpisode();
-
-  void makeChoice(int choice, const std::string &choice_name);
-
   std::string to_string();
 
   bool bAlive;
   double state[MAX_RL_STATE_VARS]; // current state
   ObjectT K[11]; // current mapping from index to players
-  int agentIdx; // agent index
-  std::vector<string> stack; // call stack
-
-  std::pair<int, std::string> lastChoice; // index of last choice
-  double cumulativeReward; // cumulative reward since last choice
-  double cumulativeGamma; // cumulative discount
+  std::vector<string> stack; // self call stack
 };
 
 /**
@@ -70,17 +61,9 @@ class HierarchicalFSM {
   friend class LinearSarsaLearner;
 
 public:
-  HierarchicalFSM(BasicPlayer *p, const std::string name) :
-      player(p), name(name) {
-    ACT = player->ACT;
-    WM = player->WM;
-    SS = player->SS;
-    PS = player->PS;
-  }
+  HierarchicalFSM(BasicPlayer *p, const std::string name);
 
-  virtual ~HierarchicalFSM() {
-
-  }
+  virtual ~HierarchicalFSM();
 
 private:
   virtual void run() = 0;
@@ -89,7 +72,7 @@ protected:
   /**
    * send commands to env, and wait for new info
    */
-  void action();
+  void action(bool sync = true);
 
   std::string getState();
 
@@ -118,6 +101,7 @@ protected:
   WorldModel *WM;  /*!< WorldModel that contains information of world   */
   ServerSettings *SS;  /*!< All parameters used by the server               */
   PlayerSettings *PS;  /*!< All parameters used for the player              */
+  ChoicePoint<int> *dummyChoice;
 
 public:
   static int num_features;
@@ -151,7 +135,7 @@ public:
   virtual void run();
 
 private:
-  ChoicePoint<int> *moveTo;
+  ChoicePoint<int> *moveToChoice;
 };
 
 class Stay : public HierarchicalFSM {
@@ -177,7 +161,7 @@ public:
   virtual void run();
 
 private:
-  ChoicePoint<int> *passTo;
+  ChoicePoint<int> *passToChoice;
 };
 
 class Hold : public HierarchicalFSM {
@@ -195,6 +179,11 @@ class MakeChoice {
 public:
   MakeChoice(ChoicePoint<T> *cp) : c(cp->choose()) {
     Memory::ins().stack.push_back("#" + to_string(c));
+    if (Log.isInLogLevel(101)) {
+      stringstream ss;
+      PRINT_VALUE_STREAM(ss, Memory::ins().stack);
+      Log.logWithTime(101, "stack push:\n%s", ss.str().c_str());
+    }
   }
 
   T operator()() {
@@ -203,6 +192,11 @@ public:
 
   ~MakeChoice() {
     Memory::ins().stack.pop_back();
+    if (Log.isInLogLevel(101)) {
+      stringstream ss;
+      PRINT_VALUE_STREAM(ss, Memory::ins().stack);
+      Log.logWithTime(101, "stack pop:\n%s", ss.str().c_str());
+    }
   }
 
 private:
@@ -216,6 +210,11 @@ class Run {
 public:
   Run(HierarchicalFSM *m) : m(m) {
     Memory::ins().stack.push_back(m->getName());
+    if (Log.isInLogLevel(101)) {
+      stringstream ss;
+      PRINT_VALUE_STREAM(ss, Memory::ins().stack);
+      Log.logWithTime(101, "stack push:\n%s", ss.str().c_str());
+    }
   }
 
   void operator()() {
@@ -224,6 +223,11 @@ public:
 
   ~Run() {
     Memory::ins().stack.pop_back();
+    if (Log.isInLogLevel(101)) {
+      stringstream ss;
+      PRINT_VALUE_STREAM(ss, Memory::ins().stack);
+      Log.logWithTime(101, "stack pop:\n%s", ss.str().c_str());
+    }
   }
 
 private:

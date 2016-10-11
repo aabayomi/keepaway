@@ -14,41 +14,10 @@
 extern Logger Log;
 
 namespace jol {
-void LinearSarsaAgent::sync(bool load) {
-  if (sharedData) {
-    ScopedLock lock(sems["sync"]);
-    Log.log(101, "LinearSarsaAgent::sync %s", load ? "load" : "save");
-
-    if (load) {
-      loadSharedData(sharedData);
-    } else {
-      saveSharedData(sharedData);
-    }
-  }
-}
-
-void LinearSarsaAgent::loadSharedData(SharedData *address) {
-  SharedData *shared = address;
-  lastAction = shared->lastAction;
-  lastActionTime = shared->lastActionTime;
-}
-
-void LinearSarsaAgent::saveSharedData(SharedData *address) {
-  SharedData *shared = address;
-  shared->lastAction = lastAction;
-  shared->lastActionTime = lastActionTime;
-}
 
 LinearSarsaAgent::~LinearSarsaAgent() {
-  if (sharedData) {
-    shm_unlink(sharedMemoryName.c_str());
-  }
-
-  for (auto pa : sems) {
-    sem_unlink(pa.first.c_str());
-  }
-
-  delete colTab;
+  if (sharedData) shm_unlink(sharedMemoryName.c_str());
+  for (auto s : semSignal) if (s) sem_close(s);
 }
 
 LinearSarsaAgent::LinearSarsaAgent(
@@ -63,15 +32,10 @@ LinearSarsaAgent::LinearSarsaAgent(
     : SMDPAgent(numFeatures, wm),
       saveWeightsFile(saveWeightsFile),
       bLearning(bLearn),
+      sharedData(0),
       gamma(gamma),
       initialWeight(initialWeight) {
-  string exepath = getexepath();
-  exepath += loadWeightsFile;
-  exepath += saveWeightsFile;
-  auto h = hash<string>().operator()(exepath); //hashing
-
-  sharedMemoryName = "/" + to_string(h) + ".shm";
-  sharedData = 0;
+  memset(semSignal, 0, sizeof(semSignal));
 
   for (int i = 0; i < getNumFeatures(); i++) {
     tileWidths[i] = widths[i];
@@ -94,7 +58,6 @@ LinearSarsaAgent::LinearSarsaAgent(
   srand48((unsigned int) 0);
   int tmp[2];
   float tmpf[2];
-  colTab = new collision_table(RL_MEMORY_SIZE, 1);
 
   GetTiles(tmp, 1, 1, tmpf, 0);  // A dummy call to set the hashing table
   srand((unsigned int) time(NULL));
@@ -107,8 +70,15 @@ LinearSarsaAgent::LinearSarsaAgent(
   numNonzeroTraces = 0;
 
   if (bLearning) { // setup shared data
-    for (auto n : vector<string>{"sync", "loadWeight", "saveWeight"}) {
-      if ((sems[n] = sem_open(("/" + n + "-" + to_string(h)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
+    string exepath = getexepath();
+    exepath += to_string(gamma);
+    exepath += to_string(initialWeight);
+    auto h = hash<string>().operator()(exepath); //hashing
+    sharedMemoryName = "/" + to_string(h) + ".shm";
+
+    for (int i = 0; i < AtomicAction::num_keepers; ++i) {
+      if ((semSignal[i] = sem_open(("/" + to_string(h) + "-" + to_string(i)).c_str(), O_CREAT, 0666, 0)) ==
+          SEM_FAILED) {
         perror("semaphore initilization");
         exit(1);
       }
@@ -137,7 +107,7 @@ void LinearSarsaAgent::setEpsilon(double epsilon) {
 }
 
 int LinearSarsaAgent::startEpisode(double state[]) {
-  Log.log(101, "LinearSarsaAgentstartEpisode");
+  Log.logWithTime(101, "LinearSarsaAgentstartEpisode");
 
   decayTraces(0);
   assert(numNonzeroTraces == 0);
@@ -154,15 +124,15 @@ int LinearSarsaAgent::startEpisode(double state[]) {
     for (int a : validActions()) {
       ss << a << ":" << Q[a] << ", ";
     }
-    Log.log(101, "LinearSarsaAgent::startEpisode numTilings: %d", numTilings);
-    Log.log(101, "LinearSarsaAgent::startEpisode Q: [%s]", ss.str().c_str());
-    Log.log(101, "LinearSarsaAgent::startEpisode action: %d", lastAction);
+    Log.logWithTime(101, "LinearSarsaAgent::startEpisode numTilings: %d", numTilings);
+    Log.logWithTime(101, "LinearSarsaAgent::startEpisode Q: [%s]", ss.str().c_str());
+    Log.logWithTime(101, "LinearSarsaAgent::startEpisode action: %d", lastAction);
   }
 
   for (int j = 0; j < numTilings; j++)
     setTrace(tiles[lastAction][j], 1.0);
 
-  Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
+  Log.logWithTime(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
   return lastAction;
 }
 
@@ -178,7 +148,7 @@ double LinearSarsaAgent::reward(double tau, double gamma) {
 
 int LinearSarsaAgent::step(double reward_, double state[]) {
   double tau = reward_; // here reward is actually tau
-  Log.log(101, "LinearSarsaAgent::step tau: %f", tau);
+  Log.logWithTime(101, "LinearSarsaAgent::step tau: %f", tau);
 
   assert(lastAction >= 0);
   double delta = reward(tau, gamma) - Q[lastAction]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
@@ -195,9 +165,9 @@ int LinearSarsaAgent::step(double reward_, double state[]) {
     for (int a : validActions()) {
       ss << a << ":" << Q[a] << ", ";
     }
-    Log.log(101, "LinearSarsaAgent::step numTilings: %d", numTilings);
-    Log.log(101, "LinearSarsaAgent::step Q: [%s]", ss.str().c_str());
-    Log.log(101, "LinearSarsaAgent::step action: %d", lastAction);
+    Log.logWithTime(101, "LinearSarsaAgent::step numTilings: %d", numTilings);
+    Log.logWithTime(101, "LinearSarsaAgent::step Q: [%s]", ss.str().c_str());
+    Log.logWithTime(101, "LinearSarsaAgent::step action: %d", lastAction);
   }
 
   if (!bLearning)
@@ -221,15 +191,15 @@ int LinearSarsaAgent::step(double reward_, double state[]) {
   for (int j = 0; j < numTilings; j++)      //replace/set traces F[a]
     setTrace(tiles[lastAction][j], 1.0);
 
-  Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
+  Log.logWithTime(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
   return lastAction;
 }
 
 void LinearSarsaAgent::endEpisode(double reward_) {
   double tau = reward_; // here reward is actually tau
 
-  Log.log(101, "LinearSarsaAgent::endEpisode tau: %f", tau);
-  Log.log(101, "LinearSarsaAgent::endEpisode hived lastAction: %d", lastAction);
+  Log.logWithTime(101, "LinearSarsaAgent::endEpisode tau: %f", tau);
+  Log.logWithTime(101, "LinearSarsaAgent::endEpisode hived lastAction: %d", lastAction);
 
   if (bLearning && lastAction != -1) { /* otherwise we never ran on this episode */
     double delta = reward(tau, gamma) - Q[lastAction];
@@ -256,30 +226,28 @@ int LinearSarsaAgent::selectAction() {
   if (agentIdx == 0 || !bLearning) {
     if (bLearning && drand48() < epsilon) {     /* explore */
       action = JointActionSpace::ins().sample(WM->tmControllBall()); // sample
-      Log.log(101, "LinearSarsaAgent::selectAction explore action %d", action);
+      Log.logWithTime(101, "LinearSarsaAgent::selectAction explore action %d", action);
     } else {
       action = argmaxQ();
-      Log.log(101, "LinearSarsaAgent::selectAction argmaxQ action %d", action);
+      Log.logWithTime(101, "LinearSarsaAgent::selectAction argmaxQ action %d", action);
     }
 
     lastActionTime = WM->getCurrentCycle();
-    sync(false);
+    sharedData->lastAction = lastAction;
+    sharedData->lastActionTime = lastActionTime;
+    for (int i = 0; i < WM->getNumKeepers(); ++i) {
+      if (i != agentIdx) {
+        Log.logWithTime(101, "notify %d with action %d at %d [tmControllBall %d]", i, lastAction, lastActionTime,
+                        WM->tmControllBall());
+        sem_post(semSignal[i]);
+      }
+    }
   } else {
-    action = -1;
-    int loops = 100;
-    while (loops--) { // wait for K0
-      Log.log(101, "wait for K0 %d", loops);
-      static const timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
-      nanosleep(&sleepTime, NULL);
-      sync(true); // load shared memory
-      if (action != -1 && lastActionTime == WM->getCurrentCycle()) break;
-    }
-
-    if (action == -1 || lastActionTime != WM->getCurrentCycle()) {
-      Log.log(101, "wait for K0 -- timeout");
-      action = JointActionSpace::ins().sample(WM->tmControllBall()); // sample
-      Log.log(101, "LinearSarsaAgent::selectAction explore action %d", action);
-    }
+    Log.logWithTime(101, "agent %d wait to be notified", agentIdx);
+    sem_wait(semSignal[agentIdx]);
+    lastAction = sharedData->lastAction;
+    lastActionTime = sharedData->lastActionTime;
+    Log.logWithTime(101, "got %d at %d [tmControllBall %d]", lastAction, lastActionTime, WM->tmControllBall());
   }
 
   assert(action >= 0);
@@ -291,8 +259,6 @@ int LinearSarsaAgent::selectAction() {
 }
 
 bool LinearSarsaAgent::loadWeights(const char *filename) {
-  ScopedLock lock(sems["loadWeight"]);
-
   cerr << "Loading weights from " << filename << endl;
   int file = open(filename, O_RDONLY);
   if (file < 0) {
@@ -300,22 +266,20 @@ bool LinearSarsaAgent::loadWeights(const char *filename) {
     return false;
   }
   read(file, (char *) weights, RL_MEMORY_SIZE * sizeof(double));
-  colTab->restore(file);
+  colTab.restore(file);
   close(file);
   cerr << "...done" << endl;
   return true;
 }
 
 bool LinearSarsaAgent::saveWeights(const char *filename) {
-  ScopedLock lock(sems["saveWeight"]);
-
   int file = open(filename, O_CREAT | O_WRONLY, 0664);
   if (file < 0) {
     cerr << "failed to open weight file: " << filename << endl;
     return false;
   }
   write(file, (char *) weights, RL_MEMORY_SIZE * sizeof(double));
-  colTab->save(file);
+  colTab.save(file);
   close(file);
   return true;
 }
@@ -370,7 +334,7 @@ void LinearSarsaAgent::updateWeights(double delta) {
   assert(numTilings > 0);
   double tmp = delta * alpha / numTilings;
 
-  Log.log(101, "LinearSarsaAgent::updateWeights delta %f", delta);
+  Log.logWithTime(101, "LinearSarsaAgent::updateWeights delta %f", delta);
 
   for (int i = 0; i < numNonzeroTraces; i++) {
     assert(i < RL_MAX_NONZERO_TRACES);
@@ -389,14 +353,14 @@ void LinearSarsaAgent::updateWeights(double delta) {
   }
 }
 
-void LinearSarsaAgent::loadTiles(double state[]) // will change colTab->data implictly
+void LinearSarsaAgent::loadTiles(double state[]) // will change colTab.data implictly
 {
   const int tilingsPerGroup = 32;
 
   numTilings = 0;
   for (int v = 0; v < getNumFeatures(); v++) {
     for (int a : validActions()) {
-      GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
+      GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, &colTab,
                 (float) (state[v] / tileWidths[v]), a, v);
     }
     numTilings += tilingsPerGroup;

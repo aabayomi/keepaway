@@ -8,18 +8,11 @@
 
 class WorldModel;
 
-/**
- * Designed specifically to match the serialization format for collision_table.
- * See collision_table::save and collision_table::restore.
- */
-#pragma pack(push, 1)
+namespace jol {
 struct SharedData {
   int lastAction;
   int lastActionTime;
 };
-#pragma pack(pop)
-
-namespace jol {
 
 class LinearSarsaAgent : public SMDPAgent {
 protected:
@@ -27,7 +20,7 @@ protected:
   bool bLearning;
   bool bSaveWeights;
 
-  std::unordered_map<std::string, sem_t*> sems;
+  sem_t *semSignal[11];
   string sharedMemoryName;
   SharedData *sharedData;
 
@@ -52,7 +45,7 @@ protected:
   int nonzeroTraces[RL_MAX_NONZERO_TRACES];
   int nonzeroTracesInverse[RL_MEMORY_SIZE];
 
-  collision_table *colTab;
+  collision_table colTab;
 
   // Load / Save weights from/to disk
   bool loadWeights(const char *filename);
@@ -80,12 +73,6 @@ protected:
   void setTrace(int f, float newTraceValue);
 
   void increaseMinTrace();
-
-  void loadSharedData(SharedData *address);
-
-  void saveSharedData(SharedData *address);
-
-  virtual void sync(bool load);
 
   double reward(double tau, double gamma);
 

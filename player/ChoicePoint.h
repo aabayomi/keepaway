@@ -24,8 +24,14 @@ public:
   }
 
   T choose() {
-    auto i = LinearSarsaLearner::ins().step((int) choices.size());
-    Memory::ins().makeChoice(i, "#" + to_string(choices[i]));
+    Log.logWithTime(101, "ChoicePoint::choose point name: %s", name.c_str());
+    auto jc = LinearSarsaLearner::ins().step((int) choices.size());
+    auto i = jc[LinearSarsaLearner::ins().agentIdx];
+
+    if (jc.size()) {
+      Log.logWithTime(101, "ChoicePoint::choose my choice (agent %d): %s", LinearSarsaLearner::ins().agentIdx,
+                      to_string(choices[i]).c_str());
+    }
     return choices[i];
   }
 

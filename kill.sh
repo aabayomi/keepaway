@@ -5,6 +5,7 @@ for i in `seq 1 10`; do
     kill -INT `pidof rcssserver` 1>/dev/null 2>&1 &
     killall -q rcssserver 1>/dev/null 2>&1 &
     killall -q rcssmonitor 1>/dev/null 2>&1 &
+    killall -q rcsslogplayer 1>/dev/null 2>&1 &
     killall -q lt-rcssserver 1>/dev/null 2>&1 &
     killall -q run.sh 1>/dev/null 2>&1 &
 done 

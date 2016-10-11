@@ -5,18 +5,18 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include "SoccerTypes.h"
 
 #define MAX_NUM_VARS 64        // Maximum number of variables in a grid-tiling
 #define MaxLONGINT 2147483647
 
 class collision_table {
 public:
-  collision_table(int, int);
+  collision_table();
 
   ~collision_table();
 
-  const long m;
-  long *data;
+  long data[RL_MEMORY_SIZE];
   const int safe;
   long calls;
   long clearhits;

@@ -53,12 +53,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SenseHandler.h"
 #include "ActHandler.h"  // sigalarmHandler
 #include "Parse.h"
-#include "WorldModelSayMsgFactory.h"
 
 #include <signal.h>   // needed for SIGALARM
-#include <string.h>   // needed for strlen
-#include <stdio.h>    // needed for printf
-#include <iostream>   // needed for cout
 
 /*****************************************************************************/
 /********************* CLASS SENSEHANDLER ************************************/
@@ -383,6 +379,7 @@ bool SenseHandler::analyzeSeeGlobalMessage( char *strMsg )
 bool SenseHandler::analyzeFullStateMessage( char *strMsg )
 {
 //  Log.log( 101, "SenseHandler::analyzeFullStateMessage: %s", strMsg );
+//  Log.restartTimer( );
   Log.restartTimer( );
   Log.logWithTime( 2, " incoming fullstate message" );
   Log.log( 4, " fullstate message: %s", strMsg );
@@ -544,6 +541,7 @@ bool SenseHandler::analyzeSenseMessage( char *strMsg )
 
   Log.logWithTime ( 2, "\n\nSENSE (%d, %d)", timeNew.getTime(),
                     timeNew.getTimeStopped() );
+//  Log.restartTimer( );
   Log.restartTimer( );
   iSimStep               = SS->getSimulatorStep()*1000;
   iTimeSignal            = (int)(iSimStep*0.85);

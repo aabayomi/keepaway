@@ -162,7 +162,7 @@ long hash_safe(int *ints, int num_ints, collision_table *ct) {
   long ccheck;
 
   ct->calls++;
-  j = hash_UNH(ints, num_ints, ct->m, 449);
+  j = hash_UNH(ints, num_ints, RL_MEMORY_SIZE, 449);
   ccheck = hash_UNH(ints, num_ints, MaxLONGINT, 457);
 
   if (ccheck == ct->data[j])
@@ -177,10 +177,10 @@ long hash_safe(int *ints, int num_ints, collision_table *ct) {
     long i = 0;
     while (++i) {
       ct->collisions++;
-      j = (j + h2) % (ct->m);
-      if (i > ct->m - 1) {
+      j = (j + h2) % (RL_MEMORY_SIZE);
+      if (i > RL_MEMORY_SIZE - 1) {
         printf("\nOut of Memory");
-        Log.log(101, "tiles hash out of memory");
+        Log.logWithTime(101, "tiles hash out of memory");
         const_cast<int &>(ct->safe) = 0;
         break;
       }
@@ -191,60 +191,56 @@ long hash_safe(int *ints, int num_ints, collision_table *ct) {
         break;
       }
     }
-    if (i > 10) Log.log(101, "tiles hash collision resolved after %d tryings", i);
+    if (i > 10) Log.logWithTime(101, "tiles hash collision resolved after %d tryings", i);
   }
   return j;
 }
 
 void collision_table::reset() {
-  fill(data, data + m, -1);
+  fill(data, data + RL_MEMORY_SIZE, -1);
   calls = 0;
   clearhits = 0;
   collisions = 0;
 }
 
-collision_table::collision_table(int size, int safety) : m(size), safe(safety) {
-  int tmp = size;
+collision_table::collision_table() : safe(1) {
+  int tmp = RL_MEMORY_SIZE;
   while (tmp > 2) {
     if (tmp % 2 != 0) {
-      printf("\nSize of collision table must be power of 2 %d", size);
+      printf("\nSize of collision table must be power of 2 %d", RL_MEMORY_SIZE);
       exit(0);
     }
     tmp /= 2;
   }
-  data = new long[size];
 
   reset();
 }
 
 collision_table::~collision_table() {
-  delete[] data;
 }
 
 int collision_table::usage() {
   int count = 0;
-  for (int i = 0; i < m; i++)
+  for (int i = 0; i < RL_MEMORY_SIZE; i++)
     if (data[i] != -1)
       count++;
   return count;
 }
 
 void collision_table::save(int file) {
-  write(file, (char *) &m, sizeof(long));
   write(file, (char *) &safe, sizeof(int));
   write(file, (char *) &calls, sizeof(long));
   write(file, (char *) &clearhits, sizeof(long));
   write(file, (char *) &collisions, sizeof(long));
-  write(file, (char *) data, m * sizeof(long));
+  write(file, (char *) data, RL_MEMORY_SIZE * sizeof(long));
 }
 
 void collision_table::restore(int file) {
-  read(file, (char *) &m, sizeof(long));
   read(file, (char *) &safe, sizeof(int));
   read(file, (char *) &calls, sizeof(long));
   read(file, (char *) &clearhits, sizeof(long));
   read(file, (char *) &collisions, sizeof(long));
-  read(file, (char *) data, m * sizeof(long));
+  read(file, (char *) data, RL_MEMORY_SIZE * sizeof(long));
 }
 
 /*
