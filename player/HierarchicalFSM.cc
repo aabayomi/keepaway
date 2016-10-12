@@ -171,8 +171,8 @@ Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "Keeper") {
   stay = new Stay(p);
   intercept = new Intercept(p);
 
-  choices[0] = new ChoicePoint<HierarchicalFSM *>("!kickableChoice", {intercept, stay});
-  choices[1] = new ChoicePoint<HierarchicalFSM *>("kickableChoice", {hold, hold});
+  choices[0] = new ChoicePoint<HierarchicalFSM *>("!kickableChoice", {intercept, stay, move});
+  choices[1] = new ChoicePoint<HierarchicalFSM *>("kickableChoice", {pass, hold});
 }
 
 Keeper::~Keeper() {

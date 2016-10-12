@@ -9,18 +9,26 @@
 
 namespace fsm {
 
-void SharedData::incNumBlocked() {
-  Log.logWithTime(101, "SharedData::incNumBlocked from %d to %d", numBlocked, numBlocked + 1);
-  numBlocked += 1;
-  assert(numBlocked <= HierarchicalFSM::num_keepers);
+void SharedData::setBlocked(int i) {
+  auto status = runningStatus;
+  runningStatus |= 1 << i;
+  Log.logWithTime(101, "SharedData::setBlocked %d (%d => %d)", i, status, runningStatus);
 }
 
-void SharedData::decNumBlocked() {
-  Log.logWithTime(101, "SharedData::decNumBlocked from %d to %d", numBlocked, numBlocked - 1);
-  numBlocked -= 1;
-  assert(numBlocked >= 0);
+void SharedData::setUnblocked(int i) {
+  auto status = runningStatus;
+  runningStatus &= ~(1 << i);
+  Log.logWithTime(101, "SharedData::setUnblocked %d (%d => %d)", i, status, runningStatus);
 }
 
+bool SharedData::isAllBlocked(int k) {
+  return runningStatus + 1 == 1 << k;
+}
+
+void SharedData::updateReward(double r) {
+  cumulativeReward += cumulativeGamma * r;
+  cumulativeGamma *= HierarchicalFSM::gamma;
+}
 
 void SharedData::resetReward() {
   cumulativeReward = 0.0;
@@ -28,7 +36,7 @@ void SharedData::resetReward() {
 }
 
 void SharedData::reset() {
-  numBlocked = 0;
+  runningStatus = 0;
   lastJointChoiceIdx = -1;
   memset(lastJointChoice, 0, sizeof(lastJointChoice));
 
@@ -46,10 +54,6 @@ void SharedData::reset() {
   colTab.reset();
 }
 
-int SharedData::getNumBlocked() const {
-  return numBlocked;
-}
-
 vector<int> SharedData::getLastJointChoice() const {
   return vector<int>(lastJointChoice, lastJointChoice + HierarchicalFSM::num_keepers);
 }
@@ -62,9 +66,9 @@ vector<string> SharedData::getMachineStateStr() const {
   return vector<string>(machineStateStr, machineStateStr + HierarchicalFSM::num_keepers);
 }
 
-void SharedData::clearNumBlocked() {
-  Log.logWithTime(101, "SharedData::clearNumBlocked to 0");
-  numBlocked = 0;
+void SharedData::clearBlocked() {
+  Log.logWithTime(101, "SharedData::clearBlocked to 0");
+  runningStatus = 0;
 }
 
 double SharedData::getCumulativeGamma() const {
@@ -73,6 +77,10 @@ double SharedData::getCumulativeGamma() const {
 
 double SharedData::getCumulativeReward() const {
   return cumulativeReward;
+}
+
+int SharedData::getRunningStatus() const {
+  return runningStatus;
 }
 
 LinearSarsaLearner &LinearSarsaLearner::ins() {
@@ -121,6 +129,7 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double weight
 
   if (bLearning) {
     string exepath = getexepath();
+    exepath += "LinearSarsaLearner::initialize";
     exepath += to_string(HierarchicalFSM::gamma);
     exepath += to_string(initialWeight);
     auto h = hash<string>().operator()(exepath); //hashing
@@ -230,14 +239,21 @@ void LinearSarsaLearner::loadQ(const vector<int> &num_choices) {
   for (auto &jc : validChoices(num_choices)) {
     Q[jc] = computeQ(jc);
   }
+
+  if (Log.isInLogLevel(101)) {
+    stringstream ss;
+    PRINT_VALUE_STREAM(ss, jointChoicesMap[num_choices]);
+    PRINT_VALUE_STREAM(ss, validChoices(num_choices));
+    PRINT_VALUE_STREAM(ss, vector<double>(Q, Q + validChoices(num_choices).size()));
+    Log.logWithTime(101, "LinearSarsaLearner::loadQ %s", ss.str().c_str());
+  }
 }
 
 const vector<int> &LinearSarsaLearner::validChoices(const vector<int> &num_choices) {
   if (!validChoicesMap.count(num_choices)) {
-    auto choices = validChoicesRaw(num_choices);
-    for (uint i = 0; i < choices.size(); ++i) {
+    jointChoicesMap[num_choices] = validChoicesRaw(num_choices);
+    for (uint i = 0; i < jointChoicesMap[num_choices].size(); ++i) {
       validChoicesMap[num_choices].push_back(i);
-      jointChoicesMap[num_choices][i] = choices[i];
     }
   }
   return validChoicesMap[num_choices];
@@ -306,14 +322,6 @@ int LinearSarsaLearner::step() {
   for (int j = 0; j < numTilings; j++)
     setTrace(tiles[choice][j], 1.0);
 
-  if (Log.isInLogLevel(101)) {
-    Log.logWithTime(101, "LinearSarsaLearner::step saved numNonzeroTraces: %d", numNonzeroTraces);
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, choice);
-    PRINT_VALUE_STREAM(ss, jointChoicesMap[numChoices][choice]);
-    Log.logWithTime(101, "LinearSarsaLearner::step choice made\n %s [%d]", ss.str().c_str(), agentIdx);
-  }
-
   return choice;
 }
 
@@ -335,28 +343,31 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
     Log.logWithTime(101, "LinearSarsaLearner::step agent %d machineState %s", agentIdx, stackStr.c_str());
     Log.logWithTime(101, "LinearSarsaLearner::step agent %d stack %s", agentIdx, stackStr.c_str());
 
-    sharedData->incNumBlocked();
-    last_blocking_agent = sharedData->getNumBlocked() == HierarchicalFSM::num_keepers;
+    sharedData->setBlocked(agentIdx);
+    last_blocking_agent = sharedData->isAllBlocked(HierarchicalFSM::num_keepers);
   }
 
   if (last_blocking_agent || !bLearning) {
-    Log.logWithTime(101, "LinearSarsaLearner::step leading agent %d", agentIdx);
+    Log.logWithTime(101, "LinearSarsaLearner::step leading agent %d (running status: %d)", agentIdx,
+                    sharedData->getRunningStatus());
 
     loadSharedData();
-
     bool action_state = true; // action state (when all are in action)
     for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
       if (numChoices.at(i) > 1) {
         action_state = false;
       }
     }
+
     Log.logWithTime(101, "LinearSarsaLearner::step action state %d", action_state);
 
-    if (action_state) {
-      sharedData->cumulativeReward += sharedData->cumulativeGamma * 1.0;
-      sharedData->cumulativeGamma *= HierarchicalFSM::gamma;
+    if (action_state) { // no learning
+      lastJointChoice = vector<int>((unsigned long) HierarchicalFSM::num_keepers,
+                                    0); // do not change lastJointChoiceIdx
+      saveSharedData();
+      sharedData->updateReward(1.0);
+      sharedData->clearBlocked(); // reset to 0
 
-      sharedData->clearNumBlocked(); // reset to 0
       for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
         if (i != agentIdx) {
           notify(i);
@@ -370,7 +381,7 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
 
       for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
         if (numChoices.at(i) > 1) {
-          sharedData->decNumBlocked();
+          sharedData->setUnblocked(i);
         }
       }
 
@@ -381,7 +392,7 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
       }
 
       if (numChoices.at(agentIdx) <= 1) {
-        wait(); // block self
+        wait(); // setBlocked self
       }
     }
   } else {
@@ -457,16 +468,12 @@ int LinearSarsaLearner::selectChoice(const vector<int> &num_choices) {
   auto vc = validChoices(num_choices);
   int choice = -1;
 
-  if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, num_choices);
-    Log.logWithTime(101, "num_choices/validChoices\n %s", ss.str().c_str());
-  }
-
   if (bLearning && drand48() < epsilon) {     /* explore */
     choice = vc[rand() % vc.size()];
+    Log.logWithTime(101, "LinearSarsaLearner::selectChoice explore choice %d", choice);
   } else {
     choice = argmaxQ(num_choices);
+    Log.logWithTime(101, "LinearSarsaLearner::selectChoice argmaxQ choice %d", choice);
   }
 
   return choice;

@@ -53,16 +53,22 @@ struct SharedData {
 
   vector<string> getMachineStateStr() const;
 
-  void incNumBlocked();
+  void setBlocked(int i);
 
-  void decNumBlocked();
+  void setUnblocked(int i);
+
+  bool isAllBlocked(int k);
 
   void reset();
 
   void resetReward();
 
+  void updateReward(double r);
+
 private:
-  int numBlocked;
+  int runningStatus;
+public:
+  int getRunningStatus() const;
 
 public:
   double getCumulativeReward() const;
@@ -70,14 +76,12 @@ public:
 public:
   double getCumulativeGamma() const;
 
-public:
+private:
   double cumulativeReward;
   double cumulativeGamma;
 
 public:
-  int getNumBlocked() const;
-
-  void clearNumBlocked();
+  void clearBlocked();
 };
 
 class HierarchicalFSM;
@@ -175,7 +179,7 @@ private:
   string sharedMemoryName;
 
   unordered_map<vector<int>, vector<int>> validChoicesMap;
-  unordered_map<vector<int>, unordered_map<int, vector<int>>> jointChoicesMap;
+  unordered_map<vector<int>, vector<vector<int>>> jointChoicesMap;
 };
 
 }

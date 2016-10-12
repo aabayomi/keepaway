@@ -110,7 +110,7 @@ SenseHandler::SenseHandler( Connection *c, WorldModel *wm, ServerSettings *ss,
 #else
   struct sigaction sigact;
 
-  sigact.sa_flags = SA_RESTART; // do not unblock primitives (like recvfrom)
+  sigact.sa_flags = SA_RESTART; // do not setUnblocked primitives (like recvfrom)
   sigact.sa_handler = (void (*)(int))sigalarmHandler;
   sigemptyset(&sigact.sa_mask);
   sigaction( SIGALRM, &sigact, NULL );

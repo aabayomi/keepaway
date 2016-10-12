@@ -71,6 +71,7 @@ LinearSarsaAgent::LinearSarsaAgent(
 
   if (bLearning) { // setup shared data
     string exepath = getexepath();
+    exepath += "LinearSarsaAgent::LinearSarsaAgent";
     exepath += to_string(gamma);
     exepath += to_string(initialWeight);
     auto h = hash<string>().operator()(exepath); //hashing
