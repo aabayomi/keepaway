@@ -180,7 +180,7 @@ long hash_safe(int *ints, int num_ints, collision_table *ct) {
       j = (j + h2) % (RL_MEMORY_SIZE);
       if (i > RL_MEMORY_SIZE - 1) {
         printf("\nOut of Memory");
-        Log.logWithTime(101, "tiles hash out of memory");
+        Log.log(101, "tiles hash out of memory");
         const_cast<int &>(ct->safe) = 0;
         break;
       }
@@ -191,7 +191,7 @@ long hash_safe(int *ints, int num_ints, collision_table *ct) {
         break;
       }
     }
-    if (i > 10) Log.logWithTime(101, "tiles hash collision resolved after %d tryings", i);
+    if (i > 10) Log.log(101, "tiles hash collision resolved after %d tryings", i);
   }
   return j;
 }

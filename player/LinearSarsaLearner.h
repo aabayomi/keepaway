@@ -55,9 +55,11 @@ struct SharedData {
 
   void setBlocked(int i);
 
-  void setUnblocked(int i);
+  void clearBlocked(int i);
 
   bool isAllBlocked(int k);
+
+  bool isBlocked(int i);
 
   void reset();
 
@@ -106,7 +108,7 @@ public:
 
   void endEpisode();
 
-  void loadSharedData();
+  bool loadSharedData();
 
   void saveSharedData();
 
@@ -126,7 +128,6 @@ private:
   SharedData *sharedData;
   sem_t *semSignal[11];
   sem_t *semSync;
-  bool newEpisode;
 
   double alpha;
   double lambda;

@@ -32,20 +32,37 @@ Memory &Memory::ins() {
 void Memory::resetState() {
   memset(state, 0, sizeof(state));
   memset(K, 0, sizeof(K));
-  LinearSarsaLearner::ins().agentIdx = 0;
 }
 
 string Memory::to_string() {
   std::stringstream ss;
-  auto State = vector<double>(state, state + HierarchicalFSM::num_features);
-  auto k = vector<ObjectT>(K, K + HierarchicalFSM::num_keepers);
-
-  PRINT_VALUE_STREAM(ss, State);
-  PRINT_VALUE_STREAM(ss, k);
-  PRINT_VALUE_STREAM(ss, LinearSarsaLearner::ins().agentIdx);
+  PRINT_VALUE_STREAM(ss, vector<double>(state, state + HierarchicalFSM::num_features));
+  PRINT_VALUE_STREAM(ss, vector<ObjectT>(K, K + HierarchicalFSM::num_keepers));
   PRINT_VALUE_STREAM(ss, stack);
 
   return ss.str();
+}
+
+const vector<string> &Memory::getStack() const {
+  return stack;
+}
+
+void Memory::PushStack(const string &s) {
+  stack.push_back(s);
+  if (Log.isInLogLevel(101)) {
+    stringstream ss;
+    PRINT_VALUE_STREAM(ss, stack);
+    Log.log(101, "Memory::PushStack:\n%s", ss.str().c_str());
+  }
+}
+
+void Memory::PopStack() {
+  stack.pop_back();
+  if (Log.isInLogLevel(101)) {
+    stringstream ss;
+    PRINT_VALUE_STREAM(ss, stack);
+    Log.log(101, "Memory::PopStack:\n%s", ss.str().c_str());
+  }
 }
 
 int HierarchicalFSM::num_features;
@@ -67,14 +84,14 @@ HierarchicalFSM::~HierarchicalFSM() {
 }
 
 void HierarchicalFSM::action(bool sync) {
-  Log.logWithTime(101, "action with stack %s", getStackStr().c_str());
+  Log.log(101, "action with stack %s", getStackStr().c_str());
 
   while (Memory::ins().bAlive) {
     if (sync) MakeChoice<int> c(dummyChoice); // dummy choice for sync purposes
 
     if (WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
         (SS->getSynchMode() && WM->getRecvThink())) {
-      Log.logWithTime(101, "send commands");
+      Log.log(101, "send commands");
       ACT->sendCommands();
 
       if (SS->getSynchMode()) {
@@ -103,7 +120,7 @@ void HierarchicalFSM::idle(const std::string error) {
     ACT->putCommandInQueue(soc = player->turnBodyToObject(OBJECT_BALL));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
   }
-  Log.logWithTime(101, "idle (error: %s)", error.c_str());
+  Log.log(101, "idle (error: %s)", error.c_str());
 }
 
 string HierarchicalFSM::getState() {
@@ -129,6 +146,7 @@ string HierarchicalFSM::getState() {
   if (K0 != Memory::ins().K[0]) return "K0 != K[0]";
 
   auto &agentIdx = LinearSarsaLearner::ins().agentIdx;
+  agentIdx = 0;
   while (agentIdx < numK &&
          Memory::ins().K[agentIdx] != WM->getAgentObjectType())
     agentIdx += 1;
@@ -148,7 +166,7 @@ bool HierarchicalFSM::running() {
 
 string HierarchicalFSM::getStackStr() {
   stringstream ss;
-  ss << Memory::ins().stack;
+  ss << Memory::ins().getStack();
   return ss.str();
 }
 
@@ -190,7 +208,7 @@ void Keeper::run() {
   while (WM->getCurrentCycle() != 1) action(false);
 
   while (Memory::ins().bAlive) {
-    assert(Memory::ins().stack.size() == 1);
+    assert(Memory::ins().getStack().size() == 1);
     if (WM->isNewEpisode()) {
       LinearSarsaLearner::ins().endEpisode();
       WM->setNewEpisode(false);
@@ -201,7 +219,7 @@ void Keeper::run() {
     Run(m).operator()();
   }
 
-  Log.logWithTime(101, "Keeper::run exit");
+  Log.log(101, "Keeper::run exit");
 }
 
 Move::Move(BasicPlayer *p) : HierarchicalFSM(p, "Move") {
@@ -258,6 +276,7 @@ void Move::run() {
     }
 
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
+    Log.log(101, "Move::run action with d=%d", d);
     action();
   }
 }
@@ -272,6 +291,7 @@ void Stay::run() {
     SoccerCommand soc;
     ACT->putCommandInQueue(soc = player->turnBodyToObject(OBJECT_BALL));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
+    Log.log(101, "Stay::run action");
     action();
   }
 }
@@ -285,6 +305,7 @@ void Intercept::run() {
     SoccerCommand soc;
     ACT->putCommandInQueue(soc = player->intercept(false));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
+    Log.log(101, "Intercept::run action");
     action();
   }
 }
@@ -308,6 +329,7 @@ void Pass::run() {
   while (running() && WM->isBallKickable()) {
     VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[k]);
     ACT->putCommandInQueue(player->directPass(tmPos, PASS_NORMAL));
+    Log.log(101, "Pass::run action with k=%d", k);
     action();
   }
 }
@@ -322,6 +344,7 @@ void Hold::run() {
   SoccerCommand soc;
   ACT->putCommandInQueue(soc = player->holdBall());
   ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
+  Log.log(101, "Hold::run action");
   action();
 }
 

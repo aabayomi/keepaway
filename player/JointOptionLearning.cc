@@ -122,7 +122,7 @@ SoccerCommand Stay::execute(BasicPlayer *player, ObjectT K[]) {
   (void) K;
   SoccerCommand soc;
 
-  Log.logWithTime(101, "turnBodyToObject( OBJECT_BALL )");
+  Log.log(101, "turnBodyToObject( OBJECT_BALL )");
   player->ACT->putCommandInQueue(soc = player->turnBodyToObject(OBJECT_BALL));
   player->ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
   return soc;
@@ -141,7 +141,7 @@ SoccerCommand Move::execute(BasicPlayer *player, ObjectT K[]) {
 
   auto r = player->WM->getKeepawayRect();
   if (r.isInside(target)) {
-    Log.logWithTime(101, "move to target %s", target.str().c_str());
+    Log.log(101, "move to target %s", target.str().c_str());
     player->ACT->putCommandInQueue(soc = player->moveToPos(target, 30.0));
   } else {
     double minDist = std::numeric_limits<double>::max();
@@ -167,10 +167,10 @@ SoccerCommand Move::execute(BasicPlayer *player, ObjectT K[]) {
     }
 
     if (minDist < std::numeric_limits<double>::max()) {
-      Log.logWithTime(101, "move to refinedTarget %s", refinedTarget.str().c_str());
+      Log.log(101, "move to refinedTarget %s", refinedTarget.str().c_str());
       player->ACT->putCommandInQueue(soc = player->moveToPos(refinedTarget, 30.0));
     } else {
-      Log.logWithTime(101, "player->turnBodyToObject( OBJECT_BALL )");
+      Log.log(101, "player->turnBodyToObject( OBJECT_BALL )");
       return Stay().execute(player, K);
     }
   }

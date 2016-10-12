@@ -23,14 +23,18 @@ public:
 
   }
 
+  const string &getName() const {
+    return name;
+  }
+
   T choose() {
-    Log.logWithTime(101, "ChoicePoint::choose point name: %s", name.c_str());
+    Log.log(101, "ChoicePoint::choose point name: %s", name.c_str());
     auto jc = LinearSarsaLearner::ins().step((int) choices.size());
     auto i = jc[LinearSarsaLearner::ins().agentIdx];
 
     if (jc.size()) {
-      Log.logWithTime(101, "ChoicePoint::choose my choice (agent %d): %s", LinearSarsaLearner::ins().agentIdx,
-                      to_string(choices[i]).c_str());
+      Log.log(101, "ChoicePoint::choose my choice (agent %d): %s", LinearSarsaLearner::ins().agentIdx,
+              to_string(choices[i]).c_str());
     }
     return choices[i];
   }

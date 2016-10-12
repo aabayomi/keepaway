@@ -43,7 +43,16 @@ public:
   bool bAlive;
   double state[MAX_RL_STATE_VARS]; // current state
   ObjectT K[11]; // current mapping from index to players
-  std::vector<string> stack; // self call stack
+
+private:
+  std::vector<string> stack;  // self call stack
+
+public:
+  const vector<string> &getStack() const;
+
+  void PushStack(const string &s);
+
+  void PopStack();
 };
 
 /**
@@ -177,13 +186,10 @@ public:
 template<class T>
 class MakeChoice {
 public:
-  MakeChoice(ChoicePoint<T> *cp) : c(cp->choose()) {
-    Memory::ins().stack.push_back("#" + to_string(c));
-    if (Log.isInLogLevel(101)) {
-      stringstream ss;
-      PRINT_VALUE_STREAM(ss, Memory::ins().stack);
-      Log.logWithTime(101, "stack push:\n%s", ss.str().c_str());
-    }
+  MakeChoice(ChoicePoint<T> *cp) {
+    Log.log(101, "MakeChoice::MakeChoice @ %s", cp->getName().c_str());
+    Memory::ins().PushStack("@" + cp->getName());
+    c = cp->choose();
   }
 
   T operator()() {
@@ -191,12 +197,7 @@ public:
   }
 
   ~MakeChoice() {
-    Memory::ins().stack.pop_back();
-    if (Log.isInLogLevel(101)) {
-      stringstream ss;
-      PRINT_VALUE_STREAM(ss, Memory::ins().stack);
-      Log.logWithTime(101, "stack pop:\n%s", ss.str().c_str());
-    }
+    Memory::ins().PopStack();
   }
 
 private:
@@ -209,12 +210,8 @@ private:
 class Run {
 public:
   Run(HierarchicalFSM *m) : m(m) {
-    Memory::ins().stack.push_back(m->getName());
-    if (Log.isInLogLevel(101)) {
-      stringstream ss;
-      PRINT_VALUE_STREAM(ss, Memory::ins().stack);
-      Log.logWithTime(101, "stack push:\n%s", ss.str().c_str());
-    }
+    Log.log(101, "Run::Run with machine=%s", m->getName().c_str());
+    Memory::ins().PushStack(m->getName());
   }
 
   void operator()() {
@@ -222,12 +219,7 @@ public:
   }
 
   ~Run() {
-    Memory::ins().stack.pop_back();
-    if (Log.isInLogLevel(101)) {
-      stringstream ss;
-      PRINT_VALUE_STREAM(ss, Memory::ins().stack);
-      Log.logWithTime(101, "stack pop:\n%s", ss.str().c_str());
-    }
+    Memory::ins().PopStack();
   }
 
 private:

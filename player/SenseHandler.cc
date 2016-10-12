@@ -110,7 +110,7 @@ SenseHandler::SenseHandler( Connection *c, WorldModel *wm, ServerSettings *ss,
 #else
   struct sigaction sigact;
 
-  sigact.sa_flags = SA_RESTART; // do not setUnblocked primitives (like recvfrom)
+  sigact.sa_flags = SA_RESTART; // do not clearBlocked primitives (like recvfrom)
   sigact.sa_handler = (void (*)(int))sigalarmHandler;
   sigemptyset(&sigact.sa_mask);
   sigaction( SIGALRM, &sigact, NULL );
@@ -549,7 +549,7 @@ bool SenseHandler::analyzeSenseMessage( char *strMsg )
 
   WM->setTimeLastSenseMessage( timeNew ); // set the time
 
-//  Log.logWithTime( 2, " end analyzing sense" );
+//  Log.log( 2, " end analyzing sense" );
   return true;
 }
 

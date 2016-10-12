@@ -11,14 +11,20 @@ namespace fsm {
 
 void SharedData::setBlocked(int i) {
   auto status = runningStatus;
+  assert(!isBlocked(i));
   runningStatus |= 1 << i;
-  Log.logWithTime(101, "SharedData::setBlocked %d (%d => %d)", i, status, runningStatus);
+  Log.log(101, "SharedData::setBlocked %d (%d => %d)", i, status, runningStatus);
 }
 
-void SharedData::setUnblocked(int i) {
+void SharedData::clearBlocked(int i) {
   auto status = runningStatus;
+  assert(isBlocked(i));
   runningStatus &= ~(1 << i);
-  Log.logWithTime(101, "SharedData::setUnblocked %d (%d => %d)", i, status, runningStatus);
+  Log.log(101, "SharedData::clearBlocked %d (%d => %d)", i, status, runningStatus);
+}
+
+bool SharedData::isBlocked(int i) {
+  return (bool) ((runningStatus >> i) & 1);
 }
 
 bool SharedData::isAllBlocked(int k) {
@@ -67,7 +73,7 @@ vector<string> SharedData::getMachineStateStr() const {
 }
 
 void SharedData::clearBlocked() {
-  Log.logWithTime(101, "SharedData::clearBlocked to 0");
+  Log.log(101, "SharedData::clearBlocked to 0");
   runningStatus = 0;
 }
 
@@ -97,7 +103,7 @@ LinearSarsaLearner::LinearSarsaLearner() {
   sharedData = 0;
   memset(semSignal, 0, sizeof(semSignal));
   semSync = 0;
-  newEpisode = true;
+  lastJointChoiceIdx = -1;
 }
 
 void LinearSarsaLearner::initialize(bool learning, double width[], double weight)
@@ -178,7 +184,7 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double weight
   }
 }
 
-void LinearSarsaLearner::loadSharedData() {
+bool LinearSarsaLearner::loadSharedData() {
   ScopedLock lock(semSync);
   numTilings = sharedData->numTilings;
   minimumTrace = sharedData->minimumTrace;
@@ -188,25 +194,41 @@ void LinearSarsaLearner::loadSharedData() {
   numChoices = sharedData->getNumChoices();
   machineStateStr = sharedData->getMachineStateStr();
 
+  bool action_state = true; // action state (when all are in action)
+  for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
+    if (numChoices.at(i) > 1) {
+      action_state = false;
+    }
+  }
+
   if (Log.isInLogLevel(101)) {
     stringstream ss;
+    PRINT_VALUE_STREAM(ss, agentIdx);
+    PRINT_VALUE_STREAM(ss, Memory::ins().to_string());
+    PRINT_VALUE_STREAM(ss, sharedData->getCumulativeReward());
+    PRINT_VALUE_STREAM(ss, sharedData->getCumulativeGamma());
+
     PRINT_VALUE_STREAM(ss, numTilings);
     PRINT_VALUE_STREAM(ss, minimumTrace);
     PRINT_VALUE_STREAM(ss, numNonzeroTraces);
     PRINT_VALUE_STREAM(ss, machineStateStr);
     PRINT_VALUE_STREAM(ss, numChoices);
+    PRINT_VALUE_STREAM(ss, action_state);
     PRINT_VALUE_STREAM(ss, lastJointChoiceIdx);
     PRINT_VALUE_STREAM(ss, lastJointChoice);
-    Log.logWithTime(101, "LinearSarsaLearner::loadSharedData\n%s", ss.str().c_str());
+
+    Log.log(101, "LinearSarsaLearner::loadSharedData\n%s", ss.str().c_str());
   }
+
+  return action_state;
 }
 
 void LinearSarsaLearner::wait() {
   int val = -1;
   sem_getvalue(semSignal[agentIdx], &val);
-  Log.logWithTime(101, "LinearSarsaLearner::wait agent %d wait to be notified, cur val: %d", agentIdx, val);
-  sem_wait(semSignal[agentIdx]);
-  Log.logWithTime(101, "LinearSarsaLearner::wait agent %d notified", agentIdx);
+  Log.log(101, "LinearSarsaLearner::wait agent %d wait to be notified, cur val: %d", agentIdx, val);
+  SemTimedWait(semSignal[agentIdx]);
+  Log.log(101, "LinearSarsaLearner::wait agent %d notified", agentIdx);
 }
 
 void LinearSarsaLearner::notify(int i) {
@@ -214,7 +236,7 @@ void LinearSarsaLearner::notify(int i) {
   int val = -1;
   sem_getvalue(semSignal[i], &val);
   assert(val == 0);
-  Log.logWithTime(101, "LinearSarsaLearner::notify agent %d notify %d, cur val: %d", agentIdx, i, val);
+  Log.log(101, "LinearSarsaLearner::notify agent %d notify %d, cur val: %d", agentIdx, i, val);
   sem_post(semSignal[i]);
 }
 
@@ -234,10 +256,10 @@ void LinearSarsaLearner::saveSharedData() {
 
 void LinearSarsaLearner::loadQ(const vector<int> &num_choices) {
   loadTiles(Memory::ins().state, machineStateStr, num_choices);
-  Log.logWithTime(101, "LinearSarsaLearner::loadQ numTilings: %d", numTilings);
+  Log.log(101, "LinearSarsaLearner::loadQ numTilings: %d", numTilings);
 
-  for (auto &jc : validChoices(num_choices)) {
-    Q[jc] = computeQ(jc);
+  for (auto c : validChoices(num_choices)) {
+    Q[c] = computeQ(c);
   }
 
   if (Log.isInLogLevel(101)) {
@@ -245,7 +267,7 @@ void LinearSarsaLearner::loadQ(const vector<int> &num_choices) {
     PRINT_VALUE_STREAM(ss, jointChoicesMap[num_choices]);
     PRINT_VALUE_STREAM(ss, validChoices(num_choices));
     PRINT_VALUE_STREAM(ss, vector<double>(Q, Q + validChoices(num_choices).size()));
-    Log.logWithTime(101, "LinearSarsaLearner::loadQ %s", ss.str().c_str());
+    Log.log(101, "LinearSarsaLearner::loadQ %s", ss.str().c_str());
   }
 }
 
@@ -279,20 +301,7 @@ int LinearSarsaLearner::step() {
   ScopedLock lock(semSync);
 
   int choice = -1;
-  if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    Log.logWithTime(101, "LinearSarsaLearner::step new episode %d", newEpisode);
-    PRINT_VALUE_STREAM(ss, Memory::ins().to_string());
-    PRINT_VALUE_STREAM(ss, machineStateStr);
-    PRINT_VALUE_STREAM(ss, numChoices);
-    PRINT_VALUE_STREAM(ss, lastJointChoiceIdx);
-    PRINT_VALUE_STREAM(ss, lastJointChoice);
-    PRINT_VALUE_STREAM(ss, sharedData->getCumulativeReward());
-    PRINT_VALUE_STREAM(ss, sharedData->getCumulativeGamma());
-    Log.logWithTime(101, "LinearSarsaLearner::step memory (before update):\n%s", ss.str().c_str());
-  }
-
-  if (!newEpisode) {
+  if (lastJointChoiceIdx != -1) {
     double delta = sharedData->getCumulativeReward() - Q[lastJointChoiceIdx];
     loadQ(numChoices);
     choice = selectChoice(numChoices);
@@ -305,7 +314,7 @@ int LinearSarsaLearner::step() {
     Q[choice] = computeQ(choice); // update Q[choice]
     decayTraces(HierarchicalFSM::gamma * lambda);
 
-    for (auto &a : validChoices(numChoices)) {
+    for (auto a : validChoices(numChoices)) {
       if (a != choice) {
         for (int j = 0; j < numTilings; j++)
           clearTrace(tiles[a][j]);
@@ -316,7 +325,6 @@ int LinearSarsaLearner::step() {
     assert(numNonzeroTraces == 0);
     loadQ(numChoices);
     choice = selectChoice(numChoices);
-    newEpisode = false;
   }
 
   for (int j = 0; j < numTilings; j++)
@@ -339,32 +347,18 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
     sharedData->numChoices[agentIdx] = num_choices;
     strcpy(sharedData->machineStateStr[agentIdx], stackStr.c_str());
 
-    Log.logWithTime(101, "LinearSarsaLearner::step agent %d numChoices %d", agentIdx, num_choices);
-    Log.logWithTime(101, "LinearSarsaLearner::step agent %d machineState %s", agentIdx, stackStr.c_str());
-    Log.logWithTime(101, "LinearSarsaLearner::step agent %d stack %s", agentIdx, stackStr.c_str());
+    Log.log(101, "LinearSarsaLearner::step agent %d write numChoices %d", agentIdx, num_choices);
+    Log.log(101, "LinearSarsaLearner::step agent %d write machineStateStr %s", agentIdx, stackStr.c_str());
 
     sharedData->setBlocked(agentIdx);
     last_blocking_agent = sharedData->isAllBlocked(HierarchicalFSM::num_keepers);
   }
 
   if (last_blocking_agent || !bLearning) {
-    Log.logWithTime(101, "LinearSarsaLearner::step leading agent %d (running status: %d)", agentIdx,
-                    sharedData->getRunningStatus());
-
-    loadSharedData();
-    bool action_state = true; // action state (when all are in action)
-    for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-      if (numChoices.at(i) > 1) {
-        action_state = false;
-      }
-    }
-
-    Log.logWithTime(101, "LinearSarsaLearner::step action state %d", action_state);
-
+    Log.log(101, "LinearSarsaLearner::step leading agent %d (running status: %d)", agentIdx,
+            sharedData->getRunningStatus());
+    bool action_state = loadSharedData();
     if (action_state) { // no learning
-      lastJointChoice = vector<int>((unsigned long) HierarchicalFSM::num_keepers,
-                                    0); // do not change lastJointChoiceIdx
-      saveSharedData();
       sharedData->updateReward(1.0);
       sharedData->clearBlocked(); // reset to 0
 
@@ -375,13 +369,14 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
       }
     } else {
       lastJointChoiceIdx = step();
+      assert(lastJointChoiceIdx >= 0);
       lastJointChoice = jointChoicesMap[numChoices][lastJointChoiceIdx];
       saveSharedData();
       sharedData->resetReward();
 
       for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
         if (numChoices.at(i) > 1) {
-          sharedData->setUnblocked(i);
+          sharedData->clearBlocked(i);
         }
       }
 
@@ -392,32 +387,24 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
       }
 
       if (numChoices.at(agentIdx) <= 1) {
-        wait(); // setBlocked self
+        wait(); // block self
       }
     }
   } else {
     wait();
   }
 
-  loadSharedData();
-  return lastJointChoice;
+  bool action_state = loadSharedData();
+  if (action_state) { // dummy choice
+    return vector<int>((unsigned long) HierarchicalFSM::num_keepers, 0);
+  } else {
+    return lastJointChoice;
+  }
 }
 
 void LinearSarsaLearner::endEpisode() {
-  if (Log.isInLogLevel(101)) {
-    Log.logWithTime(101, "LinearSarsaLearner::endEpisode memory: \n%s",
-                    Memory::ins().to_string().c_str());
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, machineStateStr);
-    PRINT_VALUE_STREAM(ss, numChoices);
-    PRINT_VALUE_STREAM(ss, lastJointChoiceIdx);
-    PRINT_VALUE_STREAM(ss, lastJointChoice);
-    PRINT_VALUE_STREAM(ss, sharedData->getCumulativeReward());
-    PRINT_VALUE_STREAM(ss, sharedData->getCumulativeGamma());
-    Log.logWithTime(101, "LinearSarsaLearner::endEpisode machine state/num choices/joint choice\n%s", ss.str().c_str());
-  }
+  loadSharedData();
 
-  sem_init(semSignal[agentIdx], PTHREAD_PROCESS_SHARED, 0);
   if (agentIdx == 0) { // only one agent can update
     if (bLearning && lastJointChoiceIdx >= 0) {
       double delta = sharedData->getCumulativeReward() - Q[lastJointChoiceIdx];
@@ -430,8 +417,7 @@ void LinearSarsaLearner::endEpisode() {
   numChoices.clear();
   lastJointChoiceIdx = -1;
   lastJointChoice.clear();
-
-  newEpisode = true;
+  sem_init(semSignal[agentIdx], PTHREAD_PROCESS_SHARED, 0);
 }
 
 void LinearSarsaLearner::loadTiles(
@@ -444,9 +430,9 @@ void LinearSarsaLearner::loadTiles(
 
   numTilings = 0;
   for (int v = 0; v < HierarchicalFSM::num_features; v++) {
-    for (auto &jc : validChoices(num_choices)) {
-      GetTiles1(&(tiles[jc][numTilings]), tilingsPerGroup, colTab,
-                (float) (state[v] / tileWidths[v]), (int) jc, v, h);
+    for (auto a: validChoices(num_choices)) {
+      GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
+                (float) (state[v] / tileWidths[v]), a, v, h);
     }
     numTilings += tilingsPerGroup;
   }
@@ -465,15 +451,15 @@ double LinearSarsaLearner::computeQ(int choice) {
 }
 
 int LinearSarsaLearner::selectChoice(const vector<int> &num_choices) {
-  auto vc = validChoices(num_choices);
   int choice = -1;
 
   if (bLearning && drand48() < epsilon) {     /* explore */
-    choice = vc[rand() % vc.size()];
-    Log.logWithTime(101, "LinearSarsaLearner::selectChoice explore choice %d", choice);
+    auto &choices = validChoices(num_choices);
+    choice = choices[rand() % choices.size()];
+    Log.log(101, "LinearSarsaLearner::selectChoice explore choice %d", choice);
   } else {
     choice = argmaxQ(num_choices);
-    Log.logWithTime(101, "LinearSarsaLearner::selectChoice argmaxQ choice %d", choice);
+    Log.log(101, "LinearSarsaLearner::selectChoice argmaxQ choice %d", choice);
   }
 
   return choice;
@@ -484,7 +470,7 @@ int LinearSarsaLearner::argmaxQ(const vector<int> &num_choices) {
   double bestValue = INT_MIN;
   int numTies = 0;
 
-  for (auto &a : validChoices(num_choices)) {
+  for (auto a : validChoices(num_choices)) {
     double value = Q[a];
     if (value > bestValue) {
       bestValue = value;
@@ -503,7 +489,7 @@ int LinearSarsaLearner::argmaxQ(const vector<int> &num_choices) {
 }
 
 void LinearSarsaLearner::updateWeights(double delta) {
-  Log.logWithTime(101, "LinearSarsaLearner::updateWeights delta %f", delta);
+  Log.log(101, "LinearSarsaLearner::updateWeights delta %f", delta);
 
   assert(numTilings > 0);
   double tmp = delta * alpha / numTilings;

@@ -52,11 +52,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "BasicPlayer.h"
-#include <fcntl.h>
 
+FileLock::FileLock(const string &prefix, const string &name) {
+  static const timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
+  lockName = prefix + name + ".flock";
+
+  for (;;) {
+    lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
+    if (lock >= 0) break;
+    nanosleep(&sleepTime, NULL);
+  }
+}
+
+FileLock::~FileLock() {
+  unlink(lockName.c_str());
+  close(lock);
+}
 
 ScopedLock::ScopedLock(sem_t *sem): sem(sem) {
-  sem_wait(sem);
+  SemTimedWait(sem);
 }
 
 ScopedLock::~ScopedLock() {

@@ -19,13 +19,13 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-SLEEP="0"
+SLEEP="10"
 
 make clean
 make release
 
 exec 1>console.log 2>&1                                                              
-for initialweight in 0.5; do
+for initialweight in 0.125 0.25 0.5; do
     for lookahead in `seq 5 10`; do
         gamma=`echo 1.0 - 1.0 / 2^$lookahead | bc -l`
         ./train.sh -b none -sf -g $gamma -I $initialweight $* &

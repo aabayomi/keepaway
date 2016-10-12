@@ -78,7 +78,7 @@ LinearSarsaAgent::LinearSarsaAgent(
     sharedMemoryName = "/" + to_string(h) + ".shm";
 
     for (int i = 0; i < AtomicAction::num_keepers; ++i) {
-      if ((semSignal[i] = sem_open(("/" + to_string(h) + "-" + to_string(i)).c_str(), O_CREAT, 0666, 0)) ==
+      if ((semSignal[i] = sem_open(("/signal-" + to_string(i) + "-" + to_string(h)).c_str(), O_CREAT, 0666, 0)) ==
           SEM_FAILED) {
         perror("semaphore initilization");
         exit(1);
@@ -103,12 +103,29 @@ LinearSarsaAgent::LinearSarsaAgent(
     loadWeights(loadWeightsFile.c_str());
 }
 
+void LinearSarsaAgent::wait() {
+  int val = -1;
+  sem_getvalue(semSignal[agentIdx], &val);
+  Log.log(101, "LinearSarsaAgent::wait agent %d wait to be notified, cur val: %d", agentIdx, val);
+  SemTimedWait(semSignal[agentIdx]);
+  Log.log(101, "LinearSarsaAgent::wait agent %d notified", agentIdx);
+}
+
+void LinearSarsaAgent::notify(int i) {
+  assert(i != agentIdx);
+  int val = -1;
+  sem_getvalue(semSignal[i], &val);
+  assert(val == 0);
+  Log.log(101, "LinearSarsaAgent::notify agent %d notify %d, cur val: %d", agentIdx, i, val);
+  sem_post(semSignal[i]);
+}
+
 void LinearSarsaAgent::setEpsilon(double epsilon) {
   this->epsilon = epsilon;
 }
 
 int LinearSarsaAgent::startEpisode(double state[]) {
-  Log.logWithTime(101, "LinearSarsaAgentstartEpisode");
+  Log.log(101, "LinearSarsaAgentstartEpisode");
 
   decayTraces(0);
   assert(numNonzeroTraces == 0);
@@ -125,15 +142,15 @@ int LinearSarsaAgent::startEpisode(double state[]) {
     for (int a : validActions()) {
       ss << a << ":" << Q[a] << ", ";
     }
-    Log.logWithTime(101, "LinearSarsaAgent::startEpisode numTilings: %d", numTilings);
-    Log.logWithTime(101, "LinearSarsaAgent::startEpisode Q: [%s]", ss.str().c_str());
-    Log.logWithTime(101, "LinearSarsaAgent::startEpisode action: %d", lastAction);
+    Log.log(101, "LinearSarsaAgent::startEpisode numTilings: %d", numTilings);
+    Log.log(101, "LinearSarsaAgent::startEpisode Q: [%s]", ss.str().c_str());
+    Log.log(101, "LinearSarsaAgent::startEpisode action: %d", lastAction);
   }
 
   for (int j = 0; j < numTilings; j++)
     setTrace(tiles[lastAction][j], 1.0);
 
-  Log.logWithTime(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
+  Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
   return lastAction;
 }
 
@@ -149,7 +166,7 @@ double LinearSarsaAgent::reward(double tau, double gamma) {
 
 int LinearSarsaAgent::step(double reward_, double state[]) {
   double tau = reward_; // here reward is actually tau
-  Log.logWithTime(101, "LinearSarsaAgent::step tau: %f", tau);
+  Log.log(101, "LinearSarsaAgent::step tau: %f", tau);
 
   assert(lastAction >= 0);
   double delta = reward(tau, gamma) - Q[lastAction]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
@@ -166,9 +183,9 @@ int LinearSarsaAgent::step(double reward_, double state[]) {
     for (int a : validActions()) {
       ss << a << ":" << Q[a] << ", ";
     }
-    Log.logWithTime(101, "LinearSarsaAgent::step numTilings: %d", numTilings);
-    Log.logWithTime(101, "LinearSarsaAgent::step Q: [%s]", ss.str().c_str());
-    Log.logWithTime(101, "LinearSarsaAgent::step action: %d", lastAction);
+    Log.log(101, "LinearSarsaAgent::step numTilings: %d", numTilings);
+    Log.log(101, "LinearSarsaAgent::step Q: [%s]", ss.str().c_str());
+    Log.log(101, "LinearSarsaAgent::step action: %d", lastAction);
   }
 
   if (!bLearning)
@@ -192,15 +209,15 @@ int LinearSarsaAgent::step(double reward_, double state[]) {
   for (int j = 0; j < numTilings; j++)      //replace/set traces F[a]
     setTrace(tiles[lastAction][j], 1.0);
 
-  Log.logWithTime(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
+  Log.log(101, "LinearSarsaAgent::step saved numNonzeroTraces: %d", numNonzeroTraces);
   return lastAction;
 }
 
 void LinearSarsaAgent::endEpisode(double reward_) {
   double tau = reward_; // here reward is actually tau
 
-  Log.logWithTime(101, "LinearSarsaAgent::endEpisode tau: %f", tau);
-  Log.logWithTime(101, "LinearSarsaAgent::endEpisode hived lastAction: %d", lastAction);
+  Log.log(101, "LinearSarsaAgent::endEpisode tau: %f", tau);
+  Log.log(101, "LinearSarsaAgent::endEpisode hived lastAction: %d", lastAction);
 
   if (bLearning && lastAction != -1) { /* otherwise we never ran on this episode */
     double delta = reward(tau, gamma) - Q[lastAction];
@@ -210,8 +227,10 @@ void LinearSarsaAgent::endEpisode(double reward_) {
   if (bLearning && bSaveWeights && rand() % 1000 == 0) {
     saveWeights(saveWeightsFile.c_str());
   }
+
   lastAction = -1;
   lastActionTime = UnknownTime;
+  sem_init(semSignal[agentIdx], PTHREAD_PROCESS_SHARED, 0);
 }
 
 void LinearSarsaAgent::shutDown() {
@@ -227,10 +246,10 @@ int LinearSarsaAgent::selectAction() {
   if (agentIdx == 0 || !bLearning) {
     if (bLearning && drand48() < epsilon) {     /* explore */
       action = JointActionSpace::ins().sample(WM->tmControllBall()); // sample
-      Log.logWithTime(101, "LinearSarsaAgent::selectAction explore action %d", action);
+      Log.log(101, "LinearSarsaAgent::selectAction explore action %d", action);
     } else {
       action = argmaxQ();
-      Log.logWithTime(101, "LinearSarsaAgent::selectAction argmaxQ action %d", action);
+      Log.log(101, "LinearSarsaAgent::selectAction argmaxQ action %d", action);
     }
 
     lastActionTime = WM->getCurrentCycle();
@@ -238,17 +257,14 @@ int LinearSarsaAgent::selectAction() {
     sharedData->lastActionTime = lastActionTime;
     for (int i = 0; i < WM->getNumKeepers(); ++i) {
       if (i != agentIdx) {
-        Log.logWithTime(101, "notify %d with action %d at %d [tmControllBall %d]", i, lastAction, lastActionTime,
-                        WM->tmControllBall());
-        sem_post(semSignal[i]);
+        notify(i);
       }
     }
   } else {
-    Log.logWithTime(101, "agent %d wait to be notified", agentIdx);
-    sem_wait(semSignal[agentIdx]);
+    wait();
     lastAction = sharedData->lastAction;
     lastActionTime = sharedData->lastActionTime;
-    Log.logWithTime(101, "got %d at %d [tmControllBall %d]", lastAction, lastActionTime, WM->tmControllBall());
+    Log.log(101, "got %d at %d [tmControllBall %d]", lastAction, lastActionTime, WM->tmControllBall());
   }
 
   assert(action >= 0);
@@ -335,7 +351,7 @@ void LinearSarsaAgent::updateWeights(double delta) {
   assert(numTilings > 0);
   double tmp = delta * alpha / numTilings;
 
-  Log.logWithTime(101, "LinearSarsaAgent::updateWeights delta %f", delta);
+  Log.log(101, "LinearSarsaAgent::updateWeights delta %f", delta);
 
   for (int i = 0; i < numNonzeroTraces; i++) {
     assert(i < RL_MAX_NONZERO_TRACES);
@@ -370,7 +386,6 @@ void LinearSarsaAgent::loadTiles(double state[]) // will change colTab.data impl
   assert(numTilings > 0);
   assert(numTilings < RL_MAX_NUM_TILINGS);
 }
-
 
 // Clear any trace for feature f
 void LinearSarsaAgent::clearTrace(int f) {

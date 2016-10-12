@@ -304,12 +304,9 @@ int main(int argc, char *argv[]) {
   int numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                        iNumKeepers, iNumTakers);
 
-  fsm::HierarchicalFSM::initialize(
-      numFeatures, iNumKeepers, bLearn, resolutions, gamma, initialWeight);
-
   if (!hierarchicalFSM) {
-    Log.logWithTime(101, "Joint Action Space: \n%s\n",
-                    jol::JointActionSpace::ins().to_string().c_str());
+    Log.log(101, "Joint Action Space: \n%s\n",
+            jol::JointActionSpace::ins().to_string().c_str());
 
     if (strlen(strPolicy) > 0 && strPolicy[0] == 'l') {
       // (l)earned
@@ -372,6 +369,8 @@ int main(int argc, char *argv[]) {
     }
   } else {
     assert(sa == 0);
+    fsm::HierarchicalFSM::initialize(
+        numFeatures, iNumKeepers, bLearn, resolutions, gamma, initialWeight);
   }
 
   KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,

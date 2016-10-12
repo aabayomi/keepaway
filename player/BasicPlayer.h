@@ -69,6 +69,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern Logger Log; /*!< This is a reference to Logger to write log info to*/
 
+class FileLock {
+private:
+  int lock;
+  std::string lockName;
+
+public:
+  FileLock(const std::string &prefix, const std::string &name);
+
+  ~FileLock();
+};
+
 class ScopedLock {
 private:
   sem_t *sem;
@@ -78,6 +89,15 @@ public:
 
   ~ScopedLock();
 };
+
+inline void SemTimedWait(sem_t *sem, int ms = 100) {
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  ts.tv_nsec += ms * 1000000;
+  ts.tv_sec += ts.tv_nsec / 1000000000;
+  ts.tv_nsec %= 1000000000;
+  sem_timedwait(sem, &ts);
+}
 
 /*! This class defines the skills that can be used by an agent. No
     functionality is available that chooses when to execute which skill, this

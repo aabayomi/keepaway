@@ -78,6 +78,10 @@ protected:
 
   const std::vector<int> &validActions() const;
 
+  void wait();
+
+  void notify(int i);
+
 public:
   LinearSarsaAgent(WorldModel *wm,
                    int numFeatures,
