@@ -1128,7 +1128,7 @@ void WorldModel::processLastSenseMessage( )
   if( c == 'l' || c == 'r' )    // target l or r
   {
     Log.log(602, "set focus: %d",
-            SoccerTypes::getTeammateObjectFromIndex( -1 + i ) );
+            SoccerTypes::getTeammateObjectFromIndex(-1 + i));
     setObjectFocus( SoccerTypes::getTeammateObjectFromIndex( -1 + i ) );
     i = Parse::parseFirstInt( &strMsg );
   }
