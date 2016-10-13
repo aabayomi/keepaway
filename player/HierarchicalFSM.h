@@ -41,7 +41,8 @@ public:
   std::string to_string();
 
   bool bAlive;
-  double state[MAX_RL_STATE_VARS]; // current state
+  int agentIdx;
+  double state[MAX_RL_STATE_VARS]; // current state -- indexed by K0..Kn
   ObjectT K[11]; // current mapping from index to players
 
 private:

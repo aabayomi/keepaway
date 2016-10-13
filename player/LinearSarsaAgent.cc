@@ -78,7 +78,8 @@ LinearSarsaAgent::LinearSarsaAgent(
     exepath += "LinearSarsaAgent::LinearSarsaAgent";
     exepath += to_string(gamma);
     exepath += to_string(initialWeight);
-    auto h = hash<string>().operator()(exepath); //hashing
+    exepath += to_string(qLearning);
+    auto h = hash<string>()(exepath); //hashing
     sharedMemoryName = "/" + to_string(h) + ".shm";
 
     for (int i = 0; i < AtomicAction::num_keepers; ++i) {
@@ -230,16 +231,14 @@ void LinearSarsaAgent::shutDown() {
 }
 
 int LinearSarsaAgent::selectAction() {
-  int &action = lastAction;
-
   if (agentIdx == 0 || !bLearning) {
     ScopedLock lock(semSync);
     if (bLearning && drand48() < epsilon) {     /* explore */
-      action = JointActionSpace::ins().sample(WM->isTmControllBall()); // sample
-      Log.log(101, "LinearSarsaAgent::selectAction explore action %d", action);
+      lastAction = JointActionSpace::ins().sample(WM->isTmControllBall()); // sample
+      Log.log(101, "LinearSarsaAgent::selectAction explore action %d", lastAction);
     } else {
-      action = argmaxQ();
-      Log.log(101, "LinearSarsaAgent::selectAction argmaxQ action %d", action);
+      lastAction = argmaxQ();
+      Log.log(101, "LinearSarsaAgent::selectAction argmaxQ action %d", lastAction);
     }
 
     lastActionTime = WM->getCurrentCycle();
@@ -268,15 +267,15 @@ int LinearSarsaAgent::selectAction() {
     }
     Log.log(101, "LinearSarsaAgent::selectAction numTilings: %d", numTilings);
     Log.log(101, "LinearSarsaAgent::selectAction Q: [%s]", ss.str().c_str());
-    Log.log(101, "LinearSarsaAgent::selectAction action: %d", action);
+    Log.log(101, "LinearSarsaAgent::selectAction action: %d", lastAction);
   }
 
-  assert(action >= 0);
-  assert(action < getNumActions());
-  assert(JointActionSpace::ins().getJointAction(action)->tmControllBall == WM->isTmControllBall());
-  assert(find(validActions().begin(), validActions().end(), action) != validActions().end());
+  assert(lastAction >= 0);
+  assert(lastAction < getNumActions());
+  assert(JointActionSpace::ins().getJointAction(lastAction)->tmControllBall == WM->isTmControllBall());
+  assert(find(validActions().begin(), validActions().end(), lastAction) != validActions().end());
 
-  return action;
+  return lastAction;
 }
 
 bool LinearSarsaAgent::loadWeights(const char *filename) {

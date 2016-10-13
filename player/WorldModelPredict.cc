@@ -825,7 +825,7 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
     *posIntercept = posBall;
 
   if (!getKeepawayRect().isInside(posBall)) {
-    Log.log(101, "SoccerCommand WorldModel::predictCommandToInterceptBall !getKeepawayRect().isInside(posBall)");
+//    Log.log(101, "SoccerCommand WorldModel::predictCommandToInterceptBall !getKeepawayRect().isInside(posBall)");
     posBall = getBallPos();
   }
 

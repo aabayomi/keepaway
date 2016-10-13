@@ -30,10 +30,10 @@ public:
   T choose() {
     Log.log(101, "ChoicePoint::choose point name: %s", name.c_str());
     auto jc = LinearSarsaLearner::ins().step((int) choices.size());
-    auto i = jc[LinearSarsaLearner::ins().agentIdx];
+    auto i = jc[Memory::ins().agentIdx];
 
     if (jc.size()) {
-      Log.log(101, "ChoicePoint::choose my choice (agent %d): %s", LinearSarsaLearner::ins().agentIdx,
+      Log.log(101, "ChoicePoint::choose my choice (agent %d): %s", Memory::ins().agentIdx,
               to_string(choices[i]).c_str());
     }
     return choices[i];

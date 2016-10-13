@@ -8,11 +8,11 @@ LOGLEVEL="101"
 HIERARCHICALFSM=""
 QLEARNING=""
 GAMMA="1.0"
-INITIALWEIGHT="0.125"
+INITIALWEIGHT="0.5"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
 LOGDIR="logs"
-QFILE=""
+QFILE="pi"
 QFILE2=""
 MEMORYCHECK=""
 
@@ -36,15 +36,15 @@ done
 PORT="--port=`shuf -i 2000-65000 -n 1`"
 
 if [ ! -z $GAMMA ]; then
-    QFILE="${QFILE}gamma${GAMMA}"
+    QFILE="${QFILE}_g${GAMMA}"
 fi
 
 if [ ! -z $INITIALWEIGHT ]; then
-    QFILE="${QFILE}_initialweight${INITIALWEIGHT}"
+    QFILE="${QFILE}_w${INITIALWEIGHT}"
 fi
 
 if [ ! -z $FULLSTATE ]; then
-    QFILE="${QFILE}_fullstate"
+    QFILE="${QFILE}_fs"
 fi
 
 if [ ! -z $HIERARCHICALFSM ]; then

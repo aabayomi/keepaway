@@ -43,9 +43,10 @@ struct SharedData {
   int numNonzeroTraces;
 
   int numChoices[11]; // indexed by K0..Kn
+  char machineStateStr[11][1024];
+
   int lastJointChoiceIdx;
   int lastJointChoice[11];
-  char machineStateStr[11][1024];
 
   vector<int> getNumChoices() const;
 
@@ -66,6 +67,8 @@ struct SharedData {
   void resetReward();
 
   void updateReward(double r);
+
+  void updateOrdering(const vector<int> &K, const vector<int> &lastK);
 
 private:
   int runningStatus;
@@ -117,7 +120,6 @@ public:
   void notify(int i);
 
 public:
-  int agentIdx;
   int lastJointChoiceIdx;
   vector<string> machineStateStr;
   vector<int> numChoices;
@@ -126,6 +128,10 @@ public:
 private:
   bool bLearning;
   SharedData *sharedData;
+public:
+  SharedData *getSharedData() const;
+
+private:
   sem_t *semSignal[11];
   sem_t *semSync;
 

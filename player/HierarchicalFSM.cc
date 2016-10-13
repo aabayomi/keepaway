@@ -37,8 +37,9 @@ void Memory::resetState() {
 
 string Memory::to_string() {
   std::stringstream ss;
-  PRINT_VALUE_STREAM(ss, vector<double>(state, state + HierarchicalFSM::num_features));
+  PRINT_VALUE_STREAM(ss, agentIdx);
   PRINT_VALUE_STREAM(ss, vector<ObjectT>(K, K + HierarchicalFSM::num_keepers));
+  PRINT_VALUE_STREAM(ss, vector<double>(state, state + HierarchicalFSM::num_features));
   PRINT_VALUE_STREAM(ss, stack);
 
   return ss.str();
@@ -125,6 +126,8 @@ void HierarchicalFSM::idle(const std::string error) {
 }
 
 string HierarchicalFSM::getState() {
+  static vector<int> lastK;
+
   Memory::ins().resetState();
 
   if (WM->getConfidence(OBJECT_BALL) < PS->getBallConfThr()) {
@@ -134,6 +137,7 @@ string HierarchicalFSM::getState() {
   }
 
   int numK = WM->getNumKeepers();
+  assert(numK == num_keepers);
 
   int features = WM->keeperStateVars(Memory::ins().state);
   assert(features == 0 || features == num_features);
@@ -146,7 +150,7 @@ string HierarchicalFSM::getState() {
   if (!WM->sortClosestTo(Memory::ins().K, numK, K0)) return "!WM->sortClosestTo(K, numK, K0)";
   if (K0 != Memory::ins().K[0]) return "K0 != K[0]";
 
-  auto &agentIdx = LinearSarsaLearner::ins().agentIdx;
+  auto &agentIdx = Memory::ins().agentIdx;
   agentIdx = 0;
   while (agentIdx < numK &&
          Memory::ins().K[agentIdx] != WM->getAgentObjectType())
@@ -154,6 +158,13 @@ string HierarchicalFSM::getState() {
   assert(agentIdx < numK);
 
   if (agentIdx >= numK) return "agentIdx >= numK";
+
+  auto K = vector<int>(Memory::ins().K, Memory::ins().K + numK);
+  if (lastK.size() && K != lastK) { // need to update shared numChoices/machineStateStr ordering
+    LinearSarsaLearner::ins().getSharedData()->updateOrdering(K, lastK);
+  }
+
+  lastK = K;
   return "";
 }
 
@@ -216,7 +227,7 @@ void Keeper::run() {
       WM->setNewEpisode(false);
     }
 
-    Log.log(101, "Keeper::run agentIdx %d", LinearSarsaLearner::ins().agentIdx);
+    Log.log(101, "Keeper::run agentIdx %d", Memory::ins().agentIdx);
     if (!WM->isBallKickable() && !WM->isTmControllBall()) { // ball free
       int minCycle = INT_MAX;
       int agentCycle = INT_MAX;
