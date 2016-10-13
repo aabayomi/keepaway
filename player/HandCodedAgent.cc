@@ -73,7 +73,7 @@ int HandCodedAgent::alwaysHold()
 
 int HandCodedAgent::random()
 {
-  return jol::JointActionSpace::ins().sample(WM->tmControllBall());
+  return jol::JointActionSpace::ins().sample(WM->isTmControllBall());
 }
 
 /**

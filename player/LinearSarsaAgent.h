@@ -21,6 +21,7 @@ protected:
   bool bSaveWeights;
 
   sem_t *semSignal[11];
+  sem_t *semSync;
   string sharedMemoryName;
   SharedData *sharedData;
 

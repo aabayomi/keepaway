@@ -17,6 +17,7 @@ namespace jol {
 
 LinearSarsaAgent::~LinearSarsaAgent() {
   if (sharedData) shm_unlink(sharedMemoryName.c_str());
+  if (semSync) sem_close(semSync);
   for (auto s : semSignal) if (s) sem_close(s);
 }
 
@@ -35,6 +36,7 @@ LinearSarsaAgent::LinearSarsaAgent(
       sharedData(0),
       gamma(gamma),
       initialWeight(initialWeight) {
+  semSync = 0;
   memset(semSignal, 0, sizeof(semSignal));
 
   for (int i = 0; i < getNumFeatures(); i++) {
@@ -83,6 +85,11 @@ LinearSarsaAgent::LinearSarsaAgent(
         perror("semaphore initilization");
         exit(1);
       }
+    }
+
+    if ((semSync = sem_open(("/sync-" + to_string(h)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
+      perror("semaphore initilization");
+      exit(1);
     }
 
     int shm_fd = shm_open(sharedMemoryName.c_str(), O_CREAT | O_RDWR, 0666);
@@ -244,8 +251,9 @@ int LinearSarsaAgent::selectAction() {
   int &action = lastAction;
 
   if (agentIdx == 0 || !bLearning) {
+    ScopedLock lock(semSync);
     if (bLearning && drand48() < epsilon) {     /* explore */
-      action = JointActionSpace::ins().sample(WM->tmControllBall()); // sample
+      action = JointActionSpace::ins().sample(WM->isTmControllBall()); // sample
       Log.log(101, "LinearSarsaAgent::selectAction explore action %d", action);
     } else {
       action = argmaxQ();
@@ -262,14 +270,18 @@ int LinearSarsaAgent::selectAction() {
     }
   } else {
     wait();
+  }
+
+  {
+    ScopedLock lock(semSync);
     lastAction = sharedData->lastAction;
     lastActionTime = sharedData->lastActionTime;
-    Log.log(101, "got %d at %d [tmControllBall %d]", lastAction, lastActionTime, WM->tmControllBall());
+    Log.log(101, "got %d at %d [isTmControllBall %d]", lastAction, lastActionTime, WM->isTmControllBall());
   }
 
   assert(action >= 0);
   assert(action < getNumActions());
-  assert(JointActionSpace::ins().getJointAction(action)->tmControllBall == WM->tmControllBall());
+  assert(JointActionSpace::ins().getJointAction(action)->tmControllBall == WM->isTmControllBall());
   assert(find(validActions().begin(), validActions().end(), action) != validActions().end());
 
   return action;
@@ -321,7 +333,7 @@ const vector<int> &LinearSarsaAgent::validActions() const {
     }
   }
 
-  return actions[WM->tmControllBall()];
+  return actions[WM->isTmControllBall()];
 }
 
 // Returns index (action) of largest entry in Q array, breaking ties randomly

@@ -67,10 +67,12 @@ class HierarchicalFSM {
 
   friend class Run;
 
+  friend class Action;
+
   friend class LinearSarsaLearner;
 
 public:
-  HierarchicalFSM(BasicPlayer *p, const std::string name);
+  HierarchicalFSM(BasicPlayer *p, const std::string &name);
 
   virtual ~HierarchicalFSM();
 
@@ -127,7 +129,7 @@ public:
   virtual void run();
 
 private:
-  ChoicePoint<HierarchicalFSM *> *choices[2];
+  ChoicePoint<HierarchicalFSM *> *choices[3];
   HierarchicalFSM *pass;
   HierarchicalFSM *hold;
   HierarchicalFSM *move;
@@ -186,14 +188,13 @@ public:
 template<class T>
 class MakeChoice {
 public:
-  MakeChoice(ChoicePoint<T> *cp) {
-    Log.log(101, "MakeChoice::MakeChoice @ %s", cp->getName().c_str());
+  MakeChoice(ChoicePoint<T> *cp) : cp(cp) {
+    Log.log(101, "MakeChoice::MakeChoice @%s", cp->getName().c_str());
     Memory::ins().PushStack("@" + cp->getName());
-    c = cp->choose();
   }
 
   T operator()() {
-    return c;
+    return cp->choose();
   }
 
   ~MakeChoice() {
@@ -201,7 +202,7 @@ public:
   }
 
 private:
-  T c;
+  ChoicePoint<T> *cp;
 };
 
 /**
@@ -210,8 +211,8 @@ private:
 class Run {
 public:
   Run(HierarchicalFSM *m) : m(m) {
-    Log.log(101, "Run::Run with machine=%s", m->getName().c_str());
-    Memory::ins().PushStack(m->getName());
+    Log.log(101, "Run::Run $%s", m->getName().c_str());
+    Memory::ins().PushStack("$" + m->getName());
   }
 
   void operator()() {
@@ -219,6 +220,25 @@ public:
   }
 
   ~Run() {
+    Memory::ins().PopStack();
+  }
+
+private:
+  HierarchicalFSM *m;
+};
+
+class Action {
+public:
+  Action(HierarchicalFSM *m, int p = 0) : m(m) {
+    Log.log(101, "Action::Action #%d", p);
+    Memory::ins().PushStack("#" + to_string(p));
+  }
+
+  void operator()() {
+    m->action();
+  }
+
+  ~Action() {
     Memory::ins().PopStack();
   }
 

@@ -2,7 +2,7 @@
 # Gregory Kuhlmann, 2002
 
 # Color output
-set terminal postscript eps color solid "Helvetica" 24 size 12,6
+set terminal postscript eps color solid "Helvetica" 24 size 15,7
 
 # Black & White output
 #set terminal postscript eps monochrome dashed "Helvetica" 24

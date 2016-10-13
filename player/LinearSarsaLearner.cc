@@ -13,6 +13,7 @@ void SharedData::setBlocked(int i) {
   auto status = runningStatus;
   assert(!isBlocked(i));
   runningStatus |= 1 << i;
+  assert(isBlocked(i));
   Log.log(101, "SharedData::setBlocked %d (%d => %d)", i, status, runningStatus);
 }
 
@@ -20,6 +21,7 @@ void SharedData::clearBlocked(int i) {
   auto status = runningStatus;
   assert(isBlocked(i));
   runningStatus &= ~(1 << i);
+  assert(!isBlocked(i));
   Log.log(101, "SharedData::clearBlocked %d (%d => %d)", i, status, runningStatus);
 }
 
@@ -167,11 +169,6 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double weight
       exit(1);
     }
 
-    {
-      ScopedLock lock(semSync);
-      sharedData->reset();
-    }
-
     Q = sharedData->Q;
     weights = sharedData->weights;
     traces = sharedData->traces;
@@ -179,8 +176,12 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double weight
     nonzeroTracesInverse = sharedData->nonzeroTracesInverse;
     colTab = &sharedData->colTab;
 
-    fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-    fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
+    {
+      ScopedLock lock(semSync);
+      sharedData->reset();
+      fill(traces, traces + RL_MEMORY_SIZE, 0.0);
+      fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
+    }
   }
 }
 
@@ -196,7 +197,7 @@ bool LinearSarsaLearner::loadSharedData() {
 
   bool action_state = true; // action state (when all are in action)
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-    if (numChoices.at(i) > 1) {
+    if (numChoices[i] > 1) {
       action_state = false;
     }
   }
@@ -248,9 +249,9 @@ void LinearSarsaLearner::saveSharedData() {
   sharedData->lastJointChoiceIdx = lastJointChoiceIdx;
 
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-    sharedData->numChoices[i] = numChoices.at(i);
-    strcpy(sharedData->machineStateStr[i], machineStateStr.at(i).c_str());
-    sharedData->lastJointChoice[i] = lastJointChoice.at(i);
+    sharedData->numChoices[i] = numChoices[i];
+    strcpy(sharedData->machineStateStr[i], machineStateStr[i].c_str());
+    sharedData->lastJointChoice[i] = lastJointChoice[i];
   }
 }
 
@@ -359,6 +360,7 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
             sharedData->getRunningStatus());
     bool action_state = loadSharedData();
     if (action_state) { // no learning
+      ScopedLock lock(semSync);
       sharedData->updateReward(1.0);
       sharedData->clearBlocked(); // reset to 0
 
@@ -372,21 +374,25 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
       assert(lastJointChoiceIdx >= 0);
       lastJointChoice = jointChoicesMap[numChoices][lastJointChoiceIdx];
       saveSharedData();
-      sharedData->resetReward();
 
-      for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-        if (numChoices.at(i) > 1) {
-          sharedData->clearBlocked(i);
+      {
+        ScopedLock lock(semSync);
+        sharedData->resetReward();
+
+        for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
+          if (numChoices[i] > 1) {
+            sharedData->clearBlocked(i);
+          }
+        }
+
+        for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
+          if (numChoices[i] > 1 && i != agentIdx) { // not blocked in action state
+            notify(i);
+          }
         }
       }
 
-      for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-        if (numChoices.at(i) > 1 && i != agentIdx) { // not blocked in action state
-          notify(i);
-        }
-      }
-
-      if (numChoices.at(agentIdx) <= 1) {
+      if (numChoices[agentIdx] <= 1) {
         wait(); // block self
       }
     }
@@ -394,6 +400,8 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
     wait();
   }
 
+  assert(!sharedData->isBlocked(agentIdx));
+  if (sharedData->isBlocked(agentIdx)) sharedData->clearBlocked(agentIdx);
   bool action_state = loadSharedData();
   if (action_state) { // dummy choice
     return vector<int>((unsigned long) HierarchicalFSM::num_keepers, 0);
@@ -406,6 +414,7 @@ void LinearSarsaLearner::endEpisode() {
   loadSharedData();
 
   if (agentIdx == 0) { // only one agent can update
+    ScopedLock lock(semSync);
     if (bLearning && lastJointChoiceIdx >= 0) {
       double delta = sharedData->getCumulativeReward() - Q[lastJointChoiceIdx];
       updateWeights(delta);
@@ -417,6 +426,7 @@ void LinearSarsaLearner::endEpisode() {
   numChoices.clear();
   lastJointChoiceIdx = -1;
   lastJointChoice.clear();
+  if (sharedData->isBlocked(agentIdx)) sharedData->clearBlocked(agentIdx);
   sem_init(semSignal[agentIdx], PTHREAD_PROCESS_SHARED, 0);
 }
 
@@ -425,8 +435,10 @@ void LinearSarsaLearner::loadTiles(
   const int tilingsPerGroup = 32;
 
   string str = "";
-  for (auto &s : machineState) str += s;
-  int h = (int) hash<string>()(str) % INT_MAX; // joint machine state
+  for (auto &s : machineState) str += s + ", ";
+  int h = (int) (hash<string>()(str) % INT_MAX); // joint machine state
+  Log.log(101, "LinearSarsaLearner::loadTiles machine state: [%s], #%d, (%d)",
+          str.c_str(), validChoices(num_choices).size(), h);
 
   numTilings = 0;
   for (int v = 0; v < HierarchicalFSM::num_features; v++) {

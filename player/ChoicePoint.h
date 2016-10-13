@@ -17,7 +17,7 @@ namespace fsm {
 template<class T>
 class ChoicePoint {
 public:
-  ChoicePoint(const std::string name, const std::vector<T> &c) :
+  ChoicePoint(const std::string &name, const std::vector<T> &c) :
       name(name),
       choices(c) {
 

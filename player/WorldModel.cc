@@ -2357,10 +2357,10 @@ bool WorldModel::setFeature( FeatureT type, Feature feature )
   return true;
 }
 
-bool WorldModel::tmControllBall() {
+bool WorldModel::isTmControllBall() {
   ObjectT K0 = getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
   VecPosition B = getBallPos();
   double WK0_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
   bool tmControllBall = WK0_dist_to_B < getMaximalKickDist(K0);
-  return tmControllBall;
+  return tmControllBall || isBallKickable();
 }

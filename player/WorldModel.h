@@ -937,7 +937,7 @@ public:
   bool           setFeature               ( FeatureT        type,
                                             Feature         feature          );
 
-  bool tmControllBall();
+  bool isTmControllBall();
 };
 
 #endif

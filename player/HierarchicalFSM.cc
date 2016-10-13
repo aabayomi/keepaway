@@ -69,14 +69,14 @@ int HierarchicalFSM::num_features;
 int HierarchicalFSM::num_keepers;
 double HierarchicalFSM::gamma;
 
-HierarchicalFSM::HierarchicalFSM(BasicPlayer *p, const std::string name) :
+HierarchicalFSM::HierarchicalFSM(BasicPlayer *p, const std::string &name) :
     player(p), name(name) {
   ACT = player->ACT;
   WM = player->WM;
   SS = player->SS;
   PS = player->PS;
 
-  dummyChoice = new ChoicePoint<int>("dummyChoice", {0});
+  dummyChoice = new ChoicePoint<int>("}", {0});
 }
 
 HierarchicalFSM::~HierarchicalFSM() {
@@ -87,7 +87,7 @@ void HierarchicalFSM::action(bool sync) {
   Log.log(101, "action with stack %s", getStackStr().c_str());
 
   while (Memory::ins().bAlive) {
-    if (sync) MakeChoice<int> c(dummyChoice); // dummy choice for sync purposes
+    if (sync) MakeChoice<int>(dummyChoice).operator()(); // dummy choice for sync purposes
 
     if (WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
         (SS->getSynchMode() && WM->getRecvThink())) {
@@ -165,9 +165,9 @@ bool HierarchicalFSM::running() {
 }
 
 string HierarchicalFSM::getStackStr() {
-  stringstream ss;
-  ss << Memory::ins().getStack();
-  return ss.str();
+  string str;
+  for (auto &s : Memory::ins().getStack()) str += s + " ";
+  return str;
 }
 
 void HierarchicalFSM::initialize(int numFeatures,
@@ -182,20 +182,22 @@ void HierarchicalFSM::initialize(int numFeatures,
   LinearSarsaLearner::ins().initialize(bLearn, widths, initialWeight);
 }
 
-Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "Keeper") {
+Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "{") {
   pass = new Pass(p);
   hold = new Hold(p);
   move = new Move(p);
   stay = new Stay(p);
   intercept = new Intercept(p);
 
-  choices[0] = new ChoicePoint<HierarchicalFSM *>("!kickableChoice", {intercept, stay, move});
-  choices[1] = new ChoicePoint<HierarchicalFSM *>("kickableChoice", {pass, hold});
+  choices[0] = new ChoicePoint<HierarchicalFSM *>("ballFree", {intercept, stay, move});
+  choices[1] = new ChoicePoint<HierarchicalFSM *>("tmControllBall", {stay, move});
+  choices[2] = new ChoicePoint<HierarchicalFSM *>("ballKickable", {pass, hold});
 }
 
 Keeper::~Keeper() {
   delete choices[0];
   delete choices[1];
+  delete choices[2];
 
   delete pass;
   delete hold;
@@ -214,8 +216,12 @@ void Keeper::run() {
       WM->setNewEpisode(false);
     }
 
-    MakeChoice<HierarchicalFSM *> c(choices[WM->isBallKickable()]);
-    auto m = c();
+    int status = 0;
+    if (WM->isBallKickable()) status = 2;
+    else if (WM->isTmControllBall()) status = 1;
+
+    Log.log(101, "Keeper::run status %d", status);
+    auto m = MakeChoice<HierarchicalFSM *>(choices[status])();
     Run(m).operator()();
   }
 
@@ -223,7 +229,7 @@ void Keeper::run() {
 }
 
 Move::Move(BasicPlayer *p) : HierarchicalFSM(p, "Move") {
-  moveToChoice = new ChoicePoint<int>("moveToChoice", {0, 1, 2, 3});
+  moveToChoice = new ChoicePoint<int>("moveTo", {0, 1, 2, 3});
 }
 
 Move::~Move() {
@@ -231,11 +237,11 @@ Move::~Move() {
 }
 
 void Move::run() {
-  MakeChoice<int> c(moveToChoice);
-  auto d = c();
+  assert(!WM->isBallKickable());
+  auto d = MakeChoice<int>(moveToChoice)();
 
-  bool flag = WM->tmControllBall();
-  while (running() && flag == WM->tmControllBall()) {
+  bool flag = WM->isTmControllBall();
+  while (running() && flag == WM->isTmControllBall()) {
     SoccerCommand soc;
     VecPosition target = WM->getAgentGlobalPosition() +
                          (WM->getBallPos() -
@@ -277,7 +283,7 @@ void Move::run() {
 
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
     Log.log(101, "Move::run action with d=%d", d);
-    action();
+    Action(this, d)();
   }
 }
 
@@ -286,13 +292,14 @@ Stay::Stay(BasicPlayer *p) : HierarchicalFSM(p, "Stay") {
 }
 
 void Stay::run() {
-  bool flag = WM->tmControllBall();
-  while (running() && flag == WM->tmControllBall()) {
+  assert(!WM->isBallKickable());
+  bool flag = WM->isTmControllBall();
+  while (running() && flag == WM->isTmControllBall()) {
     SoccerCommand soc;
     ACT->putCommandInQueue(soc = player->turnBodyToObject(OBJECT_BALL));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
     Log.log(101, "Stay::run action");
-    action();
+    Action(this)();
   }
 }
 
@@ -301,12 +308,14 @@ Intercept::Intercept(BasicPlayer *p) : HierarchicalFSM(p, "Intercept") {
 }
 
 void Intercept::run() {
-  while (running() && !WM->isBallKickable()) {
+  assert(!WM->isBallKickable());
+  assert(!WM->isTmControllBall());
+  while (running() && !WM->isTmControllBall()) {
     SoccerCommand soc;
     ACT->putCommandInQueue(soc = player->intercept(false));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
     Log.log(101, "Intercept::run action");
-    action();
+    Action(this)();
   }
 }
 
@@ -315,7 +324,7 @@ Pass::Pass(BasicPlayer *p) : HierarchicalFSM(p, "Pass") {
   for (int i = 1; i < num_keepers; ++i) {
     parameters.push_back(i);
   }
-  passToChoice = new ChoicePoint<int>("passToChoice", parameters);
+  passToChoice = new ChoicePoint<int>("passTo", parameters);
 }
 
 Pass::~Pass() {
@@ -323,14 +332,14 @@ Pass::~Pass() {
 }
 
 void Pass::run() {
-  MakeChoice<int> c(passToChoice);
-  auto k = c();
+  assert(WM->isBallKickable());
+  auto k = MakeChoice<int>(passToChoice)();
 
   while (running() && WM->isBallKickable()) {
     VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[k]);
     ACT->putCommandInQueue(player->directPass(tmPos, PASS_NORMAL));
     Log.log(101, "Pass::run action with k=%d", k);
-    action();
+    Action(this, k)();
   }
 }
 
@@ -340,12 +349,11 @@ Hold::Hold(BasicPlayer *p) : HierarchicalFSM(p, "Hold") {
 
 void Hold::run() {
   assert(WM->isBallKickable());
-
   SoccerCommand soc;
   ACT->putCommandInQueue(soc = player->holdBall());
   ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
   Log.log(101, "Hold::run action");
-  action();
+  Action(this)();
 }
 
 }

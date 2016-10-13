@@ -277,7 +277,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
   int features = WM->keeperStateVars(state);
   assert(features == 0 || features == SA->getNumFeatures());
   if (features != SA->getNumFeatures()) return idle("features != SA->getNumFeatures()"); // do nothing
-  Log.log(101, "tmControllBall %d", WM->tmControllBall());
+  Log.log(101, "isTmControllBall %d", WM->isTmControllBall());
 
   ObjectT K[11];
   memset(K, 0, sizeof(K));
@@ -317,7 +317,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
     }
   }
 
-  assert(agentIdx != 0 || !WM->tmControllBall() || WM->isBallKickable());
+  assert(agentIdx != 0 || !WM->isTmControllBall() || WM->isBallKickable());
 
   if (WM->isNewEpisode()) {
     SA->endEpisode(WM->keeperReward(SA->lastActionTime));
