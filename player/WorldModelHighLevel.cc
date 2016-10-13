@@ -48,7 +48,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstring>
 #include<list>            // needed for list<double>
-#include<stdio.h>         // needed for printf
 #include "WorldModel.h"
 
 /*! This method returns the number of objects that are within the circle 'c'
@@ -111,8 +110,8 @@ int WorldModel::getNrInSetInRectangle( ObjectSetT set, Rect *rect  )
     \param start center of the cone
     \param end position that is the end of the cone.
     \return number of objects part of 'set' and located in this cone. */
-int WorldModel::getNrInSetInCone( ObjectSetT set, double dWidth,
-                                      VecPosition start , VecPosition end )
+int WorldModel::getNrInSetInCone(ObjectSetT set, double dWidth,
+                                 VecPosition start, VecPosition end)
 {
   double      dConfThr   = PS->getPlayerConfThr();
   int         iNr        = 0;
@@ -134,7 +133,7 @@ int WorldModel::getNrInSetInCone( ObjectSetT set, double dWidth,
     if(posOnLine.getDistanceTo(posObj) < dWidth*posOnLine.getDistanceTo(start)
        && line.isInBetween( posOnLine, start, end )
        && start.getDistanceTo( posObj ) < start.getDistanceTo( end ) )
-        iNr++;
+      iNr++;
   }
   iterateObjectDone( iIndex );
   return iNr;
@@ -149,7 +148,7 @@ bool WorldModel::isEmptySpace( ObjectT obj, AngDeg ang, double dDist )
     return false;
 
   VecPosition pos = getGlobalPosition( obj );
-   pos += VecPosition( dDist, ang, POLAR );
+  pos += VecPosition(dDist, ang, POLAR);
 
   if( getNrInSetInCircle( OBJECT_SET_OPPONENTS, Circle( pos, dDist ) ) == 0 )
     return true;
@@ -173,8 +172,8 @@ bool WorldModel::coordinateWith( ObjectT obj )
   return false;
 }
 
-bool WorldModel::sortClosestTo( ObjectT objs[], int numObjs, ObjectT o,
-				double dDist[], double dConfThr )
+bool WorldModel::sortClosestTo(ObjectT objs[], int numObjs, ObjectT o,
+                               double dDist[], double dConfThr)
 {
   if ( dConfThr == -1.0 )
     dConfThr = PS->getPlayerConfThr();
@@ -195,12 +194,12 @@ bool WorldModel::sortClosestTo( ObjectT objs[], int numObjs, ObjectT o,
   for ( int i = 0; i < numObjs - 1; i++ ) {
     for ( int j = i + 1; j < numObjs; j++ ) {
       if ( myDist[ j ] < myDist[ i ] ) {
-	ObjectT tmpObj = objs[ i ];
-	objs[ i ] = objs[ j ];
-	objs[ j ] = tmpObj;
-	double tmpDist = myDist[ i ];
-	myDist[ i ] = myDist[ j ];
-	myDist[ j ] = tmpDist;
+        ObjectT tmpObj = objs[i];
+        objs[i] = objs[j];
+        objs[j] = tmpObj;
+        double tmpDist = myDist[i];
+        myDist[i] = myDist[j];
+        myDist[j] = tmpDist;
       }
     }
   }
@@ -226,8 +225,8 @@ bool WorldModel::sortClosestTo( ObjectT objs[], int numObjs, ObjectT o,
 
     \param dConfThr minimum confidence threshold for the objects in 'set'
     \return ObjectType that is closest to o */
-ObjectT WorldModel::getClosestInSetTo( ObjectSetT set, ObjectT objTarget,
-                                        double *dDist, double dConfThr )
+ObjectT WorldModel::getClosestInSetTo(ObjectSetT set, ObjectT objTarget,
+                                      double *dDist, double dConfThr)
 {
   if( dConfThr == -1.0 ) dConfThr      = PS->getPlayerConfThr();
   ObjectT     closestObject = OBJECT_ILLEGAL;
@@ -311,9 +310,9 @@ ObjectT WorldModel::getClosestInSetTo( ObjectSetT set, VecPosition pos,
     \param dDistPos1ToPoint will contain distance from pos1 to projection point
     opponent on line l
     \return object type of closest object to line l */
-ObjectT WorldModel::getClosestInSetTo( ObjectSetT set, Line l,
-                              VecPosition pos1, VecPosition pos2,
-                              double *dDistObjToLine, double *dDistPos1ToPoint)
+ObjectT WorldModel::getClosestInSetTo(ObjectSetT set, Line l,
+                                      VecPosition pos1, VecPosition pos2,
+                                      double *dDistObjToLine, double *dDistPos1ToPoint)
 {
   VecPosition posObj;
   VecPosition posOnLine;
@@ -565,7 +564,7 @@ void WorldModel::createInterceptFeatures( )
 
   if( count > 4 )
     cerr << getPlayerNumber() << " called createIntercept too often: " <<
-       count << endl;
+         count << endl;
   // we check all possible next positions of the ball and see
   // whether a player (opponent or teammate) can reach the ball at that point
   // if so, we log this as a feature. We finish when all features have been
@@ -614,16 +613,16 @@ void WorldModel::createInterceptFeatures( )
     // determine its position and traverse all players to check the teammate
     // and opponent who can reach it first
     posObj     = predictPosAfterNrCycles( OBJECT_BALL, iCycles );
-    for( ObjectT o = iterateObjectStart( iIndex, set );
-       o != OBJECT_ILLEGAL;
-       o = iterateObjectNext ( iIndex, set ) )
+    for(ObjectT o = iterateObjectStart( iIndex, set );
+        o != OBJECT_ILLEGAL;
+        o = iterateObjectNext(iIndex, set))
     {
       if( getGlobalPosition(o).getDistanceTo(posObj)/SS->getPlayerSpeedMax()
           < iCycles + 1 && (bOnlyMe == false || SoccerTypes::isOpponent( o )
-          || o == getAgentObjectType() ) )
+                            || o == getAgentObjectType()))
       {
-        Log.log( 460, "call predictNrCyclesToPoint %d %d %d",
-                       iCycles, iMinCyclesTeam, iMinCyclesOpp );
+        Log.log(460, "call predictNrCyclesToPoint %d %d %d",
+                iCycles, iMinCyclesTeam, iMinCyclesOpp);
         iCyclesToObj = predictNrCyclesToPoint( o, posObj );
 
         if( iCyclesToObj < iMinCyclesOpp && SoccerTypes::isOpponent( o ) )
@@ -660,18 +659,18 @@ void WorldModel::createInterceptFeatures( )
         iCyclesLog           = iCycles;
         iCyclesFastestPlayer = iCycles;
         objLog               = (iMinCyclesTeam<=iMinCyclesOpp) ?
-                                    objFastestTeam : objFastestOpp;
+                               objFastestTeam : objFastestOpp;
         objFastestPlayer     = objLog;
         bFinishedPlayer      = true;
       }
-      // if teammate not set yet and min cycles team smaller set it
+        // if teammate not set yet and min cycles team smaller set it
       else if( bFinishedTeammates == false &&
                (iMinCyclesTeam <= iCycles || bFinishedOpponents == true
                 || bLastCall))
       {
         if( bFinishedOpponents == true )
-          objFastestTeam = getFastestInSetTo( OBJECT_SET_TEAMMATES, posObj,
-                             VecPosition(0,0), 0, &iCycles );
+          objFastestTeam = getFastestInSetTo(OBJECT_SET_TEAMMATES, posObj,
+                                             VecPosition(0, 0), 0, &iCycles);
         featLog            = FEATURE_FASTEST_TEAMMATE_TO_BALL;
         iCyclesLog         = iCycles;
         iCyclesFastestTeam = iCycles;
@@ -679,12 +678,12 @@ void WorldModel::createInterceptFeatures( )
         bFinishedTeammates = true;
       }
       else if( bFinishedTeammatesNoGoalie == false &&
-         ( ( iMinCyclesTeam <= iCycles && objFastestTeam != getOwnGoalieType())
-           || bFinishedOpponents == true || bLastCall ) )
+               ((iMinCyclesTeam <= iCycles && objFastestTeam != getOwnGoalieType())
+                || bFinishedOpponents == true || bLastCall))
       {
         if( bFinishedOpponents == true && objFastestTeam == getOwnGoalieType())
-          objFastestTeam=getFastestInSetTo( OBJECT_SET_TEAMMATES_NO_GOALIE,
-                            posObj, VecPosition(0,0), 0, &iCycles );
+          objFastestTeam=getFastestInSetTo(OBJECT_SET_TEAMMATES_NO_GOALIE,
+                                           posObj, VecPosition(0, 0), 0, &iCycles);
         featLog                   = FEATURE_FASTEST_TEAMMATE_TO_BALL_NO_GOALIE;
         iCyclesLog                 = iCycles;
         iCyclesFastestTeamNoGoalie = iCycles;
@@ -693,11 +692,11 @@ void WorldModel::createInterceptFeatures( )
         bFinishedTeammatesNoGoalie = true;
       }
       else if( bFinishedMe == false &&
-        ((iMinCyclesTeam <= iCycles && objFastestTeam == getAgentObjectType())
-        || bFinishedOpponents == true || bLastCall ) )
+               ((iMinCyclesTeam <= iCycles && objFastestTeam == getAgentObjectType())
+                || bFinishedOpponents == true || bLastCall))
       {
         if( bFinishedOpponents == true &&
-	    objFastestTeam != getAgentObjectType())
+            objFastestTeam != getAgentObjectType())
           iCycles = predictNrCyclesToPoint( getAgentObjectType(), posObj );
         featLog          = FEATURE_INTERCEPT_CYCLES_ME;
         iCyclesLog       = iCycles;
@@ -720,9 +719,9 @@ void WorldModel::createInterceptFeatures( )
 
       if( featLog != FEATURE_ILLEGAL )
       {
-        Log.log( 460, "log feature %d object %d in %d cycles sense %d see %d",
-          featLog, objLog, iCyclesLog,getTimeLastSenseMessage().getTime(),
-          getTimeLastSeeMessage().getTime()  );
+        Log.log(460, "log feature %d object %d in %d cycles sense %d see %d",
+                featLog, objLog, iCyclesLog, getTimeLastSenseMessage().getTime(),
+                getTimeLastSeeMessage().getTime());
         setFeature( featLog,
                     Feature( getTimeLastSeeMessage(),
                              getTimeLastSenseMessage(),
@@ -738,8 +737,8 @@ void WorldModel::createInterceptFeatures( )
       set = OBJECT_SET_OPPONENTS;
     bFinished &= bFinishedOpponents;
   }
-  Log.log( 460, "creatIntercept: team %d me %d opp %d",
-     iCyclesFastestTeamNoGoalie, iCyclesFastestMe, iCyclesFastestOpp );
+  Log.log(460, "creatIntercept: team %d me %d opp %d",
+          iCyclesFastestTeamNoGoalie, iCyclesFastestMe, iCyclesFastestOpp);
 }
 
 
@@ -752,8 +751,8 @@ void WorldModel::createInterceptFeatures( )
     \param obj object type of object that should be intercepted
     \param iCyclesToIntercept will be filled with the amount of cycles needed
     \returns object that can intercept object obj fastest */
-ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
-                              int *iCyclesToIntercept )
+ObjectT WorldModel::getFastestInSetTo(ObjectSetT set, ObjectT obj,
+                                      int *iCyclesToIntercept)
 {
   ObjectT  objFastestOpp  = OBJECT_ILLEGAL, objFastestTeam  = OBJECT_ILLEGAL;
   int      iCyclesFastestOpp = 30; // how much do we try
@@ -779,9 +778,9 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
         break;
       case OBJECT_SET_PLAYERS:
         objFastestOpp =
-         getFastestInSetTo( OBJECT_SET_OPPONENTS, obj, &iCyclesFastestOpp);
+            getFastestInSetTo(OBJECT_SET_OPPONENTS, obj, &iCyclesFastestOpp);
         objFastestTeam =
-         getFastestInSetTo( OBJECT_SET_TEAMMATES, obj, &iCyclesFastestTeam);
+            getFastestInSetTo(OBJECT_SET_TEAMMATES, obj, &iCyclesFastestTeam);
         if( iCyclesFastestOpp < iCyclesFastestTeam )
         {
           fastestObject = objFastestOpp;
@@ -802,7 +801,7 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
     if( isFeatureRelevant( feature_type ) )
     {
       int i = max(0,
-             ((int)getFeature( feature_type ).getInfo() - getCurrentCycle() ));
+                  ((int) getFeature(feature_type).getInfo() - getCurrentCycle()));
       if( iCyclesToIntercept != NULL )
         *iCyclesToIntercept  = i;
       return getFeature( feature_type ).getObject();
@@ -814,7 +813,7 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
     return getFastestInSetTo( set, obj, iCyclesToIntercept );
     if( set == OBJECT_SET_TEAMMATES || set == OBJECT_SET_TEAMMATES_NO_GOALIE )
       objFastestOpp =
-         getFastestInSetTo( OBJECT_SET_OPPONENTS, obj, &iCyclesFastestOpp);
+          getFastestInSetTo(OBJECT_SET_OPPONENTS, obj, &iCyclesFastestOpp);
   }
 
   // no feature available, calculate information
@@ -834,14 +833,14 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
     posObj     = predictPosAfterNrCycles( obj, iCycles );
     Log.log( 460, "fastest loop: %d fastest_opp %d",
              iCycles, iCyclesFastestOpp );
-    for( ObjectT o = iterateObjectStart( iIndex, set, dConfThr );
-       o != OBJECT_ILLEGAL;
-       o = iterateObjectNext ( iIndex, set, dConfThr ) )
+    for(ObjectT o = iterateObjectStart( iIndex, set, dConfThr );
+        o != OBJECT_ILLEGAL;
+        o = iterateObjectNext(iIndex, set, dConfThr))
     {
       if( getGlobalPosition(o).getDistanceTo(posObj)/SS->getPlayerSpeedMax()
-              < iMinCycles &&
+          < iMinCycles &&
           getGlobalPosition(o).getDistanceTo(posObj)/SS->getPlayerSpeedMax()
-              < iCycles + 1 )
+          < iCycles + 1)
       {
         Log.log( 460, "call predictNrCyclesToPoint %d %d",
                  iCycles,iMinCycles );
@@ -866,9 +865,9 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
 
   if( feature_type != FEATURE_ILLEGAL )
   {
-    Log.log( 460, "log feature %d object %d in %d cycles sense %d see %d",
-             feature_type, fastestObject, iCycles,getTimeLastSenseMessage().
-             getTime(), getTimeLastSeeMessage().getTime()  );
+    Log.log(460, "log feature %d object %d in %d cycles sense %d see %d",
+            feature_type, fastestObject, iCycles, getTimeLastSenseMessage().
+            getTime(), getTimeLastSeeMessage().getTime());
     setFeature( feature_type,
                 Feature( getTimeLastSeeMessage(),
                          getTimeLastSenseMessage(),
@@ -889,8 +888,8 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, ObjectT obj,
     \param dDecay decay value of the velocity of the object
     \param iCyclesToIntercept will be filled with the amount of cycles needed
     \returns object that can reach it fastest */
-ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, VecPosition pos,
-                    VecPosition vel, double dDecay, int *iCyclesToIntercept)
+ObjectT WorldModel::getFastestInSetTo(ObjectSetT set, VecPosition pos,
+                                      VecPosition vel, double dDecay, int *iCyclesToIntercept)
 {
   double  dConfThr      = PS->getPlayerConfThr();
   ObjectT fastestObject = OBJECT_ILLEGAL;
@@ -904,20 +903,18 @@ ObjectT WorldModel::getFastestInSetTo( ObjectSetT set, VecPosition pos,
     iCycles    = iCycles + 1  ;
     iMinCycles = 100;
     Log.log( 460, "fastest to point: %d", iCycles );
-    for( ObjectT o = iterateObjectStart( iIndex, set, dConfThr );
-       o != OBJECT_ILLEGAL;
-       o = iterateObjectNext ( iIndex, set, dConfThr ) )
+    for(ObjectT o = iterateObjectStart( iIndex, set, dConfThr );
+        o != OBJECT_ILLEGAL;
+        o = iterateObjectNext(iIndex, set, dConfThr))
     {
-       if( getGlobalPosition(o).getDistanceTo(pos)/SS->getPlayerSpeedMax()
-           < iMinCycles )
-       {
-         iCyclesToObj = predictNrCyclesToPoint( o, pos );
-         if( iCyclesToObj < iMinCycles )
-         {
-           iMinCycles    = iCyclesToObj;
-           fastestObject = o;
-         }
-       }
+      if (getGlobalPosition(o).getDistanceTo(pos) / SS->getPlayerSpeedMax()
+          < iMinCycles) {
+        iCyclesToObj = predictNrCyclesToPoint(o, pos);
+        if (iCyclesToObj < iMinCycles) {
+          iMinCycles = iCyclesToObj;
+          fastestObject = o;
+        }
+      }
     }
     iterateObjectDone( iIndex );
     pos += vel;
@@ -975,7 +972,7 @@ bool WorldModel::isVisible( ObjectT o )
   Object *object = getObjectPtrFromType( o );
 
   return object != NULL &&
-    object->getTimeLastSeen() == getTimeLastSeeMessage();
+         object->getTimeLastSeen() == getTimeLastSeeMessage();
 
 }
 
@@ -1038,8 +1035,8 @@ bool WorldModel::isBallHeadingToGoal(  )
   VecPosition posIntersect = l.getIntersection( l2 );
   if( fabs(posIntersect.getY()) > SS->getGoalWidth()/2.0 + 3.0)
   {
-    Log.log( 553, "ball not towards goal: outside goal %f",
-       posIntersect.getY());
+    Log.log(553, "ball not towards goal: outside goal %f",
+            posIntersect.getY());
     return false;
   }
 
@@ -1049,8 +1046,8 @@ bool WorldModel::isBallHeadingToGoal(  )
   while( fabs( pos.getX() ) < PITCH_LENGTH/2.0 && iCycle < 20)
   {
     pos = predictPosAfterNrCycles( OBJECT_BALL, iCycle );
-    Log.log( 553, "predicted pos %d cycles: (%f,%f)" ,
-      iCycle, pos.getX(), pos.getY() );
+    Log.log(553, "predicted pos %d cycles: (%f,%f)" ,
+            iCycle, pos.getX(), pos.getY());
     iCycle ++;
   }
 
@@ -1088,8 +1085,8 @@ bool WorldModel::isBallInOwnPenaltyArea( )
 bool WorldModel::isInOwnPenaltyArea( VecPosition pos )
 {
   ObjectT     objFlag = ( getSide() == SIDE_LEFT  )
-                              ?  OBJECT_FLAG_P_L_C
-                              :  OBJECT_FLAG_P_R_C ;
+                        ? OBJECT_FLAG_P_L_C
+                        : OBJECT_FLAG_P_R_C;
 
   if( isPenaltyUs() || isPenaltyThem() )
     objFlag = ( getSidePenalty() == SIDE_LEFT ) ? OBJECT_FLAG_P_L_C
@@ -1109,8 +1106,8 @@ bool WorldModel::isInOwnPenaltyArea( VecPosition pos )
 bool WorldModel::isInTheirPenaltyArea( VecPosition pos )
 {
   ObjectT     objFlag = ( getSide() == SIDE_LEFT )
-                              ?  OBJECT_FLAG_P_R_C
-                              :  OBJECT_FLAG_P_L_C ;
+                        ? OBJECT_FLAG_P_R_C
+                        : OBJECT_FLAG_P_L_C;
   VecPosition posFlag = SoccerTypes::getGlobalPositionFlag( objFlag,getSide());
 
   if ( pos.getX() > posFlag.getX() &&
@@ -1275,8 +1272,8 @@ double WorldModel::getOffsideX( bool bIncludeComm )
                         into account (if false only goal line and side line
                         are used.
     \return position denoting the outer position on the field */
-VecPosition WorldModel::getOuterPositionInField( VecPosition pos, AngDeg ang,
-                                  double dDist, bool bWithPenalty )
+VecPosition WorldModel::getOuterPositionInField(VecPosition pos, AngDeg ang,
+                                                double dDist, bool bWithPenalty)
 {
   VecPosition posShoot;
 
@@ -1285,12 +1282,12 @@ VecPosition WorldModel::getOuterPositionInField( VecPosition pos, AngDeg ang,
 
   // get intersection point between the created line and goal line
   Line lineLength  = Line::makeLineFromPositionAndAngle(
-                            VecPosition( PITCH_LENGTH/2.0 - dDist, 0.0 ), 90 );
+      VecPosition(PITCH_LENGTH / 2.0 - dDist, 0.0), 90);
   posShoot         = lineObj.getIntersection( lineLength );
 
   // check whether it first crosses the penalty line
   Line linePenalty = Line::makeLineFromPositionAndAngle(
-                            VecPosition( PENALTY_X - dDist, 0.0 ), 90.0 );
+      VecPosition(PENALTY_X - dDist, 0.0), 90.0);
   double dPenaltyY = lineObj.getIntersection(linePenalty).getY();
 
   if( bWithPenalty && fabs(dPenaltyY) < PENALTY_AREA_WIDTH/2.0 )
@@ -1302,10 +1299,10 @@ VecPosition WorldModel::getOuterPositionInField( VecPosition pos, AngDeg ang,
 
   // check where it crosses the side line
   Line lineSide = ( ang < 0 )
-     ? Line::makeLineFromPositionAndAngle(
-                           VecPosition( 0.0, - PITCH_WIDTH/2.0 + dDist ),0.0 )
-     : Line::makeLineFromPositionAndAngle(
-                           VecPosition( 0.0, + PITCH_WIDTH/2.0 - dDist ),0.0 );
+                  ? Line::makeLineFromPositionAndAngle(
+          VecPosition(0.0, -PITCH_WIDTH / 2.0 + dDist), 0.0)
+                  : Line::makeLineFromPositionAndAngle(
+          VecPosition(0.0, +PITCH_WIDTH / 2.0 - dDist), 0.0);
 
   if( fabs(posShoot.getY()) > PITCH_WIDTH/2.0 - dDist )
     posShoot = lineObj.getIntersection( lineSide );
@@ -1325,7 +1322,7 @@ VecPosition WorldModel::getOuterPositionInField( VecPosition pos, AngDeg ang,
            will be taken into account.
     \return global direction with the largest angle between opponents */
 AngDeg WorldModel::getDirectionOfWidestAngle(VecPosition posOrg, AngDeg angMin,
-                               AngDeg angMax, AngDeg *angLargest, double dDist)
+                                             AngDeg angMax, AngDeg *angLargest, double dDist)
 {
   list<double> v;
   list<double> v2;
@@ -1356,8 +1353,8 @@ AngDeg WorldModel::getDirectionOfWidestAngle(VecPosition posOrg, AngDeg angMin,
       posOrg.getDistanceTo( posGoalie ) < dDist )
   {
     angGoalie = ( posGoalie - posOrg ).getDirection();
-    Log.log( 560, "direction_widest_angle: min %f max %f angGoalie %f",
-                                                  angMin, angMax, angGoalie );
+    Log.log(560, "direction_widest_angle: min %f max %f angGoalie %f",
+            angMin, angMax, angGoalie);
 
     if( posOrg.getY() > 0 ) // right side of the field
     {
@@ -1465,21 +1462,21 @@ AngDeg WorldModel::getDirectionOfWidestAngle(VecPosition posOrg, AngDeg angMin,
 /*! This method returns whether the position 'pos' is inside the playfield. */
 bool WorldModel::isInField( VecPosition pos, double dMargin )
 {
-  return Rect(
-             VecPosition( + PITCH_LENGTH/2.0 - dMargin,
-                          - PITCH_WIDTH/2.0  + dMargin ),
-             VecPosition( - PITCH_LENGTH/2.0 + dMargin,
-                          + PITCH_WIDTH/2.0  - dMargin )
-             ).isInside( pos );
+  return getKeepawayRect().isInside(pos) && Rect(
+      VecPosition(+PITCH_LENGTH / 2.0 - dMargin,
+                  -PITCH_WIDTH / 2.0 + dMargin),
+      VecPosition(-PITCH_LENGTH / 2.0 + dMargin,
+                  +PITCH_WIDTH / 2.0 - dMargin)
+  ).isInside(pos);
 }
 
 /*! This method returns whether the position 'pos' is before the opp goal. */
 bool WorldModel::isBeforeGoal( VecPosition pos )
 {
   return Rect(
-             VecPosition( + PENALTY_X - 2,    - ( SS->getGoalWidth()/2.0 + 1)),
-             VecPosition( + PITCH_LENGTH/2.0, + ( SS->getGoalWidth()/2.0 + 1))
-             ).isInside( pos );
+      VecPosition(+PENALTY_X - 2, -(SS->getGoalWidth() / 2.0 + 1)),
+      VecPosition(+PITCH_LENGTH / 2.0, +(SS->getGoalWidth() / 2.0 + 1))
+  ).isInside(pos);
 }
 
 /*! This method determine the strategic position for the specified object. This
@@ -1526,7 +1523,7 @@ VecPosition WorldModel::getStrategicPosition( int iPlayer, FormationT ft )
 
   if( bOwnBall &&
       getGlobalPosition(
-        SoccerTypes::getTeammateObjectFromIndex(iPlayer)).getX()
+          SoccerTypes::getTeammateObjectFromIndex(iPlayer)).getX()
       < posBall.getX() )
     dMaxX = max( dMaxX, posBall.getX()  );
 
@@ -1545,9 +1542,9 @@ VecPosition WorldModel::getStrategicPosition( int iPlayer, FormationT ft )
   // expected movement of the ball
   if( isBeforeKickOff() )
     posBall.setVecPosition( 0, 0 );
-  else if( isGoalKickUs() ||
-      getTimeSinceLastCatch(  ) < PS->getCyclesCatchWait() + 5  ||
-      ( isFreeKickUs() && posBall.getX() < - PENALTY_X ) )
+  else if(isGoalKickUs() ||
+          getTimeSinceLastCatch() < PS->getCyclesCatchWait() + 5 ||
+          (isFreeKickUs() && posBall.getX() < -PENALTY_X))
     posBall.setX( -PITCH_LENGTH/4 + 5.0 );
   else if( getConfidence( OBJECT_BALL ) < PS->getBallConfThr() )
     posBall.setVecPosition( 0.0, 0.0 );
@@ -1563,9 +1560,9 @@ VecPosition WorldModel::getStrategicPosition( int iPlayer, FormationT ft )
     posBall = predictPosAfterNrCycles( OBJECT_BALL, 3 );
 
   // get the strategic position
-  pos = formations->getStrategicPosition( iPlayer, posBall, dMaxX,
-                          bOwnBall, PS->getMaxYPercentage(),
-					  ft );
+  pos = formations->getStrategicPosition(iPlayer, posBall, dMaxX,
+                                         bOwnBall, PS->getMaxYPercentage(),
+                                         ft);
   return pos;
 }
 
@@ -1589,11 +1586,11 @@ VecPosition WorldModel::getStrategicPosition( int iPlayer, FormationT ft )
     \param dDist distance marking position is located from object
     position \param mark marking technique that should be used \return
     position that is the marking position. */
-VecPosition WorldModel::getMarkingPosition( VecPosition pos, double dDist,
-					    MarkT mark)
+VecPosition WorldModel::getMarkingPosition(VecPosition pos, double dDist,
+                                           MarkT mark)
 {
   VecPosition posBall  = getBallPos();
-    //edictPosAfterNrCycles( OBJECT_BALL, 3 );
+  //edictPosAfterNrCycles( OBJECT_BALL, 3 );
   VecPosition posGoal  = getPosOwnGoal( );
   if( posBall.getX() < - PITCH_LENGTH/2.0 + 10.0 )
     posGoal.setX( posBall.getX() + 1  );
@@ -1629,29 +1626,28 @@ VecPosition WorldModel::getMarkingPosition( VecPosition pos, double dDist,
     if( pos.getDistanceTo(posAgent) < 5 )
       dExtra = 0.0;
     dCalcDist += dDistOpp + dExtra;
-    Log.log( 513, "dDistOpp %f dDistAgent %f calc %f min %f",
-	     dDistOpp, dDistAgent, dCalcDist, 0.75*pos.getDistanceTo(posGoal));
+    Log.log(513, "dDistOpp %f dDistAgent %f calc %f min %f",
+            dDistOpp, dDistAgent, dCalcDist, 0.75 * pos.getDistanceTo(posGoal));
     dCalcDist = min( dCalcDist, 0.75*pos.getDistanceTo( posGoal ) );
     double x = -PITCH_LENGTH/2 + 4;
     double y = line.getYGivenX( x);
     posMark = pos + VecPosition( dCalcDist, angToGoal, POLAR );
-    if( posMark.getX() < x )
-      {
-	Log.log( 513, "change posmark to (%f,%f)", x, y );
-	posMark.setVecPosition( x, y );
-      }
+    if( posMark.getX() < x ) {
+      Log.log(513, "change posmark to (%f,%f)", x, y);
+      posMark.setVecPosition(x, y);
+    }
     // if interception point iss outside range or very close to marking
     // point, but far away from opp (is this possible?) move closer.
-    if( ! line.isInBetween( posMark, pos, posGoal ) ||
-	( posMark.getDistanceTo( posAgent ) < 1.5 &&
-	  posMark.getDistanceTo( pos ) > 2*dDist ) )
+    if(! line.isInBetween( posMark, pos, posGoal ) ||
+       (posMark.getDistanceTo(posAgent) < 1.5 &&
+        posMark.getDistanceTo(pos) > 2 * dDist))
     {
       Log.log( 513, "set marking position at dDist %f", min(dDistAgent,7.0) );
       posMark   = pos + VecPosition( min( dDistAgent, 7.0 ), angToGoal, POLAR );
     }
-    Log.log( 513, "marking position calc (%f,%f) pos(%f,%f) calcdist %f",
-	     posMark.getX(), posMark.getY(), pos.getX(), pos.getY(),
-	     dCalcDist );
+    Log.log(513, "marking position calc (%f,%f) pos(%f,%f) calcdist %f",
+            posMark.getX(), posMark.getY(), pos.getX(), pos.getY(),
+            dCalcDist);
   }
   else if( mark == MARK_BALL )                  // position in direction ball
   {
@@ -1685,12 +1681,12 @@ VecPosition WorldModel::getMarkingPosition( VecPosition pos, double dDist,
     \return the actual kick power rate with which power is multiplied  */
 double WorldModel::getActualKickPowerRate( )
 {
- // true indicates that relative angle to body should be returned
- double dir_diff      = fabs( getRelativeAngle( OBJECT_BALL, true ) );
- double dist          = getRelativeDistance( OBJECT_BALL ) -
-                        SS->getPlayerSize( ) - SS->getBallSize( );
- return SS->getKickPowerRate() *
-          ( 1 - 0.25 * dir_diff/180.0 - 0.25 * dist / SS->getKickableMargin());
+  // true indicates that relative angle to body should be returned
+  double dir_diff = fabs(getRelativeAngle(OBJECT_BALL, true));
+  double dist = getRelativeDistance(OBJECT_BALL) -
+                SS->getPlayerSize() - SS->getBallSize();
+  return SS->getKickPowerRate() *
+         (1 - 0.25 * dir_diff / 180.0 - 0.25 * dist / SS->getKickableMargin());
 }
 
 /*! The actual power with which the ball must be kicked depends on the
@@ -1733,8 +1729,8 @@ double WorldModel::getKickSpeedToTravel( double dDistance, double dEndSpeed )
   // the inverse of the ball decay (r).
   // s = a + a*r + .. a*r^n since we calculated from endspeed (a) to
   // firstspeed, firstspeed equals a*r^n = endspeed*r^nr_steps
-  double dNrSteps = Geometry::getLengthGeomSeries( dEndSpeed,
-                                  1.0/SS->getBallDecay( ), dDistance );
+  double dNrSteps = Geometry::getLengthGeomSeries(dEndSpeed,
+                                                  1.0 / SS->getBallDecay(), dDistance);
   return getFirstSpeedFromEndSpeed( dEndSpeed, (int)rint(dNrSteps) ) ;
 }
 
@@ -1767,7 +1763,7 @@ double WorldModel::getFirstSpeedFromEndSpeed( double dEndSpeed, double dCycles,
     \param dDecay decay of the geometric series.
     \return initial speed for the ball to travel 'dDist' in 'dCycles' cycles */
 double WorldModel::getFirstSpeedFromDist( double dDist, double dCycles, double
-                   dDecay )
+dDecay)
 {
   if( dDecay < 0 )
     dDecay = SS->getBallDecay();
@@ -1829,8 +1825,8 @@ AngDeg WorldModel::getActualTurnAngle( AngDeg angTurn,double dSpeed,ObjectT o )
     \param dEffort current effort of the player
     \param iCycles desired number of cycles to reach this point
     \return dash power that should be sent with dash command */
-double WorldModel::getPowerForDash( VecPosition posRelTo, AngDeg angBody,
-              VecPosition vel, double dEffort, int iCycles )
+double WorldModel::getPowerForDash(VecPosition posRelTo, AngDeg angBody,
+                                   VecPosition vel, double dEffort, int iCycles)
 {
   // the distance desired is the x-direction to the relative position we
   // we want to move to. If point lies far away, we dash maximal. Furthermore
@@ -1839,7 +1835,7 @@ double WorldModel::getPowerForDash( VecPosition posRelTo, AngDeg angBody,
   double dDist = posRelTo.rotate(-angBody).getX(); // get distance in direction
   if( iCycles <= 0 ) iCycles = 1;
   double dAcc  = getFirstSpeedFromDist(dDist,iCycles,SS->getPlayerDecay());
-                                                   // get speed to travel now
+  // get speed to travel now
   if( dAcc > SS->getPlayerSpeedMax() )             // if too far away
     dAcc = SS->getPlayerSpeedMax();                // set maximum speed
   dAcc -= vel.rotate(-angBody).getX();             // subtract current velocity
@@ -1882,14 +1878,14 @@ int WorldModel::getClosestPlayerInFormationTo( VecPosition pos,
     else if( objWithout == SoccerTypes::getTeammateObjectFromIndex( i ) )
       continue;
     else if( !SoccerTypes::isPlayerTypeInSet(
-	      formations->getPlayerType(i,ft), ps ))
+        formations->getPlayerType(i, ft), ps))
       continue;
 
     posStrat = getStrategicPosition( i, ft );
 
-    if( isDeadBallUs( )&&
-         getBallPos().getX() < PITCH_LENGTH/3.0 &&
-         i >= 9 )
+    if(isDeadBallUs( ) &&
+       getBallPos().getX() < PITCH_LENGTH / 3.0 &&
+       i >= 9)
       ;  // don't use attackers when in dead ball situation and not upfront
     else if( posStrat.getDistanceTo( pos ) < dDist )
     {
@@ -1901,17 +1897,17 @@ int WorldModel::getClosestPlayerInFormationTo( VecPosition pos,
 }
 
 
-ObjectT WorldModel::getLeastConfidentInSet( ObjectSetT objectSet,
-					    double *dConf )
+ObjectT WorldModel::getLeastConfidentInSet(ObjectSetT objectSet,
+                                           double *dConf)
 {
   int iIndex;
   double dConfThr = 0.0;
   double conf, dMin = 1.1;
   ObjectT objMin = OBJECT_ILLEGAL;
 
-  for ( ObjectT o = iterateObjectStart( iIndex, objectSet, dConfThr );
-	o != OBJECT_ILLEGAL;
-	o = iterateObjectNext ( iIndex, objectSet, dConfThr ) ) {
+  for (ObjectT o = iterateObjectStart( iIndex, objectSet, dConfThr );
+       o != OBJECT_ILLEGAL;
+       o = iterateObjectNext(iIndex, objectSet, dConfThr)) {
     conf = getConfidence( o );
     if ( conf < dMin ) {
       dMin = conf;

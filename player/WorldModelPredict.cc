@@ -670,20 +670,20 @@ SoccerCommand WorldModel::predictCommandToMoveToPos(ObjectT obj,
 SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
                                                         SoccerCommand socClose, int *iCycles, VecPosition *posIntercept,
                                                         VecPosition *posIn, VecPosition *velIn, AngDeg *angBodyIn) {
-  FeatureT feature_type = FEATURE_INTERCEPTION_POINT_BALL;
+//  FeatureT feature_type = FEATURE_INTERCEPTION_POINT_BALL;
 
   // check whether we already have calculated this value
-  if (isFeatureRelevant(feature_type)) {
-    int i = max(0, ((int) getFeature(feature_type).getInfo() - getCurrentCycle()));
-    if (iCycles != NULL)
-      *iCycles = i;
-    if (posIntercept != NULL)
-      *posIntercept = predictPosAfterNrCycles(OBJECT_BALL, i);
-
-    Log.log(463, "intercept, use old info, feature %d: %d", feature_type,
-            max(0, ((int) getFeature(feature_type).getInfo() - getCurrentCycle())));
-    return getFeature(feature_type).getCommand();
-  }
+//  if (isFeatureRelevant(feature_type) && obj == getAgentObjectType()) {
+//    int i = max(0, ((int) getFeature(feature_type).getInfo() - getCurrentCycle()));
+//    if (iCycles != NULL)
+//      *iCycles = i;
+//    if (posIntercept != NULL)
+//      *posIntercept = predictPosAfterNrCycles(OBJECT_BALL, i);
+//
+//    Log.log(463, "intercept, use old info, feature %d: %d", feature_type,
+//            max(0, ((int) getFeature(feature_type).getInfo() - getCurrentCycle())));
+//    return getFeature(feature_type).getCommand();
+//  }
 
   // declare all needed variables
   SoccerCommand soc;
@@ -691,8 +691,8 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
   AngDeg angBody, angNeck;
   int iMinCyclesBall = 100, iFirstBall = 100;
   double dMaxDist = getMaximalKickDist(obj);
-  double dBestX = UnknownDoubleValue;
-  Stamina sta;
+//  double dBestX = UnknownDoubleValue;
+//  Stamina sta;
   double dMinOldIntercept = 100, dDistanceOfIntercept = 10.0;
   int iOldIntercept = UnknownIntValue;
   static Time timeLastIntercepted(-1, 0);
@@ -712,13 +712,14 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
   // and update the best interception point
   while (iCyclesBall <= PS->getPlayerWhenToIntercept() &&
          iCyclesBall <= iFirstBall + 20 &&
-         isInField(posBall) == true) {
+         getKeepawayRect().isInside(posBall) &&
+         isInField(posBall)) {
     // re-initialize all variables
     angBody = (angBodyIn == NULL) ? getGlobalBodyAngle(obj) : *angBodyIn;
     angNeck = getGlobalNeckAngle(obj);
     pos = (posIn == NULL) ? getGlobalPosition(obj) : *posIn;
     vel = (velIn == NULL) ? getGlobalVelocity(obj) : *velIn;
-    sta = getAgentStamina();
+//    sta = getAgentStamina();
     soc.commandType = CMD_ILLEGAL;
 
     // predict the ball position after iCycles and from that its velocity
@@ -735,7 +736,7 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
 
     // if too far away, we can never reach it and try next cycle
     if (posPred.getDistanceTo(posBall) / getPlayerSpeedMax(obj)
-        > iCyclesBall + dMaxDist || isInField(posBall) == false) {
+        > iCyclesBall + dMaxDist || !isInField(posBall)) {
       iCyclesBall++;
       continue;
     }
@@ -768,7 +769,7 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
           pos.getDistanceTo(posBall) < 0.70 * getMaximalKickDist(obj) &&
           velBall.getMagnitude() > 0.6) {
         Log.log(468, "update old interception point %d", iCyclesBall);
-        dBestX = posBall.getX();
+//        dBestX = posBall.getX();
         iOldIntercept = iCyclesBall;
         dDistanceOfIntercept = pos.getDistanceTo(posBall);
         dMinOldIntercept = posBall.getDistanceTo(posOldIntercept);
@@ -804,7 +805,7 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
   Log.log(463, "old interception point           %d cycles", iOldIntercept);
 
   // check special situations where we move to special position.
-  if (!(iMinCyclesBall > iOldIntercept + 2) &&
+  if (iMinCyclesBall <= iOldIntercept + 2 &&
       iOldIntercept != UnknownIntValue) {
     Log.log(463, "move to old interception point.");
     iMinCyclesBall = iOldIntercept;
@@ -823,9 +824,16 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
   if (posIntercept != NULL)
     *posIntercept = posBall;
 
+  if (!getKeepawayRect().isInside(posBall)) {
+    Log.log(101, "SoccerCommand WorldModel::predictCommandToInterceptBall !getKeepawayRect().isInside(posBall)");
+    posBall = getBallPos();
+  }
+
   if (iMinCyclesBall < 3 && !socClose.isIllegal()) {
     Log.log(463, "do close intercept");
     iMinCyclesBall = 1;
+    if (iCycles != NULL)
+      *iCycles = iMinCyclesBall;
     soc = socClose;
   } else if (posPred.getDistanceTo(posBall) < 0.5) {
     Log.log(463, "intercept: do not move already close");
@@ -841,14 +849,14 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
   }
 
   // store the calculated action as a feature
-  if (obj == getAgentObjectType())
-    setFeature(feature_type,
-               Feature(getTimeLastSeeMessage(),
-                       getTimeLastSenseMessage(),
-                       getTimeLastHearMessage(),
-                       OBJECT_ILLEGAL,
-                       getTimeLastSeeMessage().getTime() + iMinCyclesBall,
-                       soc));
+//  if (obj == getAgentObjectType())
+//    setFeature(feature_type,
+//               Feature(getTimeLastSeeMessage(),
+//                       getTimeLastSenseMessage(),
+//                       getTimeLastHearMessage(),
+//                       OBJECT_ILLEGAL,
+//                       getTimeLastSeeMessage().getTime() + iMinCyclesBall,
+//                       soc));
   return soc;
 }
 

@@ -129,7 +129,7 @@ public:
   virtual void run();
 
 private:
-  ChoicePoint<HierarchicalFSM *> *choices[3];
+  ChoicePoint<HierarchicalFSM *> *choices[2];
   HierarchicalFSM *pass;
   HierarchicalFSM *hold;
   HierarchicalFSM *move;

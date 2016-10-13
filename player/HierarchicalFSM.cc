@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cassert>
 #include <sstream>
+#include <climits>
 #include "HierarchicalFSM.h"
 #include "ChoicePoint.h"
 
@@ -189,15 +190,13 @@ Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "{") {
   stay = new Stay(p);
   intercept = new Intercept(p);
 
-  choices[0] = new ChoicePoint<HierarchicalFSM *>("ballFree", {intercept, stay, move});
-  choices[1] = new ChoicePoint<HierarchicalFSM *>("tmControllBall", {stay, move});
-  choices[2] = new ChoicePoint<HierarchicalFSM *>("ballKickable", {pass, hold});
+  choices[0] = new ChoicePoint<HierarchicalFSM *>("formation", {stay, move});
+  choices[1] = new ChoicePoint<HierarchicalFSM *>("attacker", {pass, hold});
 }
 
 Keeper::~Keeper() {
   delete choices[0];
   delete choices[1];
-  delete choices[2];
 
   delete pass;
   delete hold;
@@ -216,13 +215,36 @@ void Keeper::run() {
       WM->setNewEpisode(false);
     }
 
-    int status = 0;
-    if (WM->isBallKickable()) status = 2;
-    else if (WM->isTmControllBall()) status = 1;
+    Log.log(101, "Keeper::run agentIdx %d", LinearSarsaLearner::ins().agentIdx);
+    if (!WM->isBallKickable() && !WM->isTmControllBall()) { // ball free
+      int minCycle = INT_MAX;
+      int agentCycle = INT_MAX;
+      for (int i = 0; i < WM->getNumKeepers(); ++i) {
+        int iCycle = INT_MAX;
+        auto o = Memory::ins().K[i];
+        SoccerCommand illegal;
+        WM->predictCommandToInterceptBall(o, illegal, &iCycle);
+        minCycle = min(minCycle, iCycle);
+        if (o == WM->getAgentObjectType()) agentCycle = iCycle;
+        Log.log(101, "Keeper::run ballFree teammate idx %d iCycle %d", i, iCycle);
+      }
 
-    Log.log(101, "Keeper::run status %d", status);
-    auto m = MakeChoice<HierarchicalFSM *>(choices[status])();
-    Run(m).operator()();
+      if (agentCycle == minCycle) {
+        Log.log(101, "Keeper::run ballFree agentCycle %d = minCycle %d", agentCycle, minCycle);
+        Run(intercept).operator()();
+      } else {
+        auto m = MakeChoice<HierarchicalFSM *>(choices[0])();
+        Run(m).operator()();
+      }
+    } else {
+      if (WM->isBallKickable()) {
+        auto m = MakeChoice<HierarchicalFSM *>(choices[1])();
+        Run(m).operator()();
+      } else {
+        auto m = MakeChoice<HierarchicalFSM *>(choices[0])();
+        Run(m).operator()();
+      }
+    }
   }
 
   Log.log(101, "Keeper::run exit");

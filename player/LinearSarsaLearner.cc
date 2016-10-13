@@ -11,17 +11,17 @@ namespace fsm {
 
 void SharedData::setBlocked(int i) {
   auto status = runningStatus;
-  assert(!isBlocked(i));
+//  assert(!isBlocked(i));
   runningStatus |= 1 << i;
-  assert(isBlocked(i));
+//  assert(isBlocked(i));
   Log.log(101, "SharedData::setBlocked %d (%d => %d)", i, status, runningStatus);
 }
 
 void SharedData::clearBlocked(int i) {
   auto status = runningStatus;
-  assert(isBlocked(i));
+//  assert(isBlocked(i));
   runningStatus &= ~(1 << i);
-  assert(!isBlocked(i));
+//  assert(!isBlocked(i));
   Log.log(101, "SharedData::clearBlocked %d (%d => %d)", i, status, runningStatus);
 }
 
@@ -400,7 +400,12 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
     wait();
   }
 
-  assert(!sharedData->isBlocked(agentIdx));
+//  assert(!sharedData->isBlocked(agentIdx));
+  if (sharedData->isBlocked(agentIdx)) {
+    PRINT_VALUE(sharedData->isBlocked(agentIdx));
+    Log.log(101, "sharedData->isBlocked(agentIdx)");
+  }
+
   if (sharedData->isBlocked(agentIdx)) sharedData->clearBlocked(agentIdx);
   bool action_state = loadSharedData();
   if (action_state) { // dummy choice

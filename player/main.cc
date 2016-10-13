@@ -113,9 +113,6 @@ int main(int argc, char *argv[]) {
   string saveWeightsFile;
   bool bInfo = false;
   bool bSuppliedLogFile = false;
-  bool bSuppliedLogDrawFile = false;
-  int iStopAfter = -1; //*met+1 8/16/05
-  int iStartLearningAfter = -1;
   bool hierarchicalFSM = false;
   double gamma = 1.0;
   double initialWeight = 0.0;
@@ -140,19 +137,12 @@ int main(int argc, char *argv[]) {
           printOptions();
           exit(0);
           break;
-        case 'a':                                   // output file drawlog info
-          osDraw.open(argv[i + 1]);
-          bSuppliedLogDrawFile = true;
-          break;
         case 'c':                                   // clientconf file
           if (!cs.readValues(argv[i + 1], ":"))
             cerr << "Error in reading client file: " << argv[i + 1] << endl;
           break;
         case 'd':
           str = &argv[i + 1][0];
-#if USE_DRAW_LOG
-        LogDraw.setActive(Parse::parseFirstInt(&str) == 1);
-#endif
           break;
         case 'e': // enable learning 0/1
           str = &argv[i + 1][0];
@@ -241,15 +231,6 @@ int main(int argc, char *argv[]) {
           break;
         case 'w':
           loadWeightsFile = argv[i + 1];
-          break;
-        case 'x':
-          str = &argv[i + 1][0];
-          iStopAfter = Parse::parseFirstInt(&str); // exit after running for iStopAfter episodes
-          break;
-        case 'y':
-          str = &argv[i + 1][0];
-          iStartLearningAfter = Parse::parseFirstInt(
-              &str); // initially don't learn, but turn on learning after iStartLearningAfter episodes have passed
           break;
         case 'z':
           str = &argv[i + 1][0];
