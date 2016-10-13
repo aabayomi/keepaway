@@ -29,13 +29,15 @@ LinearSarsaAgent::LinearSarsaAgent(
     string loadWeightsFile,
     string saveWeightsFile,
     double gamma,
-    double initialWeight)
+    double initialWeight,
+    bool qLearning)
     : SMDPAgent(numFeatures, wm),
       saveWeightsFile(saveWeightsFile),
       bLearning(bLearn),
       sharedData(0),
       gamma(gamma),
-      initialWeight(initialWeight) {
+      initialWeight(initialWeight),
+      qLearning(qLearning) {
   semSync = 0;
   memset(semSignal, 0, sizeof(semSignal));
 
@@ -141,18 +143,7 @@ int LinearSarsaAgent::startEpisode(double state[]) {
   for (int a : validActions()) {
     Q[a] = computeQ(a);
   }
-
   lastAction = selectAction();
-
-  if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    for (int a : validActions()) {
-      ss << a << ":" << Q[a] << ", ";
-    }
-    Log.log(101, "LinearSarsaAgent::startEpisode numTilings: %d", numTilings);
-    Log.log(101, "LinearSarsaAgent::startEpisode Q: [%s]", ss.str().c_str());
-    Log.log(101, "LinearSarsaAgent::startEpisode action: %d", lastAction);
-  }
 
   for (int j = 0; j < numTilings; j++)
     setTrace(tiles[lastAction][j], 1.0);
@@ -176,34 +167,25 @@ int LinearSarsaAgent::step(double reward_, double state[]) {
   Log.log(101, "LinearSarsaAgent::step tau: %f", tau);
 
   assert(lastAction >= 0);
-  double delta = reward(tau, gamma) - Q[lastAction]; //r - Q_{t-1}[s_{t-1}, a_{t-1}]
-
-  loadTiles(state); //s_t
+  double delta = reward(tau, gamma) - Q[lastAction];
+  loadTiles(state);
   for (int a : validActions()) {
-    Q[a] = computeQ(a); //Q_{t-1}[s_t, *]
+    Q[a] = computeQ(a);
   }
+  lastAction = selectAction();
 
-  lastAction = selectAction(); //a_t
-
-  if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    for (int a : validActions()) {
-      ss << a << ":" << Q[a] << ", ";
-    }
-    Log.log(101, "LinearSarsaAgent::step numTilings: %d", numTilings);
-    Log.log(101, "LinearSarsaAgent::step Q: [%s]", ss.str().c_str());
-    Log.log(101, "LinearSarsaAgent::step action: %d", lastAction);
-  }
-
-  if (!bLearning)
-    return lastAction;
-
+  if (!bLearning) return lastAction;
   assert(!std::isnan(Q[lastAction]) && !std::isinf(Q[lastAction]));
-  delta += pow(gamma, tau) * Q[lastAction]; //delta += gamma**tau * Q_{t-1}[s_t, a_t]
+
+  if (qLearning) {
+    delta += pow(gamma, tau) * Q[argmaxQ()];
+  }
+  else {
+    delta += pow(gamma, tau) * Q[lastAction];
+  }
 
   updateWeights(delta);
-  Q[lastAction] = computeQ(lastAction); //need to redo because weights changed: Q_t[s_t, a_t]
-
+  Q[lastAction] = computeQ(lastAction); //need to redo because weights changed
   decayTraces(gamma * lambda);
 
   for (int a : validActions()) {
@@ -279,6 +261,16 @@ int LinearSarsaAgent::selectAction() {
     Log.log(101, "got %d at %d [isTmControllBall %d]", lastAction, lastActionTime, WM->isTmControllBall());
   }
 
+  if (Log.isInLogLevel(101)) {
+    stringstream ss;
+    for (int a : validActions()) {
+      ss << a << ":" << Q[a] << ", ";
+    }
+    Log.log(101, "LinearSarsaAgent::selectAction numTilings: %d", numTilings);
+    Log.log(101, "LinearSarsaAgent::selectAction Q: [%s]", ss.str().c_str());
+    Log.log(101, "LinearSarsaAgent::selectAction action: %d", action);
+  }
+
   assert(action >= 0);
   assert(action < getNumActions());
   assert(JointActionSpace::ins().getJointAction(action)->tmControllBall == WM->isTmControllBall());
@@ -338,7 +330,7 @@ const vector<int> &LinearSarsaAgent::validActions() const {
 
 // Returns index (action) of largest entry in Q array, breaking ties randomly
 int LinearSarsaAgent::argmaxQ() const {
-  int bestAction = 0;
+  int bestAction = -1;
   double bestValue = INT_MIN;
   int numTies = 0;
 
@@ -356,14 +348,15 @@ int LinearSarsaAgent::argmaxQ() const {
     }
   }
 
+  assert(bestAction >= 0);
   return bestAction;
 }
 
 void LinearSarsaAgent::updateWeights(double delta) {
+  Log.log(101, "LinearSarsaAgent::updateWeights delta %f", delta);
+
   assert(numTilings > 0);
   double tmp = delta * alpha / numTilings;
-
-  Log.log(101, "LinearSarsaAgent::updateWeights delta %f", delta);
 
   for (int i = 0; i < numNonzeroTraces; i++) {
     assert(i < RL_MAX_NONZERO_TRACES);
@@ -402,6 +395,7 @@ void LinearSarsaAgent::loadTiles(double state[]) // will change colTab.data impl
 // Clear any trace for feature f
 void LinearSarsaAgent::clearTrace(int f) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
+    assert(0);
     cerr << "ClearTrace: f out of range " << f << endl;
     return;
   }
@@ -413,6 +407,7 @@ void LinearSarsaAgent::clearTrace(int f) {
 // Clear the trace for feature f at location loc in the list of nonzero traces
 void LinearSarsaAgent::clearExistentTrace(int f, int loc) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
+    assert(0);
     cerr << "ClearExistentTrace: f out of range " << f << endl;
     return;
   }
@@ -434,6 +429,7 @@ void LinearSarsaAgent::decayTraces(double decayRate) {
   for (int loc = numNonzeroTraces - 1; loc >= 0; loc--) {
     int f = nonzeroTraces[loc];
     if (f >= RL_MEMORY_SIZE || f < 0) {
+      assert(0);
       cerr << "DecayTraces: f out of range " << f << endl;
       continue;
     }
@@ -447,6 +443,7 @@ void LinearSarsaAgent::decayTraces(double decayRate) {
 // Set the trace for feature f to the given value, which must be positive
 void LinearSarsaAgent::setTrace(int f, float newTraceValue) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
+    assert(0);
     cerr << "SetTraces: f out of range " << f << endl;
     return;
   }

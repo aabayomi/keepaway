@@ -176,11 +176,12 @@ void HierarchicalFSM::initialize(int numFeatures,
                                  bool bLearn,
                                  double widths[],
                                  double Gamma,
-                                 double initialWeight) {
+                                 double initialWeight,
+                                 bool qLearning) {
   num_features = numFeatures;
   num_keepers = numKeepers;
   gamma = Gamma;
-  LinearSarsaLearner::ins().initialize(bLearn, widths, initialWeight);
+  LinearSarsaLearner::ins().initialize(bLearn, widths, initialWeight, qLearning);
 }
 
 Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "{") {
@@ -190,8 +191,8 @@ Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "{") {
   stay = new Stay(p);
   intercept = new Intercept(p);
 
-  choices[0] = new ChoicePoint<HierarchicalFSM *>("formation", {stay, move});
-  choices[1] = new ChoicePoint<HierarchicalFSM *>("attacker", {pass, hold});
+  choices[0] = new ChoicePoint<HierarchicalFSM *>("@Free", {stay, move});
+  choices[1] = new ChoicePoint<HierarchicalFSM *>("@Ball", {pass, hold});
 }
 
 Keeper::~Keeper() {
@@ -233,15 +234,18 @@ void Keeper::run() {
         Log.log(101, "Keeper::run ballFree agentCycle %d = minCycle %d", agentCycle, minCycle);
         Run(intercept).operator()();
       } else {
-        auto m = MakeChoice<HierarchicalFSM *>(choices[0])();
+        MakeChoice<HierarchicalFSM *> c(choices[0]);
+        auto m = c();
         Run(m).operator()();
       }
     } else {
       if (WM->isBallKickable()) {
-        auto m = MakeChoice<HierarchicalFSM *>(choices[1])();
+        MakeChoice<HierarchicalFSM *> c(choices[1]);
+        auto m = c();
         Run(m).operator()();
       } else {
-        auto m = MakeChoice<HierarchicalFSM *>(choices[0])();
+        MakeChoice<HierarchicalFSM *> c(choices[0]);
+        auto m = c();
         Run(m).operator()();
       }
     }
@@ -250,8 +254,8 @@ void Keeper::run() {
   Log.log(101, "Keeper::run exit");
 }
 
-Move::Move(BasicPlayer *p) : HierarchicalFSM(p, "Move") {
-  moveToChoice = new ChoicePoint<int>("moveTo", {0, 1, 2, 3});
+Move::Move(BasicPlayer *p) : HierarchicalFSM(p, "$Move") {
+  moveToChoice = new ChoicePoint<int>("@MoveTo", {0, 1, 2, 3});
 }
 
 Move::~Move() {
@@ -260,7 +264,8 @@ Move::~Move() {
 
 void Move::run() {
   assert(!WM->isBallKickable());
-  auto d = MakeChoice<int>(moveToChoice)();
+  MakeChoice<int> c(moveToChoice);
+  auto d = c();
 
   bool flag = WM->isTmControllBall();
   while (running() && flag == WM->isTmControllBall()) {
@@ -309,7 +314,7 @@ void Move::run() {
   }
 }
 
-Stay::Stay(BasicPlayer *p) : HierarchicalFSM(p, "Stay") {
+Stay::Stay(BasicPlayer *p) : HierarchicalFSM(p, "$Stay") {
 
 }
 
@@ -325,7 +330,7 @@ void Stay::run() {
   }
 }
 
-Intercept::Intercept(BasicPlayer *p) : HierarchicalFSM(p, "Intercept") {
+Intercept::Intercept(BasicPlayer *p) : HierarchicalFSM(p, "$Intercept") {
 
 }
 
@@ -341,12 +346,12 @@ void Intercept::run() {
   }
 }
 
-Pass::Pass(BasicPlayer *p) : HierarchicalFSM(p, "Pass") {
+Pass::Pass(BasicPlayer *p) : HierarchicalFSM(p, "$Pass") {
   vector<int> parameters;
   for (int i = 1; i < num_keepers; ++i) {
     parameters.push_back(i);
   }
-  passToChoice = new ChoicePoint<int>("passTo", parameters);
+  passToChoice = new ChoicePoint<int>("@PassTo", parameters);
 }
 
 Pass::~Pass() {
@@ -355,7 +360,8 @@ Pass::~Pass() {
 
 void Pass::run() {
   assert(WM->isBallKickable());
-  auto k = MakeChoice<int>(passToChoice)();
+  MakeChoice<int> c(passToChoice);
+  auto k = c();
 
   while (running() && WM->isBallKickable()) {
     VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[k]);
@@ -365,7 +371,7 @@ void Pass::run() {
   }
 }
 
-Hold::Hold(BasicPlayer *p) : HierarchicalFSM(p, "Hold") {
+Hold::Hold(BasicPlayer *p) : HierarchicalFSM(p, "$Hold") {
 
 }
 

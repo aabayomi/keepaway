@@ -102,15 +102,18 @@ LinearSarsaLearner::~LinearSarsaLearner() {
 }
 
 LinearSarsaLearner::LinearSarsaLearner() {
+  bLearning = false;
+  qLearning = false;
   sharedData = 0;
   memset(semSignal, 0, sizeof(semSignal));
   semSync = 0;
   lastJointChoiceIdx = -1;
 }
 
-void LinearSarsaLearner::initialize(bool learning, double width[], double weight)
+void LinearSarsaLearner::initialize(bool learning, double width[], double weight, bool qLearning)
 {
   bLearning = learning;
+  this->qLearning = qLearning;
   for (int i = 0; i < HierarchicalFSM::num_features; i++) {
     tileWidths[i] = width[i];
   }
@@ -255,23 +258,6 @@ void LinearSarsaLearner::saveSharedData() {
   }
 }
 
-void LinearSarsaLearner::loadQ(const vector<int> &num_choices) {
-  loadTiles(Memory::ins().state, machineStateStr, num_choices);
-  Log.log(101, "LinearSarsaLearner::loadQ numTilings: %d", numTilings);
-
-  for (auto c : validChoices(num_choices)) {
-    Q[c] = computeQ(c);
-  }
-
-  if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, jointChoicesMap[num_choices]);
-    PRINT_VALUE_STREAM(ss, validChoices(num_choices));
-    PRINT_VALUE_STREAM(ss, vector<double>(Q, Q + validChoices(num_choices).size()));
-    Log.log(101, "LinearSarsaLearner::loadQ %s", ss.str().c_str());
-  }
-}
-
 const vector<int> &LinearSarsaLearner::validChoices(const vector<int> &num_choices) {
   if (!validChoicesMap.count(num_choices)) {
     jointChoicesMap[num_choices] = validChoicesRaw(num_choices);
@@ -302,14 +288,27 @@ int LinearSarsaLearner::step() {
   ScopedLock lock(semSync);
 
   int choice = -1;
-  if (lastJointChoiceIdx != -1) {
+  if (lastJointChoiceIdx >= 0) {
+    if (sharedData->getCumulativeReward() <= EPSILON) {
+      Log.log(101, "LinearSarsaLearner::step sharedData->getCumulativeReward() <= EPSILON, %f", sharedData->getCumulativeReward());
+    }
+
     double delta = sharedData->getCumulativeReward() - Q[lastJointChoiceIdx];
-    loadQ(numChoices);
+    loadTiles(Memory::ins().state, machineStateStr, numChoices);
+    for (auto c : validChoices(numChoices)) {
+      Q[c] = computeQ(c);
+    }
     choice = selectChoice(numChoices);
 
     if (!bLearning) return choice;
     assert(!std::isnan(Q[choice]) && !std::isinf(Q[choice]));
-    delta += sharedData->getCumulativeGamma() * Q[choice];
+
+    if (qLearning) {
+      delta += sharedData->getCumulativeGamma() * Q[argmaxQ(numChoices)];
+    }
+    else {
+      delta += sharedData->getCumulativeGamma() * Q[choice];
+    }
 
     updateWeights(delta);
     Q[choice] = computeQ(choice); // update Q[choice]
@@ -324,7 +323,10 @@ int LinearSarsaLearner::step() {
   } else { // new episode
     decayTraces(0.0);
     assert(numNonzeroTraces == 0);
-    loadQ(numChoices);
+    loadTiles(Memory::ins().state, machineStateStr, numChoices);
+    for (auto c : validChoices(numChoices)) {
+      Q[c] = computeQ(c);
+    }
     choice = selectChoice(numChoices);
   }
 
@@ -359,6 +361,7 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
     Log.log(101, "LinearSarsaLearner::step leading agent %d (running status: %d)", agentIdx,
             sharedData->getRunningStatus());
     bool action_state = loadSharedData();
+
     if (action_state) { // no learning
       ScopedLock lock(semSync);
       sharedData->updateReward(1.0);
@@ -416,6 +419,8 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
 }
 
 void LinearSarsaLearner::endEpisode() {
+  Log.log(101, "LinearSarsaLearner::endEpisode");
+
   loadSharedData();
 
   if (agentIdx == 0) { // only one agent can update
@@ -469,6 +474,16 @@ double LinearSarsaLearner::computeQ(int choice) {
 
 int LinearSarsaLearner::selectChoice(const vector<int> &num_choices) {
   int choice = -1;
+
+  if (Log.isInLogLevel(101)) {
+    stringstream ss;
+    PRINT_VALUE_STREAM(ss, validChoices(num_choices));
+    PRINT_VALUE_STREAM(ss, validChoices(num_choices).size());
+    PRINT_VALUE_STREAM(ss, jointChoicesMap[num_choices]);
+    PRINT_VALUE_STREAM(ss, vector<double>(Q, Q + validChoices(num_choices).size()));
+    Log.log(101, "LinearSarsaLearner::selectChoice %s", ss.str().c_str());
+    Log.log(101, "LinearSarsaLearner::selectChoice numTilings: %d", numTilings);
+  }
 
   if (bLearning && drand48() < epsilon) {     /* explore */
     auto &choices = validChoices(num_choices);
@@ -532,6 +547,7 @@ void LinearSarsaLearner::decayTraces(double decayRate) {
   for (int loc = numNonzeroTraces - 1; loc >= 0; loc--) {
     int f = nonzeroTraces[loc];
     if (f >= RL_MEMORY_SIZE || f < 0) {
+      assert(0);
       cerr << "DecayTraces: f out of range " << f << endl;
       continue;
     }
@@ -544,6 +560,7 @@ void LinearSarsaLearner::decayTraces(double decayRate) {
 
 void LinearSarsaLearner::clearTrace(int f) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
+    assert(0);
     cerr << "ClearTrace: f out of range " << f << endl;
     return;
   }
@@ -554,6 +571,7 @@ void LinearSarsaLearner::clearTrace(int f) {
 
 void LinearSarsaLearner::clearExistentTrace(int f, int loc) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
+    assert(0);
     cerr << "ClearExistentTrace: f out of range " << f << endl;
     return;
   }
@@ -572,6 +590,7 @@ void LinearSarsaLearner::clearExistentTrace(int f, int loc) {
 
 void LinearSarsaLearner::setTrace(int f, float newTraceValue) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
+    assert(0);
     cerr << "SetTraces: f out of range " << f << endl;
     return;
   }

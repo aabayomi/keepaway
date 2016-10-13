@@ -100,7 +100,7 @@ private:
 public:
   static LinearSarsaLearner &ins();
 
-  void initialize(bool learning, double width[], double weight);
+  void initialize(bool learning, double width[], double weight, bool qLearning);
 
   vector<int> step(int num_choices);
 
@@ -170,8 +170,6 @@ private:
 
   string getQStr(int num_choice);
 
-  void loadQ(const vector<int> &num_choices);
-
   const vector<int> &validChoices(const vector<int> &num_choices);
 
   vector<vector<int>> validChoicesRaw(const vector<int> &num_choices);
@@ -181,6 +179,7 @@ private:
 
   unordered_map<vector<int>, vector<int>> validChoicesMap;
   unordered_map<vector<int>, vector<vector<int>>> jointChoicesMap;
+  bool qLearning;
 };
 
 }

@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
   bool hierarchicalFSM = false;
   double gamma = 1.0;
   double initialWeight = 0.0;
+  bool qLearning = false;
 
   ofstream os;
   ofstream osDraw;
@@ -214,6 +215,10 @@ int main(int argc, char *argv[]) {
         case 'q':
           strcpy(strPolicy, argv[i + 1]);
           break;
+        case 'Q': // enable qlearning 0/1
+          str = &argv[i + 1][0];
+          qLearning = Parse::parseFirstInt(&str) == 1;
+          break;
         case 'r':                                   // reconnect 1 0
           str = &argv[i + 1][0];
           iReconnect = Parse::parseFirstInt(&str);
@@ -253,6 +258,7 @@ int main(int argc, char *argv[]) {
          "hierarchical FSM : " << hierarchicalFSM << endl <<
          "gamma : " << gamma << endl <<
          "initialWeight: " << initialWeight << endl <<
+         "qlearning: " << qLearning << endl <<
          "be learning : " << bLearn << endl;
   }
 
@@ -295,8 +301,7 @@ int main(int argc, char *argv[]) {
       auto linearSarsaAgent = new jol::LinearSarsaAgent(
           &wm, numFeatures, bLearn, resolutions,
           loadWeightsFile, saveWeightsFile,
-          gamma, initialWeight
-      );
+          gamma, initialWeight, qLearning);
 
       // Check for pure exploitation mode.
       size_t length = strlen(strPolicy);
@@ -351,7 +356,7 @@ int main(int argc, char *argv[]) {
   } else {
     assert(sa == 0);
     fsm::HierarchicalFSM::initialize(
-        numFeatures, iNumKeepers, bLearn, resolutions, gamma, initialWeight);
+        numFeatures, iNumKeepers, bLearn, resolutions, gamma, initialWeight, qLearning);
   }
 
   KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,

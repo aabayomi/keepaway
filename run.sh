@@ -6,8 +6,9 @@ SYNCH=""
 LOG=""
 LOGLEVEL="101"
 HIERARCHICALFSM=""
+QLEARNING=""
 GAMMA="1.0"
-INITIALWEIGHT="0.5"
+INITIALWEIGHT="0.125"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
 LOGDIR="logs"
@@ -15,13 +16,14 @@ QFILE=""
 QFILE2=""
 MEMORYCHECK=""
 
-while getopts  "b:g:q:I:lfmsnzM" flag; do
+while getopts  "b:g:q:I:lfmsnzMQ" flag; do
     case "$flag" in
         f) FULLSTATE="--fullstate" ;; 
         m) MONITOR="--monitor" ;;
         s) SYNCH="--synch-mode" ;;
         l) LOG="--log-dir=$LOGDIR --log-game --log-text --log-level $LOGLEVEL" ;;
         z) HIERARCHICALFSM="--hierarchical-fsm" ;;
+        Q) QLEARNING="--qlearning" ;;
         g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         I) INITIALWEIGHT="$OPTARG" ;;
         b) BUILD="$OPTARG" ;;
@@ -49,6 +51,10 @@ if [ ! -z $HIERARCHICALFSM ]; then
     QFILE="${QFILE}_fsm"
 fi
 
+if [ ! -z $QLEARNING ]; then
+    QFILE="${QFILE}_ql"
+fi
+
 QFILE="${QFILE}.q"
 
 if [ ! -z $QFILE2 ]; then
@@ -66,5 +72,5 @@ ulimit -c unlimited
     --keeper-output=$QFILE --keeper-input=$QFILE \
     $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
     $HIERARCHICALFSM --gamma=$GAMMA --initial-weight=$INITIALWEIGHT \
-    --label=`basename $QFILE .q` 2>&1 | tee $CONSOLE_LOG
+    $QLEARNING --label=`basename $QFILE .q` 2>&1 | tee $CONSOLE_LOG
 

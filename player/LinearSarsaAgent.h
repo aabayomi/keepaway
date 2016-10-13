@@ -30,6 +30,7 @@ protected:
   double lambda;
   double epsilon;
   double initialWeight;
+  bool qLearning;
 
   double tileWidths[MAX_RL_STATE_VARS];
   double Q[MAX_RL_ACTIONS];
@@ -91,7 +92,8 @@ public:
                    std::string loadWeightsFile,
                    std::string saveWeightsFile,
                    double gamma,
-                   double initialWeight);
+                   double initialWeight,
+                   bool qLearning);
 
   virtual ~LinearSarsaAgent();
 

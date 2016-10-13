@@ -37,7 +37,8 @@ def launch_player(player_type, index, options):
         m = '0', # running mode
         g = float(options.gamma),
         I = float(options.initial_weight),
-        z=int(options.hierarchical_fsm),
+        z = int(options.hierarchical_fsm),
+        Q = int(options.qlearning),
         l = options.log_level, # log level
         o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index + 1),
         e = int(getattr(options, player_type + '_learn')),
@@ -329,7 +330,10 @@ def parse_options(args = None, **defaults):
         help = "Use fullstate information for left and right.")
     parser.add_option(
         '--hierarchical-fsm', action='store_true', default=False,
-        help = "Tiling using all state variables (not per state variable).")
+        help = "Use hierarchical FSMs for learning.")
+    parser.add_option(
+        '--qlearning', action='store_true', default=False,
+        help = "Use QLearning (instead of SARSA).")
     parser.add_option(
         '--gamma', type = 'float', default = 1.0,
         help = "Discount factor gamma.")
