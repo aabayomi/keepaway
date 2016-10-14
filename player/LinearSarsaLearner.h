@@ -42,11 +42,11 @@ struct SharedData {
   double minimumTrace;
   int numNonzeroTraces;
 
-  int numChoices[11]; // indexed by K0..Kn
-  char machineStateStr[11][1024];
+  int numChoices[OBJECT_MAX_OBJECTS]; // indexed by object type
+  char machineStateStr[OBJECT_MAX_OBJECTS][1024];
 
   int lastJointChoiceIdx;
-  int lastJointChoice[11];
+  int lastJointChoice[11]; // indexed by K0..Kn
 
   vector<int> getNumChoices() const;
 
@@ -67,8 +67,6 @@ struct SharedData {
   void resetReward();
 
   void updateReward(double r);
-
-  void updateOrdering(const vector<int> &K, const vector<int> &lastK);
 
 private:
   int runningStatus;
@@ -121,7 +119,7 @@ public:
 
 public:
   int lastJointChoiceIdx;
-  vector<string> machineStateStr;
+  vector<string> machineStateStr; // indexed by K0..Kn
   vector<int> numChoices;
   vector<int> lastJointChoice;
 

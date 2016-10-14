@@ -126,8 +126,6 @@ void HierarchicalFSM::idle(const std::string error) {
 }
 
 string HierarchicalFSM::getState() {
-  static vector<int> lastK;
-
   Memory::ins().resetState();
 
   if (WM->getConfidence(OBJECT_BALL) < PS->getBallConfThr()) {
@@ -158,13 +156,6 @@ string HierarchicalFSM::getState() {
   assert(agentIdx < numK);
 
   if (agentIdx >= numK) return "agentIdx >= numK";
-
-  auto K = vector<int>(Memory::ins().K, Memory::ins().K + numK);
-  if (lastK.size() && K != lastK) { // need to update shared numChoices/machineStateStr ordering
-    LinearSarsaLearner::ins().getSharedData()->updateOrdering(K, lastK);
-  }
-
-  lastK = K;
   return "";
 }
 

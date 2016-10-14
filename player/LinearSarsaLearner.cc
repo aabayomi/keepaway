@@ -38,42 +38,6 @@ void SharedData::updateReward(double r) {
   cumulativeGamma *= HierarchicalFSM::gamma;
 }
 
-void SharedData::updateOrdering(const vector<int> &K, const vector<int> &lastK) {
-  assert(K.size() == lastK.size());
-
-  if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, K);
-    PRINT_VALUE_STREAM(ss, lastK);
-    PRINT_VALUE_STREAM(ss, getNumChoices());
-    PRINT_VALUE_STREAM(ss, getMachineStateStr());
-    Log.log(101, "SharedData::updateOrdering before:\n%s", ss.str().c_str());
-  }
-
-  int numK = (int) K.size();
-  vector<int> num_choices((unsigned long) numK);
-  vector<string> machine_state_str((unsigned long) numK);
-
-  unordered_map<int, int> lastKInverse;
-  for (int i = 0; i < numK; ++i) lastKInverse[lastK[i]] = i;
-  for (int i = 0; i < numK; ++i) {
-    num_choices[i] = numChoices[lastKInverse[K[i]]];
-    machine_state_str[i] = machineStateStr[lastKInverse[K[i]]];
-  }
-
-  for (int i = 0; i < numK; ++i) {
-    numChoices[i] = num_choices[i];
-    strcpy(machineStateStr[i], machine_state_str[i].c_str());
-  }
-
-  if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, getNumChoices());
-    PRINT_VALUE_STREAM(ss, getMachineStateStr());
-    Log.log(101, "SharedData::updateOrdering after:\n%s", ss.str().c_str());
-  }
-}
-
 void SharedData::resetReward() {
   cumulativeReward = 0.0;
   cumulativeGamma = HierarchicalFSM::gamma;
@@ -94,7 +58,8 @@ void SharedData::reset() {
   minimumTrace = 0.01;
   numNonzeroTraces = 0;
 
-  fill(numChoices, numChoices + 11, 0);
+  memset(numChoices, 0, sizeof(numChoices));
+  memset(machineStateStr, 0, sizeof(machineStateStr));
   colTab.reset();
 }
 
@@ -103,11 +68,19 @@ vector<int> SharedData::getLastJointChoice() const {
 }
 
 vector<int> SharedData::getNumChoices() const {
-  return vector<int>(numChoices, numChoices + HierarchicalFSM::num_keepers);
+  vector<int> ret((unsigned long) HierarchicalFSM::num_keepers);
+  for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
+    ret[i] = numChoices[Memory::ins().K[i]];
+  }
+  return ret;
 }
 
 vector<string> SharedData::getMachineStateStr() const {
-  return vector<string>(machineStateStr, machineStateStr + HierarchicalFSM::num_keepers);
+  vector<string> ret((unsigned long) HierarchicalFSM::num_keepers);
+  for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
+    ret[i] = machineStateStr[Memory::ins().K[i]];
+  }
+  return ret;
 }
 
 void SharedData::clearBlocked() {
@@ -288,8 +261,8 @@ void LinearSarsaLearner::saveSharedData() {
   sharedData->lastJointChoiceIdx = lastJointChoiceIdx;
 
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-    sharedData->numChoices[i] = numChoices[i];
-    strcpy(sharedData->machineStateStr[i], machineStateStr[i].c_str());
+    sharedData->numChoices[Memory::ins().K[i]] = numChoices[i];
+    strcpy(sharedData->machineStateStr[Memory::ins().K[i]], machineStateStr[i].c_str());
     sharedData->lastJointChoice[i] = lastJointChoice[i];
   }
 }
@@ -383,8 +356,8 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
   {
     ScopedLock lock(semSync);
     auto stackStr = HierarchicalFSM::getStackStr();
-    sharedData->numChoices[Memory::ins().agentIdx] = num_choices;
-    strcpy(sharedData->machineStateStr[Memory::ins().agentIdx], stackStr.c_str());
+    sharedData->numChoices[Memory::ins().K[Memory::ins().agentIdx]] = num_choices;
+    strcpy(sharedData->machineStateStr[Memory::ins().K[Memory::ins().agentIdx]], stackStr.c_str());
 
     Log.log(101, "LinearSarsaLearner::step agent %d write numChoices %d", Memory::ins().agentIdx, num_choices);
     Log.log(101, "LinearSarsaLearner::step agent %d write machineStateStr %s", Memory::ins().agentIdx,
@@ -394,7 +367,7 @@ vector<int> LinearSarsaLearner::step(int num_choices) {
     last_blocking_agent = sharedData->isAllBlocked(HierarchicalFSM::num_keepers);
   }
 
-  if (last_blocking_agent || !bLearning) {
+  if (last_blocking_agent || !bLearning) { // leading agent
     Log.log(101, "LinearSarsaLearner::step leading agent %d (running status: %d)", Memory::ins().agentIdx,
             sharedData->getRunningStatus());
     bool action_state = loadSharedData();
