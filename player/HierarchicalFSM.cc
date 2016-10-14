@@ -89,7 +89,7 @@ void HierarchicalFSM::action(bool sync) {
   Log.log(101, "action with stack %s", getStackStr().c_str());
 
   while (Memory::ins().bAlive) {
-    if (sync) MakeChoice<int>(dummyChoice).operator()(); // dummy choice for sync purposes
+    if (sync) MakeChoice<int>(dummyChoice).operator()(WM->getCurrentCycle()); // dummy choice for sync purposes
 
     if (WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
         (SS->getSynchMode() && WM->getRecvThink())) {
@@ -214,7 +214,7 @@ void Keeper::run() {
   while (Memory::ins().bAlive) {
     assert(Memory::ins().getStack().size() == 1);
     if (WM->isNewEpisode()) {
-      LinearSarsaLearner::ins().endEpisode();
+      LinearSarsaLearner::ins().endEpisode(WM->getCurrentCycle());
       WM->setNewEpisode(false);
     }
 
@@ -237,17 +237,17 @@ void Keeper::run() {
         Run(intercept).operator()();
       } else {
         MakeChoice<HierarchicalFSM *> c(choices[0]);
-        auto m = c();
+        auto m = c(WM->getCurrentCycle());
         Run(m).operator()();
       }
     } else {
       if (WM->isBallKickable()) {
         MakeChoice<HierarchicalFSM *> c(choices[1]);
-        auto m = c();
+        auto m = c(WM->getCurrentCycle());
         Run(m).operator()();
       } else {
         MakeChoice<HierarchicalFSM *> c(choices[0]);
-        auto m = c();
+        auto m = c(WM->getCurrentCycle());
         Run(m).operator()();
       }
     }
@@ -267,7 +267,7 @@ Move::~Move() {
 void Move::run() {
   assert(!WM->isBallKickable());
   MakeChoice<int> c(moveToChoice);
-  auto d = c();
+  auto d = c(WM->getCurrentCycle());
 
   bool flag = WM->isTmControllBall();
   while (running() && flag == WM->isTmControllBall()) {
@@ -363,7 +363,7 @@ Pass::~Pass() {
 void Pass::run() {
   assert(WM->isBallKickable());
   MakeChoice<int> c(passToChoice);
-  auto k = c();
+  auto k = c(WM->getCurrentCycle());
 
   while (running() && WM->isBallKickable()) {
     VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[k]);

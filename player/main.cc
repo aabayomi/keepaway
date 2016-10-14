@@ -66,6 +66,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <windows.h>  // needed for CreateThread
 #else
 
+#include "gzstream.h"
 #include <dlfcn.h>    // needed for extension loading.
 
 #endif
@@ -118,8 +119,7 @@ int main(int argc, char *argv[]) {
   double initialWeight = 0.0;
   bool qLearning = false;
 
-  ofstream os;
-  ofstream osDraw;
+  ogzstream os;
 
   // read in all the command options and change the associated variables
   // assume every two values supplied at prompt, form a duo
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
           iNr = Parse::parseFirstInt(&str);
           break;
         case 'o':                                   // output file log info
-          os.open(argv[i + 1]);
+          os.open((string(argv[i + 1]) + ".gz").c_str());
           bSuppliedLogFile = true;
           break;
         case 'p':                                   // port
@@ -266,13 +266,6 @@ int main(int argc, char *argv[]) {
     Log.setOutputStream(os);                   // initialize logger
   else
     Log.setOutputStream(cout);
-
-#if USE_DRAW_LOG
-  if (bSuppliedLogDrawFile)
-    LogDraw.setOutputStream(osDraw);          // initialize drawing logger
-  else
-    LogDraw.setOutputStream(cout);
-#endif
 
   Log.restartTimer();
 

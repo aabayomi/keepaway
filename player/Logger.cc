@@ -50,14 +50,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Logger.h"
 #include <cstring>
-#include <stdio.h>    // needed for vsprintf
-#include <string>     // needed for string
+
 #ifdef Solaris
 #include <varargs.h> // needed for va_list and va_start under Solaris
 #else
 #include <stdarg.h>
 #endif
-#include <pthread.h>
 
 Logger Log;          /*!<Logger instantation that can be used by all classes */
 
@@ -74,7 +72,7 @@ Logger Log;          /*!<Logger instantation that can be used by all classes */
    \param iMax maximal log level (default 0) */
 Logger::Logger( ostream& o, int iMin, int iMax )
 {
-  pthread_mutex_init( &mutex_stream, NULL );
+//  pthread_mutex_init( &mutex_stream, NULL );
   strcpy( m_strHeader, "" );
   m_timing.restartTime();
   addLogRange( iMin, iMax );

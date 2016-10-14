@@ -135,7 +135,7 @@ class Logger
   char     m_buf[MAX_LOG_LINE];    /*!< buffer needed by different methods   */
   set<int> m_setLogLevels;         /*!< set that contains all log levels     */
 
-  pthread_mutex_t mutex_stream;
+//  pthread_mutex_t mutex_stream;
   char     m_strHeader[MAX_HEADER];/*!< header string printed before msg     */
   ostream* m_os;                   /*!< output stream to print messages to   */
   string   m_strSignal;            /*!< temporary string for other messages  */

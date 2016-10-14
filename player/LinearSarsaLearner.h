@@ -46,6 +46,7 @@ struct SharedData {
   char machineStateStr[OBJECT_MAX_OBJECTS][1024];
 
   int lastJointChoiceIdx;
+  int lastJointChoiceTime;
   int lastJointChoice[11]; // indexed by K0..Kn
 
   vector<int> getNumChoices() const;
@@ -70,18 +71,9 @@ struct SharedData {
 
 private:
   int runningStatus;
+
 public:
   int getRunningStatus() const;
-
-public:
-  double getCumulativeReward() const;
-
-public:
-  double getCumulativeGamma() const;
-
-private:
-  double cumulativeReward;
-  double cumulativeGamma;
 
 public:
   void clearBlocked();
@@ -103,11 +95,11 @@ public:
 
   void initialize(bool learning, double width[], double weight, bool qLearning);
 
-  vector<int> step(int num_choices);
+  vector<int> step(int current_time, int num_choices);
 
-  int step();
+  int step(int current_time);
 
-  void endEpisode();
+  void endEpisode(int current_time);
 
   bool loadSharedData();
 
@@ -119,6 +111,7 @@ public:
 
 public:
   int lastJointChoiceIdx;
+  int lastJointChoiceTime;
   vector<string> machineStateStr; // indexed by K0..Kn
   vector<int> numChoices;
   vector<int> lastJointChoice;
@@ -184,6 +177,8 @@ private:
   unordered_map<vector<int>, vector<int>> validChoicesMap;
   unordered_map<vector<int>, vector<vector<int>>> jointChoicesMap;
   bool qLearning;
+
+  double reward(double tau);
 };
 
 }

@@ -195,8 +195,8 @@ public:
     Memory::ins().PushStack(cp->getName());
   }
 
-  T operator()() {
-    return cp->choose();
+  T operator()(int current_time) {
+    return cp->choose(current_time);
   }
 
   ~MakeChoice() {

@@ -47,8 +47,7 @@ def launch_player(player_type, index, options):
         p = options.port,
         q = getattr(options, player_type + '_policy'),
         t = player_type + 's', # Pluralize for team name. TODO Really?
-        x = options.stop_after,
-        y = options.start_learning_after)
+    )
 
     # Handle optional args.
     def put_player_file(key, name):
@@ -174,7 +173,7 @@ def launch_server(options):
 
     if options.log_text:
         server_options += [
-            ('text_log_compression', 0),
+            ('text_log_compression', 1),
             ('text_log_dir', options.log_dir),
             ('text_log_fixed', 1),
             ('text_log_fixed_name', log_name)];
@@ -292,15 +291,7 @@ def parse_options(args = None, **defaults):
     parser.add_option(
         '--restricted-vision', action = 'store_true', default = False,
         help = "Restrict player vision to less than 360 degrees.")
-    # TODO This isn't used at all in the keepaway program.
-    parser.add_option(
-        '--start-learning-after', type = 'int', default = -1,
-        help = "Start learning after the given number of episodes.")
-    # TODO This isn't used at all in the keepaway program.
     # TODO Perhaps kick off a monitor here to watch for episodes?
-    parser.add_option(
-        '--stop-after', type = 'int', default = -1,
-        help = "Stop play after the given number of episodes.")
     parser.add_option(
         '--synch-mode', action = 'store_true', default = False,
         help = "Speed up with synchronous mode.")

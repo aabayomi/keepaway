@@ -66,7 +66,11 @@ set(SOURCE_FILES
         player/JointOptionLearning.h
         player/HierarchicalFSM.cc
         player/HierarchicalFSM.h
-        player/ChoicePoint.h player/LinearSarsaLearner.cc player/LinearSarsaLearner.h)
+        player/ChoicePoint.h
+        player/LinearSarsaLearner.cc
+        player/LinearSarsaLearner.h
+        player/gzstream.cc
+        player/gzstream.h)
 
 add_executable(keepaway_player ${SOURCE_FILES})
-target_link_libraries(keepaway_player pthread dl rt)
+target_link_libraries(keepaway_player pthread dl rt z)

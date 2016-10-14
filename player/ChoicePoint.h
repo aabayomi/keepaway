@@ -17,7 +17,7 @@ namespace fsm {
 template<class T>
 class ChoicePoint {
 public:
-  ChoicePoint(const std::string &name, const std::vector<T> &c) :
+  ChoicePoint(const std::string &name, const std::vector<T> c) :
       name(name),
       choices(c) {
 
@@ -27,9 +27,9 @@ public:
     return name;
   }
 
-  T choose() {
+  T choose(int current_time) {
     Log.log(101, "ChoicePoint::choose point name: %s", name.c_str());
-    auto jc = LinearSarsaLearner::ins().step((int) choices.size());
+    auto jc = LinearSarsaLearner::ins().step(current_time, (int) choices.size());
     auto i = jc[Memory::ins().agentIdx];
 
     if (jc.size()) {
