@@ -70,11 +70,11 @@ FileLock::~FileLock() {
 }
 
 ScopedLock::ScopedLock(sem_t *sem): sem(sem) {
-  SemTimedWait(sem);
+  if (sem) SemTimedWait(sem);
 }
 
 ScopedLock::~ScopedLock() {
-  sem_post(sem);
+  if (sem) sem_post(sem);
 }
 
 /********************** LOW-LEVEL SKILLS *************************************/

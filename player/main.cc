@@ -349,7 +349,9 @@ int main(int argc, char *argv[]) {
   } else {
     assert(sa == 0);
     fsm::HierarchicalFSM::initialize(
-        numFeatures, iNumKeepers, bLearn, resolutions, gamma, initialWeight, qLearning);
+        numFeatures, iNumKeepers, bLearn,
+        resolutions, gamma, initialWeight, qLearning,
+        loadWeightsFile, saveWeightsFile);
   }
 
   KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,

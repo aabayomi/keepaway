@@ -107,7 +107,9 @@ public:
                          double widths[],
                          double gamma,
                          double initialWeight,
-                         bool qLearning);
+                         bool qLearning,
+                         string loadWeightsFile,
+                         string saveWeightsFile);
 
 protected:
   ActHandler *ACT; /*!< ActHandler to which commands can be sent        */

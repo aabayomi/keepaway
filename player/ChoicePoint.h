@@ -29,13 +29,10 @@ public:
 
   T choose(int current_time) {
     Log.log(101, "ChoicePoint::choose point name: %s", name.c_str());
-    auto jc = LinearSarsaLearner::ins().step(current_time, (int) choices.size());
-    auto i = jc[Memory::ins().agentIdx];
+    auto i = LinearSarsaLearner::ins().step(current_time, (int) choices.size());
+    assert(i < choices.size());
 
-    if (jc.size()) {
-      Log.log(101, "ChoicePoint::choose my choice (agent %d): %s", Memory::ins().agentIdx,
-              to_string(choices[i]).c_str());
-    }
+    Log.log(101, "ChoicePoint::choose my choice (agent %d): %s", Memory::ins().agentIdx, to_string(choices[i]).c_str());
     return choices[i];
   }
 

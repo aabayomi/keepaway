@@ -89,8 +89,7 @@ LinearSarsaLearner &LinearSarsaLearner::ins() {
 }
 
 LinearSarsaLearner::~LinearSarsaLearner() {
-  if (sharedData) shm_unlink(sharedMemoryName.c_str());
-  for (auto s : semSignal) if (s) sem_close(s);
+  shutDown();
 }
 
 LinearSarsaLearner::LinearSarsaLearner() {
@@ -103,10 +102,16 @@ LinearSarsaLearner::LinearSarsaLearner() {
   lastJointChoiceTime = UnknownTime;
 }
 
-void LinearSarsaLearner::initialize(bool learning, double width[], double weight, bool QLearning)
+void LinearSarsaLearner::initialize(
+    bool learning, double width[], double weight, bool QLearning,
+    string loadWeightsFile,
+    string saveWeightsFile_)
 {
   bLearning = learning;
+  bSaveWeights = bLearning && saveWeightsFile_.length() > 0;
+  saveWeightsFile = saveWeightsFile_;
   qLearning = QLearning;
+
   for (int i = 0; i < HierarchicalFSM::num_features; i++) {
     tileWidths[i] = width[i];
   }
@@ -132,7 +137,7 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double weight
   minimumTrace = 0.01;
   numNonzeroTraces = 0;
 
-  if (bLearning) {
+  if (bLearning || !bLearning) {
     string exepath = getexepath();
     exepath += "LinearSarsaLearner::initialize";
     exepath += to_string(HierarchicalFSM::gamma);
@@ -179,8 +184,26 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double weight
       sharedData->reset();
       fill(traces, traces + RL_MEMORY_SIZE, 0.0);
       fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
+
+      if (loadWeightsFile.length() > 0)
+        loadWeights(loadWeightsFile.c_str());
     }
   }
+}
+
+void LinearSarsaLearner::shutDown()
+{
+  PRINT_VALUE(bLearning);
+  PRINT_VALUE(bSaveWeights);
+
+  if (Memory::ins().agentIdx == 0 && bLearning && bSaveWeights) {
+    cerr << "Saving weights at shutdown." << endl;
+    saveWeights(saveWeightsFile.c_str());
+  }
+
+  if (sharedData) shm_unlink(sharedMemoryName.c_str());
+  for (auto s : semSignal) if (s) sem_close(s);
+  if (semSync) sem_close(semSync);
 }
 
 bool LinearSarsaLearner::loadSharedData() {
@@ -352,7 +375,7 @@ int LinearSarsaLearner::step(int current_time) {
  * @param num_choices
  * @return
  */
-vector<int> LinearSarsaLearner::step(int current_time, int num_choices) {
+int LinearSarsaLearner::step(int current_time, int num_choices) {
   bool last_blocking_agent = false;
   {
     ScopedLock lock(semSync);
@@ -368,7 +391,7 @@ vector<int> LinearSarsaLearner::step(int current_time, int num_choices) {
     last_blocking_agent = sharedData->isAllBlocked(HierarchicalFSM::num_keepers);
   }
 
-  if (last_blocking_agent || !bLearning) { // leading agent
+  if (last_blocking_agent) { // leading agent
     Log.log(101, "LinearSarsaLearner::step leading agent %d (running status: %d)", Memory::ins().agentIdx,
             sharedData->getRunningStatus());
     bool action_state = loadSharedData();
@@ -421,9 +444,9 @@ vector<int> LinearSarsaLearner::step(int current_time, int num_choices) {
   if (sharedData->isBlocked(Memory::ins().agentIdx)) sharedData->clearBlocked(Memory::ins().agentIdx);
   bool action_state = loadSharedData();
   if (action_state) { // dummy choice
-    return vector<int>((unsigned long) HierarchicalFSM::num_keepers, 0);
+    return 0;
   } else {
-    return lastJointChoice;
+    return lastJointChoice[Memory::ins().agentIdx];
   }
 }
 
@@ -432,6 +455,7 @@ void LinearSarsaLearner::endEpisode(int current_time) {
 
   if (Memory::ins().agentIdx == 0) { // only one agent can update
     loadSharedData();
+
     if (bLearning && lastJointChoiceIdx >= 0) {
       ScopedLock lock(semSync);
       assert(lastJointChoiceTime != UnknownTime);
@@ -440,9 +464,14 @@ void LinearSarsaLearner::endEpisode(int current_time) {
       double delta = reward(tau) - Q[lastJointChoiceIdx];
       updateWeights(delta);
     }
+
     lastJointChoiceIdx = -1;
     lastJointChoiceTime = UnknownTime;
     saveSharedData();
+
+    if (bLearning && bSaveWeights && rand() % 1000 == 0) {
+      saveWeights(saveWeightsFile.c_str());
+    }
   } else {
     usleep(5000);
   }
@@ -638,14 +667,30 @@ void LinearSarsaLearner::increaseMinTrace() {
   }
 }
 
-string LinearSarsaLearner::getQStr(int num_choice) {
-  stringstream ss;
-//  ss << vector<double>(Q, Q + num_choice);
-  return ss.str();
+bool LinearSarsaLearner::loadWeights(const char *filename) {
+  cerr << "Loading weights from " << filename << endl;
+  int file = open(filename, O_RDONLY);
+  if (file < 0) {
+    cerr << "failed to open weight file: " << filename << endl;
+    return false;
+  }
+  read(file, (char *) weights, RL_MEMORY_SIZE * sizeof(double));
+  colTab->restore(file);
+  close(file);
+  cerr << "...done" << endl;
+  return true;
 }
 
-SharedData *LinearSarsaLearner::getSharedData() const {
-  return sharedData;
+bool LinearSarsaLearner::saveWeights(const char *filename) {
+  int file = open(filename, O_CREAT | O_WRONLY, 0664);
+  if (file < 0) {
+    cerr << "failed to open weight file: " << filename << endl;
+    return false;
+  }
+  write(file, (char *) weights, RL_MEMORY_SIZE * sizeof(double));
+  colTab->save(file);
+  close(file);
+  return true;
 }
 
 }

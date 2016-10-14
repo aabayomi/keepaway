@@ -8,7 +8,7 @@ LOGLEVEL="101"
 HIERARCHICALFSM=""
 QLEARNING=""
 GAMMA="1.0"
-INITIALWEIGHT="0.0"
+INITIALWEIGHT="0.5"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
 LOGDIR="logs"
@@ -63,6 +63,8 @@ fi
 
 if [ $BUILD != "none" ]; then
     make $BUILD
+else
+    sleep $[ ( $RANDOM % 10 )  + 1 ]s # batch mode
 fi
 
 CONSOLE_LOG="$LOGDIR/`basename $QFILE .q`.console"

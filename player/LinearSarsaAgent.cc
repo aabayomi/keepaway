@@ -209,7 +209,7 @@ void LinearSarsaAgent::endEpisode(double reward_) {
   Log.log(101, "LinearSarsaAgent::endEpisode tau: %f", tau);
   Log.log(101, "LinearSarsaAgent::endEpisode hived lastAction: %d", lastAction);
 
-  if (bLearning && lastAction != -1) { /* otherwise we never ran on this episode */
+  if (bLearning && lastAction >= 0) { /* otherwise we never ran on this episode */
     double delta = reward(tau, gamma) - Q[lastAction];
     updateWeights(delta);
   }
@@ -220,7 +220,7 @@ void LinearSarsaAgent::endEpisode(double reward_) {
 
   lastAction = -1;
   lastActionTime = UnknownTime;
-  sem_init(semSignal[agentIdx], PTHREAD_PROCESS_SHARED, 0);
+  if (bLearning) sem_init(semSignal[agentIdx], PTHREAD_PROCESS_SHARED, 0);
 }
 
 void LinearSarsaAgent::shutDown() {
@@ -242,18 +242,23 @@ int LinearSarsaAgent::selectAction() {
     }
 
     lastActionTime = WM->getCurrentCycle();
-    sharedData->lastAction = lastAction;
-    sharedData->lastActionTime = lastActionTime;
-    for (int i = 0; i < WM->getNumKeepers(); ++i) {
-      if (i != agentIdx) {
-        notify(i);
+    if (sharedData) {
+      sharedData->lastAction = lastAction;
+      sharedData->lastActionTime = lastActionTime;
+    }
+
+    if (bLearning) {
+      for (int i = 0; i < WM->getNumKeepers(); ++i) {
+        if (i != agentIdx) {
+          notify(i);
+        }
       }
     }
   } else {
     wait();
   }
 
-  {
+  if (bLearning) {
     ScopedLock lock(semSync);
     lastAction = sharedData->lastAction;
     lastActionTime = sharedData->lastActionTime;

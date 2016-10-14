@@ -65,10 +65,6 @@ struct SharedData {
 
   void reset();
 
-  void resetReward();
-
-  void updateReward(double r);
-
 private:
   int runningStatus;
 
@@ -93,9 +89,14 @@ private:
 public:
   static LinearSarsaLearner &ins();
 
-  void initialize(bool learning, double width[], double weight, bool qLearning);
+  void initialize(
+      bool learning, double width[], double weight, bool qLearning,
+      string loadWeightsFile,
+      string saveWeightsFile);
 
-  vector<int> step(int current_time, int num_choices);
+  void shutDown();
+
+  int step(int current_time, int num_choices);
 
   int step(int current_time);
 
@@ -109,6 +110,11 @@ public:
 
   void notify(int i);
 
+  // Load / Save weights from/to disk
+  bool loadWeights(const char *filename);
+
+  bool saveWeights(const char *filename);
+
 public:
   int lastJointChoiceIdx;
   int lastJointChoiceTime;
@@ -118,9 +124,9 @@ public:
 
 private:
   bool bLearning;
+  string saveWeightsFile;
+  bool bSaveWeights;
   SharedData *sharedData;
-public:
-  SharedData *getSharedData() const;
 
 private:
   sem_t *semSignal[11];
@@ -164,8 +170,6 @@ private:
   void setTrace(int f, float newTraceValue);
 
   void increaseMinTrace();
-
-  string getQStr(int num_choice);
 
   const vector<int> &validChoices(const vector<int> &num_choices);
 
