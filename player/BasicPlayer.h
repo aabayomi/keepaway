@@ -69,6 +69,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern Logger Log; /*!< This is a reference to Logger to write log info to*/
 
+#define SCOPED_LOG EntryRaiiObject obj ## __LINE__ (__PRETTY_FUNCTION__);
+
+struct EntryRaiiObject {
+  EntryRaiiObject(const char *f) : f_(f) {
+    Log.log(101, "Entered into >> %s", f_);
+  }
+
+  ~EntryRaiiObject() {
+    Log.log(101, "Exited from << %s", f_);
+  }
+
+  const char *f_;
+};
+
 class FileLock {
 private:
   int lock;
@@ -109,6 +123,7 @@ private:
   sem_t *mutex;
   sem_t *turnstile;
   sem_t *turnstile2;
+  int wait_id;
 };
 
 inline void SemTimedWait(sem_t *sem, int ms = 0) {

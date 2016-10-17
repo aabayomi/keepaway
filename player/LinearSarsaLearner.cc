@@ -300,6 +300,7 @@ int LinearSarsaLearner::step(int current_time) {
  * @return
  */
 int LinearSarsaLearner::step(int current_time, int num_choices) {
+  SCOPED_LOG
   auto stackStr = HierarchicalFSM::getStackStr();
   sharedData->numChoices[Memory::ins().K[Memory::ins().agentIdx]] = num_choices;
   strcpy(sharedData->machineStateStr[Memory::ins().K[Memory::ins().agentIdx]], stackStr.c_str());
@@ -320,24 +321,24 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
   }
 
   barrier->wait();
-  loadSharedData();
+  bool action_state2 = loadSharedData();
+  barrier->wait();
 
-  if (action_state) {
+  if (action_state2 == action_state) {
+    if (action_state) {
+      return 0;
+    } else if (numChoices[Memory::ins().agentIdx] <= 1) { // dummy choice
+      return step(current_time, num_choices);
+    } else {
+      return lastJointChoice[Memory::ins().agentIdx];
+    }
+  } else { // race condition?
     return 0;
-  } else if (numChoices[Memory::ins().agentIdx] <= 1) {
-    Assert(lastJointChoiceIdx >= 0);
-    Assert(lastJointChoiceTime == current_time);
-    return step(current_time, num_choices);
-  } else {
-    Assert(lastJointChoiceIdx >= 0);
-    Assert(lastJointChoiceTime == current_time);
-    return lastJointChoice[Memory::ins().agentIdx];
   }
 }
 
 void LinearSarsaLearner::endEpisode(int current_time) {
-  Log.log(101, "LinearSarsaLearner::endEpisode");
-
+  SCOPED_LOG
   if (Memory::ins().agentIdx == 0) { // only one agent can update
     loadSharedData();
 
