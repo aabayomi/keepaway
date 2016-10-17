@@ -119,7 +119,11 @@ int main(int argc, char *argv[]) {
   double initialWeight = 0.0;
   bool qLearning = false;
 
+#ifdef _Compress
   ogzstream os;
+#else
+  ofstream os;
+#endif
 
   // read in all the command options and change the associated variables
   // assume every two values supplied at prompt, form a duo
@@ -205,7 +209,11 @@ int main(int argc, char *argv[]) {
           iNr = Parse::parseFirstInt(&str);
           break;
         case 'o':                                   // output file log info
+# ifdef _Compress
           os.open((string(argv[i + 1]) + ".gz").c_str());
+#else
+          os.open(argv[i + 1]);
+#endif
           bSuppliedLogFile = true;
           break;
         case 'p':                                   // port
@@ -347,7 +355,7 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
   } else {
-    assert(sa == 0);
+    Assert(sa == 0);
     fsm::HierarchicalFSM::initialize(
         numFeatures, iNumKeepers, bLearn,
         resolutions, gamma, initialWeight, qLearning,

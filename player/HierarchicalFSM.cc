@@ -3,7 +3,6 @@
 //
 
 #include <cstring>
-#include <cassert>
 #include <sstream>
 #include <climits>
 #include "HierarchicalFSM.h"
@@ -135,10 +134,10 @@ string HierarchicalFSM::getState() {
   }
 
   int numK = WM->getNumKeepers();
-  assert(numK == num_keepers);
+  Assert(numK == num_keepers);
 
   int features = WM->keeperStateVars(Memory::ins().state);
-  assert(features == 0 || features == num_features);
+  Assert(features == 0 || features == num_features);
   if (features != num_features) return "features != SA->getNumFeatures()";
 
   for (int i = 0; i < numK; i++)
@@ -153,7 +152,7 @@ string HierarchicalFSM::getState() {
   while (agentIdx < numK &&
          Memory::ins().K[agentIdx] != WM->getAgentObjectType())
     agentIdx += 1;
-  assert(agentIdx < numK);
+  Assert(agentIdx < numK);
 
   if (agentIdx >= numK) return "agentIdx >= numK";
   return "";
@@ -213,10 +212,10 @@ Keeper::~Keeper() {
 }
 
 void Keeper::run() {
-  while (WM->getCurrentCycle() != 1) action(false);
+  while (WM->getCurrentCycle() < 1) action(false);
 
   while (Memory::ins().bAlive) {
-    assert(Memory::ins().getStack().size() == 1);
+    Assert(Memory::ins().getStack().size() == 1);
     if (WM->isNewEpisode()) {
       LinearSarsaLearner::ins().endEpisode(WM->getCurrentCycle());
       WM->setNewEpisode(false);
@@ -269,7 +268,7 @@ Move::~Move() {
 }
 
 void Move::run() {
-  assert(!WM->isBallKickable());
+  Assert(!WM->isBallKickable());
   MakeChoice<int> c(moveToChoice);
   auto d = c(WM->getCurrentCycle());
 
@@ -325,7 +324,7 @@ Stay::Stay(BasicPlayer *p) : HierarchicalFSM(p, "$Stay") {
 }
 
 void Stay::run() {
-  assert(!WM->isBallKickable());
+  Assert(!WM->isBallKickable());
   bool flag = WM->isTmControllBall();
   while (running() && flag == WM->isTmControllBall()) {
     SoccerCommand soc;
@@ -341,8 +340,8 @@ Intercept::Intercept(BasicPlayer *p) : HierarchicalFSM(p, "$Intercept") {
 }
 
 void Intercept::run() {
-  assert(!WM->isBallKickable());
-  assert(!WM->isTmControllBall());
+  Assert(!WM->isBallKickable());
+  Assert(!WM->isTmControllBall());
   while (running() && !WM->isTmControllBall()) {
     SoccerCommand soc;
     ACT->putCommandInQueue(soc = player->intercept(false));
@@ -365,7 +364,7 @@ Pass::~Pass() {
 }
 
 void Pass::run() {
-  assert(WM->isBallKickable());
+  Assert(WM->isBallKickable());
   MakeChoice<int> c(passToChoice);
   auto k = c(WM->getCurrentCycle());
 
@@ -382,7 +381,7 @@ Hold::Hold(BasicPlayer *p) : HierarchicalFSM(p, "$Hold") {
 }
 
 void Hold::run() {
-  assert(WM->isBallKickable());
+  Assert(WM->isBallKickable());
   SoccerCommand soc;
   ACT->putCommandInQueue(soc = player->holdBall());
   ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));

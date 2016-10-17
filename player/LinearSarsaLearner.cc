@@ -2,39 +2,14 @@
 // Created by baj on 10/4/16.
 //
 
-#include <cassert>
 #include <climits>
 #include <sstream>
 #include "LinearSarsaLearner.h"
 
 namespace fsm {
 
-void SharedData::setBlocked(int i) {
-  auto status = runningStatus;
-//  assert(!isBlocked(i));
-  runningStatus |= 1 << i;
-//  assert(isBlocked(i));
-  Log.log(101, "SharedData::setBlocked %d (%d => %d)", i, status, runningStatus);
-}
-
-void SharedData::clearBlocked(int i) {
-  auto status = runningStatus;
-//  assert(isBlocked(i));
-  runningStatus &= ~(1 << i);
-//  assert(!isBlocked(i));
-  Log.log(101, "SharedData::clearBlocked %d (%d => %d)", i, status, runningStatus);
-}
-
-bool SharedData::isBlocked(int i) {
-  return (bool) ((runningStatus >> i) & 1);
-}
-
-bool SharedData::isAllBlocked(int k) {
-  return runningStatus + 1 == 1 << k;
-}
-
 void SharedData::reset() {
-  runningStatus = 0;
+  numBlocked = 0;
   lastJointChoiceIdx = -1;
   lastJointChoiceTime = UnknownTime;
   memset(lastJointChoice, 0, sizeof(lastJointChoice));
@@ -74,15 +49,6 @@ vector<string> SharedData::getMachineStateStr() const {
   return ret;
 }
 
-void SharedData::clearBlocked() {
-  Log.log(101, "SharedData::clearBlocked to 0");
-  runningStatus = 0;
-}
-
-int SharedData::getRunningStatus() const {
-  return runningStatus;
-}
-
 LinearSarsaLearner &LinearSarsaLearner::ins() {
   static LinearSarsaLearner learner;
   return learner;
@@ -96,8 +62,7 @@ LinearSarsaLearner::LinearSarsaLearner() {
   bLearning = false;
   qLearning = false;
   sharedData = 0;
-  memset(semSignal, 0, sizeof(semSignal));
-  semSync = 0;
+  barrier = 0;
   lastJointChoiceIdx = -1;
   lastJointChoiceTime = UnknownTime;
 }
@@ -146,19 +111,6 @@ void LinearSarsaLearner::initialize(
     auto h = hash<string>()(exepath); //hashing
     sharedMemoryName = "/" + to_string(h) + ".shm";
 
-    for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-      if ((semSignal[i] = sem_open(("/signal-" + to_string(i) + "-" + to_string(h)).c_str(), O_CREAT, 0666, 0)) ==
-          SEM_FAILED) {
-        perror("semaphore initilization");
-        exit(1);
-      }
-    }
-
-    if ((semSync = sem_open(("/sync-" + to_string(h)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
-      perror("semaphore initilization");
-      exit(1);
-    }
-
     int shm_fd = shm_open(sharedMemoryName.c_str(), O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1) {
       printf("prod: Shared memory failed: %s\n", strerror(errno));
@@ -179,35 +131,29 @@ void LinearSarsaLearner::initialize(
     nonzeroTracesInverse = sharedData->nonzeroTracesInverse;
     colTab = &sharedData->colTab;
 
-    {
-      ScopedLock lock(semSync);
-      sharedData->reset();
-      fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-      fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
+    barrier = new Barrier(HierarchicalFSM::num_keepers, &(sharedData->numBlocked), h);
 
-      if (loadWeightsFile.length() > 0)
-        loadWeights(loadWeightsFile.c_str());
-    }
+    sharedData->reset();
+    fill(traces, traces + RL_MEMORY_SIZE, 0.0);
+    fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
+
+    if (loadWeightsFile.length() > 0)
+      loadWeights(loadWeightsFile.c_str());
   }
 }
 
 void LinearSarsaLearner::shutDown()
 {
-  PRINT_VALUE(bLearning);
-  PRINT_VALUE(bSaveWeights);
-
   if (Memory::ins().agentIdx == 0 && bLearning && bSaveWeights) {
     cerr << "Saving weights at shutdown." << endl;
     saveWeights(saveWeightsFile.c_str());
   }
 
   if (sharedData) shm_unlink(sharedMemoryName.c_str());
-  for (auto s : semSignal) if (s) sem_close(s);
-  if (semSync) sem_close(semSync);
+  delete barrier;
 }
 
 bool LinearSarsaLearner::loadSharedData() {
-  ScopedLock lock(semSync);
   numTilings = sharedData->numTilings;
   minimumTrace = sharedData->minimumTrace;
   numNonzeroTraces = sharedData->numNonzeroTraces;
@@ -243,29 +189,10 @@ bool LinearSarsaLearner::loadSharedData() {
   return action_state;
 }
 
-void LinearSarsaLearner::wait() {
-  int val = -1;
-  sem_getvalue(semSignal[Memory::ins().agentIdx], &val);
-  Log.log(101, "LinearSarsaLearner::wait agent %d wait to be notified, cur val: %d", Memory::ins().agentIdx, val);
-  SemTimedWait(semSignal[Memory::ins().agentIdx]);
-  Log.log(101, "LinearSarsaLearner::wait agent %d notified", Memory::ins().agentIdx);
-}
-
-void LinearSarsaLearner::notify(int i) {
-  assert(i != Memory::ins().agentIdx);
-  int val = -1;
-  sem_getvalue(semSignal[i], &val);
-  assert(val == 0);
-  Log.log(101, "LinearSarsaLearner::notify agent %d notify %d, cur val: %d", Memory::ins().agentIdx, i, val);
-  sem_post(semSignal[i]);
-}
-
 void LinearSarsaLearner::saveSharedData() {
-  ScopedLock lock(semSync);
-
-  assert(numChoices.size());
-  assert(machineStateStr.size());
-  assert(lastJointChoice.size());
+  Assert(numChoices.size());
+  Assert(machineStateStr.size());
+  Assert(lastJointChoice.size());
 
   sharedData->numTilings = numTilings;
   sharedData->minimumTrace = minimumTrace;
@@ -319,12 +246,9 @@ double LinearSarsaLearner::reward(double tau) {
 }
 
 int LinearSarsaLearner::step(int current_time) {
-  ScopedLock lock(semSync);
-
   int choice = -1;
   if (lastJointChoiceIdx >= 0) {
-    assert(lastJointChoiceTime != UnknownTime);
-    assert(lastJointChoiceTime <= current_time);
+    Assert(lastJointChoiceTime != UnknownTime);
     double tau = current_time - lastJointChoiceTime;
     double delta = reward(tau) - Q[lastJointChoiceIdx];
     loadTiles(Memory::ins().state, machineStateStr, numChoices);
@@ -334,7 +258,7 @@ int LinearSarsaLearner::step(int current_time) {
     choice = selectChoice(numChoices);
 
     if (!bLearning) return choice;
-    assert(!std::isnan(Q[choice]) && !std::isinf(Q[choice]));
+    Assert(!std::isnan(Q[choice]) && !std::isinf(Q[choice]));
 
     if (qLearning) {
       delta += pow(HierarchicalFSM::gamma, tau) * Q[argmaxQ(numChoices)];
@@ -355,7 +279,7 @@ int LinearSarsaLearner::step(int current_time) {
     }
   } else { // new episode
     decayTraces(0.0);
-    assert(numNonzeroTraces == 0);
+    Assert(numNonzeroTraces == 0);
     loadTiles(Memory::ins().state, machineStateStr, numChoices);
     for (auto c : validChoices(numChoices)) {
       Q[c] = computeQ(c);
@@ -376,76 +300,37 @@ int LinearSarsaLearner::step(int current_time) {
  * @return
  */
 int LinearSarsaLearner::step(int current_time, int num_choices) {
-  bool last_blocking_agent = false;
-  {
-    ScopedLock lock(semSync);
-    auto stackStr = HierarchicalFSM::getStackStr();
-    sharedData->numChoices[Memory::ins().K[Memory::ins().agentIdx]] = num_choices;
-    strcpy(sharedData->machineStateStr[Memory::ins().K[Memory::ins().agentIdx]], stackStr.c_str());
+  auto stackStr = HierarchicalFSM::getStackStr();
+  sharedData->numChoices[Memory::ins().K[Memory::ins().agentIdx]] = num_choices;
+  strcpy(sharedData->machineStateStr[Memory::ins().K[Memory::ins().agentIdx]], stackStr.c_str());
 
-    Log.log(101, "LinearSarsaLearner::step agent %d write numChoices %d", Memory::ins().agentIdx, num_choices);
-    Log.log(101, "LinearSarsaLearner::step agent %d write machineStateStr %s", Memory::ins().agentIdx,
-            stackStr.c_str());
+  Log.log(101, "LinearSarsaLearner::step agent %d write numChoices %d", Memory::ins().agentIdx, num_choices);
+  Log.log(101, "LinearSarsaLearner::step agent %d write machineStateStr %s", Memory::ins().agentIdx,
+          stackStr.c_str());
 
-    sharedData->setBlocked(Memory::ins().agentIdx);
-    last_blocking_agent = sharedData->isAllBlocked(HierarchicalFSM::num_keepers);
-  }
-
-  if (last_blocking_agent) { // leading agent
-    Log.log(101, "LinearSarsaLearner::step leading agent %d (running status: %d)", Memory::ins().agentIdx,
-            sharedData->getRunningStatus());
-    bool action_state = loadSharedData();
-
-    if (action_state) { // no q update
-      ScopedLock lock(semSync);
-      sharedData->clearBlocked(); // reset to 0
-
-      for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-        if (i != Memory::ins().agentIdx) {
-          notify(i);
-        }
-      }
-    } else {
+  barrier->wait();
+  bool action_state = loadSharedData();
+  if (Memory::ins().agentIdx == 0) {
+    if (!action_state) {
       lastJointChoiceIdx = step(current_time);
       lastJointChoiceTime = current_time;
-      assert(lastJointChoiceIdx >= 0);
       lastJointChoice = jointChoicesMap[numChoices][lastJointChoiceIdx];
       saveSharedData();
-
-      {
-        ScopedLock lock(semSync);
-        for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-          if (numChoices[i] > 1) {
-            sharedData->clearBlocked(i);
-          }
-        }
-
-        for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-          if (numChoices[i] > 1 && i != Memory::ins().agentIdx) { // not blocked in action state
-            notify(i);
-          }
-        }
-      }
-
-      if (numChoices[Memory::ins().agentIdx] <= 1) {
-        wait(); // block self
-      }
     }
-  } else {
-    wait();
   }
 
-//  assert(!sharedData->isBlocked(agentIdx));
-  if (sharedData->isBlocked(Memory::ins().agentIdx)) {
-    PRINT_VALUE(sharedData->isBlocked(Memory::ins().agentIdx));
-    Log.log(101, "sharedData->isBlocked(agentIdx)");
-  }
+  barrier->wait();
+  loadSharedData();
 
-  if (sharedData->isBlocked(Memory::ins().agentIdx)) sharedData->clearBlocked(Memory::ins().agentIdx);
-  bool action_state = loadSharedData();
-  if (action_state) { // dummy choice
+  if (action_state) {
     return 0;
+  } else if (numChoices[Memory::ins().agentIdx] <= 1) {
+    Assert(lastJointChoiceIdx >= 0);
+    Assert(lastJointChoiceTime == current_time);
+    return step(current_time, num_choices);
   } else {
+    Assert(lastJointChoiceIdx >= 0);
+    Assert(lastJointChoiceTime == current_time);
     return lastJointChoice[Memory::ins().agentIdx];
   }
 }
@@ -457,9 +342,8 @@ void LinearSarsaLearner::endEpisode(int current_time) {
     loadSharedData();
 
     if (bLearning && lastJointChoiceIdx >= 0) {
-      ScopedLock lock(semSync);
-      assert(lastJointChoiceTime != UnknownTime);
-      assert(lastJointChoiceTime <= current_time);
+      Assert(lastJointChoiceTime != UnknownTime);
+      Assert(lastJointChoiceTime <= current_time);
       double tau = current_time - lastJointChoiceTime;
       double delta = reward(tau) - Q[lastJointChoiceIdx];
       updateWeights(delta);
@@ -472,18 +356,16 @@ void LinearSarsaLearner::endEpisode(int current_time) {
     if (bLearning && bSaveWeights && rand() % 1000 == 0) {
       saveWeights(saveWeightsFile.c_str());
     }
-  } else {
-    usleep(5000);
   }
 
+  barrier->wait();
   loadSharedData();
+
   machineStateStr.clear();
   numChoices.clear();
   lastJointChoiceIdx = -1;
   lastJointChoiceTime = UnknownTime;
   lastJointChoice.clear();
-  if (sharedData->isBlocked(Memory::ins().agentIdx)) sharedData->clearBlocked(Memory::ins().agentIdx);
-  sem_init(semSignal[Memory::ins().agentIdx], PTHREAD_PROCESS_SHARED, 0);
 }
 
 void LinearSarsaLearner::loadTiles(
@@ -505,8 +387,8 @@ void LinearSarsaLearner::loadTiles(
     numTilings += tilingsPerGroup;
   }
 
-  assert(numTilings > 0);
-  assert(numTilings < RL_MAX_NUM_TILINGS);
+  Assert(numTilings > 0);
+  Assert(numTilings < RL_MAX_NUM_TILINGS);
 }
 
 double LinearSarsaLearner::computeQ(int choice) {
@@ -562,30 +444,30 @@ int LinearSarsaLearner::argmaxQ(const vector<int> &num_choices) {
     }
   }
 
-  assert(bestAction >= 0);
+  Assert(bestAction >= 0);
   return bestAction;
 }
 
 void LinearSarsaLearner::updateWeights(double delta) {
   Log.log(101, "LinearSarsaLearner::updateWeights delta %f", delta);
 
-  assert(numTilings > 0);
+  Assert(numTilings > 0);
   double tmp = delta * alpha / numTilings;
 
   for (int i = 0; i < numNonzeroTraces; i++) {
-    assert(i < RL_MAX_NONZERO_TRACES);
+    Assert(i < RL_MAX_NONZERO_TRACES);
 
     int f = nonzeroTraces[i];
-    assert(f >= 0);
-    assert(f < RL_MEMORY_SIZE);
+    Assert(f >= 0);
+    Assert(f < RL_MEMORY_SIZE);
 
     if (f >= RL_MEMORY_SIZE || f < 0) {
       continue;
     }
 
     weights[f] += tmp * traces[f];
-    assert(!std::isnan(weights[f]));
-    assert(!std::isinf(weights[f]));
+    Assert(!std::isnan(weights[f]));
+    Assert(!std::isinf(weights[f]));
   }
 }
 
@@ -593,7 +475,7 @@ void LinearSarsaLearner::decayTraces(double decayRate) {
   for (int loc = numNonzeroTraces - 1; loc >= 0; loc--) {
     int f = nonzeroTraces[loc];
     if (f >= RL_MEMORY_SIZE || f < 0) {
-      assert(0);
+      Assert(0);
       cerr << "DecayTraces: f out of range " << f << endl;
       continue;
     }
@@ -606,7 +488,7 @@ void LinearSarsaLearner::decayTraces(double decayRate) {
 
 void LinearSarsaLearner::clearTrace(int f) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
-    assert(0);
+    Assert(0);
     cerr << "ClearTrace: f out of range " << f << endl;
     return;
   }
@@ -617,7 +499,7 @@ void LinearSarsaLearner::clearTrace(int f) {
 
 void LinearSarsaLearner::clearExistentTrace(int f, int loc) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
-    assert(0);
+    Assert(0);
     cerr << "ClearExistentTrace: f out of range " << f << endl;
     return;
   }
@@ -630,13 +512,13 @@ void LinearSarsaLearner::clearExistentTrace(int f, int loc) {
     nonzeroTracesInverse[nonzeroTraces[loc]] = loc;
   } else {
     fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-    assert(numNonzeroTraces == 0);
+    Assert(numNonzeroTraces == 0);
   }
 }
 
 void LinearSarsaLearner::setTrace(int f, float newTraceValue) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
-    assert(0);
+    Assert(0);
     cerr << "SetTraces: f out of range " << f << endl;
     return;
   }
@@ -649,8 +531,8 @@ void LinearSarsaLearner::setTrace(int f, float newTraceValue) {
     }
 
     traces[f] = newTraceValue;
-    assert(numNonzeroTraces >= 0);
-    assert(numNonzeroTraces < RL_MAX_NONZERO_TRACES);
+    Assert(numNonzeroTraces >= 0);
+    Assert(numNonzeroTraces < RL_MAX_NONZERO_TRACES);
     nonzeroTraces[numNonzeroTraces] = f;
     nonzeroTracesInverse[f] = numNonzeroTraces;
     numNonzeroTraces++;

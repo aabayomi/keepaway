@@ -77,6 +77,73 @@ ScopedLock::~ScopedLock() {
   if (sem) sem_post(sem);
 }
 
+Barrier::Barrier(int n, int *count, int hash) : n(n), count(count) {
+  Log.log(101, "Barrier::Barrier n=%d", n);
+  Log.log(101, "Barrier::Barrier count=%d", *count);
+
+  if ((mutex = sem_open(("/Barrier::mutex-" + to_string(hash)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
+    perror("semaphore initilization");
+    exit(1);
+  }
+
+  if ((turnstile = sem_open(("/Barrier::turnstile-" + to_string(hash)).c_str(), O_CREAT, 0666, 0)) == SEM_FAILED) {
+    perror("semaphore initilization");
+    exit(1);
+  }
+
+  if ((turnstile2 = sem_open(("/Barrier::turnstile2-" + to_string(hash)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
+    perror("semaphore initilization");
+    exit(1);
+  }
+}
+
+void Barrier::phase1() {
+//  Log.log(101, "Barrier::phase1 >>");
+  {
+    ScopedLock lock(mutex);
+    *count += 1;
+//    Log.log(101, "Barrier::phase1 count=%d", *count);
+    if (*count == n) {
+      SemTimedWait(turnstile2);
+      sem_post(turnstile);
+    }
+  }
+
+  SemTimedWait(turnstile);
+  sem_post(turnstile);
+//  Log.log(101, "Barrier::phase1 <<");
+}
+
+void Barrier::phase2() {
+//  Log.log(101, "Barrier::phase2 >>");
+  {
+    ScopedLock lock(mutex);
+    *count -= 1;
+//    Log.log(101, "Barrier::phase2 count=%d", *count);
+    if (*count == 0) {
+      SemTimedWait(turnstile);
+      sem_post(turnstile2);
+    }
+  }
+
+  SemTimedWait(turnstile2);
+  sem_post(turnstile2);
+//  Log.log(101, "Barrier::phase2 <<");
+}
+
+void Barrier::wait() {
+  Log.log(101, "Barrier::wait >>");
+  phase1();
+  phase2();
+  Log.log(101, "Barrier::wait <<");
+}
+
+Barrier::~Barrier() {
+  sem_close(mutex);
+  sem_close(turnstile);
+  sem_close(turnstile2);
+}
+
 /********************** LOW-LEVEL SKILLS *************************************/
 
 /*! This skill enables an agent to align his neck with his body. It returns a

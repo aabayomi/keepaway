@@ -237,30 +237,12 @@ void KeepawayPlayer::makeSayMessage( SoccerCommand soc, char * strMsg )
 
 SoccerCommand KeepawayPlayer::keeper()
 {
-  //Log.log( 101, "KeepawayPlayer::keeper: decision" );
-
   SoccerCommand soc;
 
-#if USE_DRAW_LOG
-  LogDraw.logCircle( "ball belief", WM->getBallPos(),
-                     1.1, 11, false, COLOR_RED,
-                     WM->getConfidence( OBJECT_BALL ) );
-  char buffer[128];
-  sprintf( buffer, "%.2f", WM->getConfidence( OBJECT_BALL ) );
-  LogDraw.logText( "ball belief", WM->getBallPos(),
-                   buffer,
-                   11, COLOR_RED );
-#endif
-
   // If we don't know where the ball is, search for it.
-  if (WM->getConfidence(OBJECT_BALL) < PS->getBallConfThr()) {
+  if (WM->getCurrentCycle() < 1 || WM->getConfidence(OBJECT_BALL) < PS->getBallConfThr()) {
     ACT->putCommandInQueue( soc = searchBall() );
     ACT->putCommandInQueue( alignNeckWithBody() );
-#if USE_DRAW_LOG
-    LogDraw.logText( "state", VecPosition( 25, 25 ),
-                     "lost ball",
-                     1, COLOR_WHITE );
-#endif
     return soc;
   }
 
@@ -275,7 +257,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
 
   int numK = WM->getNumKeepers();
   int features = WM->keeperStateVars(state);
-  assert(features == 0 || features == SA->getNumFeatures());
+  Assert(features == 0 || features == SA->getNumFeatures());
   if (features != SA->getNumFeatures()) return idle("features != SA->getNumFeatures()"); // do nothing
   Log.log(101, "isTmControllBall %d", WM->isTmControllBall());
 
@@ -292,7 +274,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
   int &agentIdx = SA->agentIdx;
   agentIdx = 0;
   while (agentIdx < numK && K[agentIdx] != WM->getAgentObjectType()) agentIdx += 1;
-  assert(agentIdx < numK);
+  Assert(agentIdx < numK);
   Log.log(101, "agentIdx %d", agentIdx);
 
   if (agentIdx >= numK) return idle("agentIdx >= numK");
@@ -304,7 +286,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
 
     int idx = 0;
     while (idx < numK && savedK[idx] != WM->getAgentObjectType()) idx += 1;
-    assert(idx < numK);
+    Assert(idx < numK);
     if (idx >= numK) return idle("idx >= numK");
 
     if (!aa->terminated(this, savedK)) {
@@ -317,7 +299,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
     }
   }
 
-  assert(agentIdx != 0 || !WM->isTmControllBall() || WM->isBallKickable());
+  Assert(agentIdx != 0 || !WM->isTmControllBall() || WM->isBallKickable());
 
   if (WM->isNewEpisode()) {
     SA->endEpisode(WM->keeperReward(SA->lastActionTime));
@@ -325,7 +307,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
 
   int action;
   if (WM->isNewEpisode() || SA->lastActionTime == UnknownTime || SA->lastAction == -1) {
-    assert(SA->lastAction == -1);
+    Assert(SA->lastAction == -1);
     if (WM->isNewEpisode()) WM->setNewEpisode(false);
     action = SA->startEpisode(state);
   } else { // Call step() on all but first SMDP step

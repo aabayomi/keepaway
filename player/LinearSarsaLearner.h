@@ -55,24 +55,10 @@ struct SharedData {
 
   vector<string> getMachineStateStr() const;
 
-  void setBlocked(int i);
-
-  void clearBlocked(int i);
-
-  bool isAllBlocked(int k);
-
-  bool isBlocked(int i);
-
   void reset();
 
-private:
-  int runningStatus;
-
 public:
-  int getRunningStatus() const;
-
-public:
-  void clearBlocked();
+  int numBlocked;
 };
 
 class HierarchicalFSM;
@@ -106,10 +92,6 @@ public:
 
   void saveSharedData();
 
-  void wait();
-
-  void notify(int i);
-
   // Load / Save weights from/to disk
   bool loadWeights(const char *filename);
 
@@ -129,8 +111,7 @@ private:
   SharedData *sharedData;
 
 private:
-  sem_t *semSignal[11];
-  sem_t *semSync;
+  Barrier *barrier;
 
   double alpha;
   double lambda;

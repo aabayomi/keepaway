@@ -51,9 +51,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _GEOMETRY_
 #define _GEOMETRY_
 
-#include "math.h"       // needed for M_PI constant
+#include <cmath>       // needed for M_PI constant
+#include <cassert>
 #include <string>       // needed for string
 #include <iostream>
+
+#ifdef _Debug
+#define Assert(expr) assert(expr)
+#else
+#define Assert(expr)
+#endif
 
 using namespace std;
 

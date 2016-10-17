@@ -6,7 +6,6 @@
 #include <sstream>
 #include <numeric>
 #include "LinearSarsaAgent.h"
-#include <cassert>
 
 // If all is well, there should be no mention of anything keepaway- or soccer-
 // related in this file.
@@ -17,8 +16,7 @@ namespace jol {
 
 LinearSarsaAgent::~LinearSarsaAgent() {
   if (sharedData) shm_unlink(sharedMemoryName.c_str());
-  if (semSync) sem_close(semSync);
-  for (auto s : semSignal) if (s) sem_close(s);
+  delete barrier;
 }
 
 LinearSarsaAgent::LinearSarsaAgent(
@@ -34,13 +32,11 @@ LinearSarsaAgent::LinearSarsaAgent(
     : SMDPAgent(numFeatures, wm),
       saveWeightsFile(saveWeightsFile),
       bLearning(bLearn),
+      barrier(0),
       sharedData(0),
       gamma(gamma),
       initialWeight(initialWeight),
       qLearning(qLearning) {
-  semSync = 0;
-  memset(semSignal, 0, sizeof(semSignal));
-
   for (int i = 0; i < getNumFeatures(); i++) {
     tileWidths[i] = widths[i];
   }
@@ -82,19 +78,6 @@ LinearSarsaAgent::LinearSarsaAgent(
     auto h = hash<string>()(exepath); //hashing
     sharedMemoryName = "/" + to_string(h) + ".shm";
 
-    for (int i = 0; i < AtomicAction::num_keepers; ++i) {
-      if ((semSignal[i] = sem_open(("/signal-" + to_string(i) + "-" + to_string(h)).c_str(), O_CREAT, 0666, 0)) ==
-          SEM_FAILED) {
-        perror("semaphore initilization");
-        exit(1);
-      }
-    }
-
-    if ((semSync = sem_open(("/sync-" + to_string(h)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
-      perror("semaphore initilization");
-      exit(1);
-    }
-
     int shm_fd = shm_open(sharedMemoryName.c_str(), O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1) {
       printf("prod: Shared memory failed: %s\n", strerror(errno));
@@ -107,27 +90,13 @@ LinearSarsaAgent::LinearSarsaAgent(
       printf("prod: Map failed: %s\n", strerror(errno));
       exit(1);
     }
+
+    barrier = new Barrier(AtomicAction::num_keepers, &(sharedData->numBlocked), h);
+    sharedData->reset();
   }
 
   if (loadWeightsFile.length() > 0)
     loadWeights(loadWeightsFile.c_str());
-}
-
-void LinearSarsaAgent::wait() {
-  int val = -1;
-  sem_getvalue(semSignal[agentIdx], &val);
-  Log.log(101, "LinearSarsaAgent::wait agent %d wait to be notified, cur val: %d", agentIdx, val);
-  SemTimedWait(semSignal[agentIdx]);
-  Log.log(101, "LinearSarsaAgent::wait agent %d notified", agentIdx);
-}
-
-void LinearSarsaAgent::notify(int i) {
-  assert(i != agentIdx);
-  int val = -1;
-  sem_getvalue(semSignal[i], &val);
-  assert(val == 0);
-  Log.log(101, "LinearSarsaAgent::notify agent %d notify %d, cur val: %d", agentIdx, i, val);
-  sem_post(semSignal[i]);
 }
 
 void LinearSarsaAgent::setEpsilon(double epsilon) {
@@ -138,7 +107,7 @@ int LinearSarsaAgent::startEpisode(double state[]) {
   Log.log(101, "LinearSarsaAgentstartEpisode");
 
   decayTraces(0);
-  assert(numNonzeroTraces == 0);
+  Assert(numNonzeroTraces == 0);
 
   loadTiles(state);
   for (int a : validActions()) {
@@ -167,7 +136,7 @@ int LinearSarsaAgent::step(double reward_, double state[]) {
   double tau = reward_; // here reward is actually tau
   Log.log(101, "LinearSarsaAgent::step tau: %f", tau);
 
-  assert(lastAction >= 0);
+  Assert(lastAction >= 0);
   double delta = reward(tau, gamma) - Q[lastAction];
   loadTiles(state);
   for (int a : validActions()) {
@@ -176,7 +145,7 @@ int LinearSarsaAgent::step(double reward_, double state[]) {
   lastAction = selectAction();
 
   if (!bLearning) return lastAction;
-  assert(!std::isnan(Q[lastAction]) && !std::isinf(Q[lastAction]));
+  Assert(!std::isnan(Q[lastAction]) && !std::isinf(Q[lastAction]));
 
   if (qLearning) {
     delta += pow(gamma, tau) * Q[argmaxQ()];
@@ -220,7 +189,6 @@ void LinearSarsaAgent::endEpisode(double reward_) {
 
   lastAction = -1;
   lastActionTime = UnknownTime;
-  if (bLearning) sem_init(semSignal[agentIdx], PTHREAD_PROCESS_SHARED, 0);
 }
 
 void LinearSarsaAgent::shutDown() {
@@ -232,7 +200,6 @@ void LinearSarsaAgent::shutDown() {
 
 int LinearSarsaAgent::selectAction() {
   if (agentIdx == 0 || !bLearning) {
-    ScopedLock lock(semSync);
     if (bLearning && drand48() < epsilon) {     /* explore */
       lastAction = JointActionSpace::ins().sample(WM->isTmControllBall()); // sample
       Log.log(101, "LinearSarsaAgent::selectAction explore action %d", lastAction);
@@ -246,20 +213,11 @@ int LinearSarsaAgent::selectAction() {
       sharedData->lastAction = lastAction;
       sharedData->lastActionTime = lastActionTime;
     }
-
-    if (bLearning) {
-      for (int i = 0; i < WM->getNumKeepers(); ++i) {
-        if (i != agentIdx) {
-          notify(i);
-        }
-      }
-    }
-  } else {
-    wait();
   }
 
+  barrier->wait();
+
   if (bLearning) {
-    ScopedLock lock(semSync);
     lastAction = sharedData->lastAction;
     lastActionTime = sharedData->lastActionTime;
     Log.log(101, "got %d at %d [isTmControllBall %d]", lastAction, lastActionTime, WM->isTmControllBall());
@@ -275,10 +233,11 @@ int LinearSarsaAgent::selectAction() {
     Log.log(101, "LinearSarsaAgent::selectAction action: %d", lastAction);
   }
 
-  assert(lastAction >= 0);
-  assert(lastAction < getNumActions());
-  assert(JointActionSpace::ins().getJointAction(lastAction)->tmControllBall == WM->isTmControllBall());
-  assert(find(validActions().begin(), validActions().end(), lastAction) != validActions().end());
+  Assert(lastAction >= 0);
+  Assert(lastAction < getNumActions());
+  Assert(lastActionTime == WM->getCurrentCycle());
+  Assert(JointActionSpace::ins().getJointAction(lastAction)->tmControllBall == WM->isTmControllBall());
+  Assert(find(validActions().begin(), validActions().end(), lastAction) != validActions().end());
 
   return lastAction;
 }
@@ -352,30 +311,30 @@ int LinearSarsaAgent::argmaxQ() const {
     }
   }
 
-  assert(bestAction >= 0);
+  Assert(bestAction >= 0);
   return bestAction;
 }
 
 void LinearSarsaAgent::updateWeights(double delta) {
   Log.log(101, "LinearSarsaAgent::updateWeights delta %f", delta);
 
-  assert(numTilings > 0);
+  Assert(numTilings > 0);
   double tmp = delta * alpha / numTilings;
 
   for (int i = 0; i < numNonzeroTraces; i++) {
-    assert(i < RL_MAX_NONZERO_TRACES);
+    Assert(i < RL_MAX_NONZERO_TRACES);
 
     int f = nonzeroTraces[i];
-    assert(f >= 0);
-    assert(f < RL_MEMORY_SIZE);
+    Assert(f >= 0);
+    Assert(f < RL_MEMORY_SIZE);
 
     if (f >= RL_MEMORY_SIZE || f < 0) {
       continue;
     }
 
     weights[f] += tmp * traces[f];
-    assert(!std::isnan(weights[f]));
-    assert(!std::isinf(weights[f]));
+    Assert(!std::isnan(weights[f]));
+    Assert(!std::isinf(weights[f]));
   }
 }
 
@@ -392,14 +351,14 @@ void LinearSarsaAgent::loadTiles(double state[]) // will change colTab.data impl
     numTilings += tilingsPerGroup;
   }
 
-  assert(numTilings > 0);
-  assert(numTilings < RL_MAX_NUM_TILINGS);
+  Assert(numTilings > 0);
+  Assert(numTilings < RL_MAX_NUM_TILINGS);
 }
 
 // Clear any trace for feature f
 void LinearSarsaAgent::clearTrace(int f) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
-    assert(0);
+    Assert(0);
     cerr << "ClearTrace: f out of range " << f << endl;
     return;
   }
@@ -411,7 +370,7 @@ void LinearSarsaAgent::clearTrace(int f) {
 // Clear the trace for feature f at location loc in the list of nonzero traces
 void LinearSarsaAgent::clearExistentTrace(int f, int loc) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
-    assert(0);
+    Assert(0);
     cerr << "ClearExistentTrace: f out of range " << f << endl;
     return;
   }
@@ -424,7 +383,7 @@ void LinearSarsaAgent::clearExistentTrace(int f, int loc) {
     nonzeroTracesInverse[nonzeroTraces[loc]] = loc;
   } else {
     fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-    assert(numNonzeroTraces == 0);
+    Assert(numNonzeroTraces == 0);
   }
 }
 
@@ -433,7 +392,7 @@ void LinearSarsaAgent::decayTraces(double decayRate) {
   for (int loc = numNonzeroTraces - 1; loc >= 0; loc--) {
     int f = nonzeroTraces[loc];
     if (f >= RL_MEMORY_SIZE || f < 0) {
-      assert(0);
+      Assert(0);
       cerr << "DecayTraces: f out of range " << f << endl;
       continue;
     }
@@ -447,7 +406,7 @@ void LinearSarsaAgent::decayTraces(double decayRate) {
 // Set the trace for feature f to the given value, which must be positive
 void LinearSarsaAgent::setTrace(int f, float newTraceValue) {
   if (f >= RL_MEMORY_SIZE || f < 0) {
-    assert(0);
+    Assert(0);
     cerr << "SetTraces: f out of range " << f << endl;
     return;
   }
@@ -460,8 +419,8 @@ void LinearSarsaAgent::setTrace(int f, float newTraceValue) {
     }
 
     traces[f] = newTraceValue;
-    assert(numNonzeroTraces >= 0);
-    assert(numNonzeroTraces < RL_MAX_NONZERO_TRACES);
+    Assert(numNonzeroTraces >= 0);
+    Assert(numNonzeroTraces < RL_MAX_NONZERO_TRACES);
     nonzeroTraces[numNonzeroTraces] = f;
     nonzeroTracesInverse[f] = numNonzeroTraces;
     numNonzeroTraces++;

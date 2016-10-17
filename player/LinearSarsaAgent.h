@@ -12,6 +12,13 @@ namespace jol {
 struct SharedData {
   int lastAction;
   int lastActionTime;
+  int numBlocked;
+
+  void reset() {
+    numBlocked = 0;
+    lastAction = -1;
+    lastActionTime = UnknownTime;
+  }
 };
 
 class LinearSarsaAgent : public SMDPAgent {
@@ -20,8 +27,7 @@ protected:
   bool bLearning;
   bool bSaveWeights;
 
-  sem_t *semSignal[11];
-  sem_t *semSync;
+  Barrier *barrier;
   string sharedMemoryName;
   SharedData *sharedData;
 
@@ -79,10 +85,6 @@ protected:
   double reward(double tau, double gamma);
 
   const std::vector<int> &validActions() const;
-
-  void wait();
-
-  void notify(int i);
 
 public:
   LinearSarsaAgent(WorldModel *wm,

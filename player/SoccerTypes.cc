@@ -53,14 +53,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <iostream>       // needed for outputsteam in showcerr
-#include <stdio.h>        // needed for sprintf
+
 #ifdef Solaris
 #include <strings.h>    // needed for strncmp
 #else
 #include <string.h>     // needed for strncmp
 #endif
 
-#include <cassert>
 #include "SoccerTypes.h"
 #include "Parse.h"
 #include "Logger.h"
@@ -852,7 +851,7 @@ bool SoccerCommand::makeKickCommand( char *str  )
             (int)dPower, (int)dAngle );
     PRINT_VALUE(dPower);
     PRINT_VALUE(dAngle);
-    assert(0);
+    Assert(0);
     return false;
   }
   return true;
@@ -878,7 +877,7 @@ bool SoccerCommand::makeMoveCommand( char *str  )
              (int)dX, (int)dY) ;
     PRINT_VALUE(dX);
     PRINT_VALUE(dY);
-    assert(0);
+    Assert(0);
     return false;
   }
   return true;

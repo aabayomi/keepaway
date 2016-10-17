@@ -63,8 +63,6 @@ fi
 
 if [ $BUILD != "none" ]; then
     make $BUILD
-else
-    sleep $[ ( $RANDOM % 10 )  + 1 ]s # batch mode
 fi
 
 CONSOLE_LOG="$LOGDIR/`basename $QFILE .q`.console"

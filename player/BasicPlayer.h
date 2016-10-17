@@ -90,13 +90,38 @@ public:
   ~ScopedLock();
 };
 
-inline void SemTimedWait(sem_t *sem, int ms = 100) {
-  struct timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  ts.tv_nsec += ms * 1000000;
-  ts.tv_sec += ts.tv_nsec / 1000000000;
-  ts.tv_nsec %= 1000000000;
-  sem_timedwait(sem, &ts);
+class Barrier {
+public:
+  Barrier(int n, int *count, int hash);
+
+  ~Barrier();
+
+  void wait();
+
+private:
+  void phase1();
+
+  void phase2();
+
+private:
+  int n;
+  int *count;
+  sem_t *mutex;
+  sem_t *turnstile;
+  sem_t *turnstile2;
+};
+
+inline void SemTimedWait(sem_t *sem, int ms = 0) {
+  if (ms > 0) {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    ts.tv_nsec += ms * 1000000;
+    ts.tv_sec += ts.tv_nsec / 1000000000;
+    ts.tv_nsec %= 1000000000;
+    sem_timedwait(sem, &ts);
+  } else {
+    sem_wait(sem);
+  }
 }
 
 /*! This class defines the skills that can be used by an agent. No
