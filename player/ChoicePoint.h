@@ -30,16 +30,15 @@ public:
   T choose(int current_time) {
     Log.log(101, "ChoicePoint::choose point name: %s", name.c_str());
     auto i = LinearSarsaLearner::ins().step(current_time, (int) choices.size());
-    Assert(i < choices.size());
 
     if (i < choices.size()) {
       Log.log(101, "ChoicePoint::choose my choice (agent %d): %s", Memory::ins().agentIdx,
               to_string(choices[i]).c_str());
-    } else {
+    } else { // race condition?
       Log.log(101, "ChoicePoint::choose i %d >= choices.size() %d", i, choices.size());
     }
 
-    return i < choices.size() ? choices[i] : 0;
+    return i < choices.size() ? choices[i] : choices[0];
   }
 
 private:

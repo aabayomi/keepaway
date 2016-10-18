@@ -106,7 +106,7 @@ public:
 
 class Barrier {
 public:
-  Barrier(int n, int *count, int hash);
+  Barrier(int n, int *count, size_t hash);
 
   ~Barrier();
 

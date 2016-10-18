@@ -67,7 +67,7 @@ void GetTiles(
     /* add additional indices for tiling and hashing_set so they hash differently */
     coordinates[i] = j;
 
-    tiles[j] = hash_UNH(coordinates, num_coordinates, memory_size, 449);
+    tiles[j] = (int) hash_UNH(coordinates, num_coordinates, memory_size, 449);
   }
 }
 
@@ -179,7 +179,7 @@ long hash_safe(int *ints, int num_ints, collision_table *ct) {
       ct->collisions++;
       j = (j + h2) % (RL_MEMORY_SIZE);
       if (i > RL_MEMORY_SIZE - 1) {
-        printf("\nOut of Memory");
+        PRINT_VALUE("Out of Memory!");
         Log.log(101, "tiles hash out of memory");
         const_cast<int &>(ct->safe) = 0;
         break;

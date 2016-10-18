@@ -215,13 +215,13 @@ int LinearSarsaAgent::selectAction() {
     }
   }
 
-  barrier->wait();
   if (bLearning) {
+    barrier->wait();
     lastAction = sharedData->lastAction;
     lastActionTime = sharedData->lastActionTime;
     Log.log(101, "got %d at %d [isTmControllBall %d]", lastAction, lastActionTime, WM->isTmControllBall());
+    barrier->wait();
   }
-  barrier->wait();
 
   if (Log.isInLogLevel(101)) {
     stringstream ss;
@@ -235,10 +235,6 @@ int LinearSarsaAgent::selectAction() {
 
   Assert(lastAction >= 0);
   Assert(lastAction < getNumActions());
-  if (lastActionTime == WM->getCurrentCycle()) {
-    Assert(JointActionSpace::ins().getJointAction(lastAction)->tmControllBall == WM->isTmControllBall());
-    Assert(find(validActions().begin(), validActions().end(), lastAction) != validActions().end());
-  }
 
   return lastAction;
 }

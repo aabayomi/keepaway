@@ -77,7 +77,7 @@ ScopedLock::~ScopedLock() {
   if (sem) sem_post(sem);
 }
 
-Barrier::Barrier(int n, int *count, int hash) : n(n), count(count), wait_id(0) {
+Barrier::Barrier(int n, int *count, size_t hash) : n(n), count(count), wait_id(0) {
   Log.log(101, "Barrier::Barrier n=%d", n);
   Log.log(101, "Barrier::Barrier count=%d", *count);
 

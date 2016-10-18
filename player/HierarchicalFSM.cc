@@ -35,7 +35,7 @@ void Memory::resetState() {
 }
 
 string Memory::to_string() {
-  std::stringstream ss;
+  stringstream ss;
   PRINT_VALUE_STREAM(ss, agentIdx);
   PRINT_VALUE_STREAM(ss, vector<ObjectT>(K, K + HierarchicalFSM::num_keepers));
   PRINT_VALUE_STREAM(ss, vector<double>(state, state + HierarchicalFSM::num_features));
@@ -51,18 +51,14 @@ const vector<string> &Memory::getStack() const {
 void Memory::PushStack(const string &s) {
   stack.push_back(s);
   if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, stack);
-    Log.log(101, "Memory::PushStack:\n%s", ss.str().c_str());
+    Log.log(101, "Memory::PushStack: %s", to_prettystring(stack).c_str());
   }
 }
 
 void Memory::PopStack() {
   stack.pop_back();
   if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, stack);
-    Log.log(101, "Memory::PopStack:\n%s", ss.str().c_str());
+    Log.log(101, "Memory::PopStack: %s", to_prettystring(stack).c_str());
   }
 }
 
