@@ -73,10 +73,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern Logger Log;     /*!< This is a reference to the normal Logger class   */
 
-#if USE_DRAW_LOG
-extern LoggerDraw LogDraw; /*!< This is a reference to the drawing Logger class  */
-#endif
-
 void printOptions();
 
 /*! This is the main function and creates and links all the different classes.
@@ -356,10 +352,12 @@ int main(int argc, char *argv[]) {
     }
   } else {
     Assert(sa == 0);
-    fsm::HierarchicalFSM::initialize(
-        numFeatures, iNumKeepers, bLearn,
-        resolutions, gamma, initialWeight, qLearning,
-        loadWeightsFile, saveWeightsFile);
+    if (string(strTeamName) == "keepers") {
+      fsm::HierarchicalFSM::initialize(
+          numFeatures, iNumKeepers, bLearn,
+          resolutions, gamma, initialWeight, qLearning,
+          loadWeightsFile, saveWeightsFile);
+    }
   }
 
   KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,

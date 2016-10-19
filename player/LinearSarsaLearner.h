@@ -16,24 +16,12 @@
 
 namespace std {
 
-template<>
-struct hash<vector<int>> {
-  size_t operator()(const vector<int> &vec) const {
+template<class T>
+struct hash<vector<T>> {
+  size_t operator()(const vector<T> &vec) const {
     size_t seed = vec.size();
     for (auto &i : vec) {
-      seed ^= hash<int>()(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    }
-    return seed;
-  }
-};
-
-
-template<>
-struct hash<vector<string>> {
-  size_t operator()(const vector<string> &vec) const {
-    size_t seed = vec.size();
-    for (auto &i : vec) {
-      seed ^= hash<string>()(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+      seed ^= hash<T>().operator()(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }
     return seed;
   }
@@ -57,11 +45,11 @@ struct SharedData {
 
   int numChoices[OBJECT_MAX_OBJECTS]; // indexed by object type
   char machineState[OBJECT_MAX_OBJECTS][1024];
-  char lastMachineState[OBJECT_MAX_OBJECTS][1024];
 
   int lastJointChoiceIdx;
   int lastJointChoiceTime;
   int lastJointChoice[11]; // indexed by K0..Kn
+  char lastMachineState[11][1024];
 
   vector<int> getNumChoices() const;
 

@@ -239,6 +239,7 @@ int LinearSarsaAgent::selectAction() {
 }
 
 bool LinearSarsaAgent::loadWeights(const char *filename) {
+  FileLock lock("loadWeights");
   cerr << "Loading weights from " << filename << endl;
   int file = open(filename, O_RDONLY);
   if (file < 0) {
@@ -253,6 +254,7 @@ bool LinearSarsaAgent::loadWeights(const char *filename) {
 }
 
 bool LinearSarsaAgent::saveWeights(const char *filename) {
+  FileLock lock("saveWeights");
   int file = open(filename, O_CREAT | O_WRONLY, 0664);
   if (file < 0) {
     cerr << "failed to open weight file: " << filename << endl;

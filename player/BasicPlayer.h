@@ -89,7 +89,7 @@ private:
   std::string lockName;
 
 public:
-  FileLock(const std::string &prefix, const std::string &name);
+  FileLock(const std::string &name);
 
   ~FileLock();
 };

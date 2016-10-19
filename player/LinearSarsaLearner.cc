@@ -15,7 +15,6 @@ void SharedData::reset() {
   memset(lastJointChoice, 0, sizeof(lastJointChoice));
 
   memset(Q, 0, sizeof(Q));
-  memset(weights, 0, sizeof(weights));
   memset(traces, 0, sizeof(traces));
   memset(nonzeroTraces, 0, sizeof(nonzeroTraces));
   memset(nonzeroTracesInverse, 0, sizeof(nonzeroTracesInverse));
@@ -26,7 +25,6 @@ void SharedData::reset() {
   memset(numChoices, 0, sizeof(numChoices));
   memset(machineState, 0, sizeof(machineState));
   memset(lastMachineState, 0, sizeof(lastMachineState));
-  colTab.reset();
 }
 
 vector<int> SharedData::getLastJointChoice() const {
@@ -52,7 +50,7 @@ vector<string> SharedData::getMachineState() const {
 vector<string> SharedData::getLastMachineState() const {
   vector<string> ret((unsigned long) HierarchicalFSM::num_keepers);
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-    ret[i] = lastMachineState[Memory::ins().K[i]];
+    ret[i] = lastMachineState[i];
   }
   return ret;
 }
@@ -143,11 +141,10 @@ void LinearSarsaLearner::initialize(
     barrier = new Barrier(HierarchicalFSM::num_keepers, &(sharedData->numBlocked), h);
 
     sharedData->reset();
-    fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-    fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
-
-    if (loadWeightsFile.length() > 0)
-      loadWeights(loadWeightsFile.c_str());
+    if (loadWeightsFile.empty() || !loadWeights(loadWeightsFile.c_str())) {
+      fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
+      colTab->reset();
+    }
   }
 }
 
@@ -217,15 +214,17 @@ void LinearSarsaLearner::saveSharedData() {
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
     sharedData->numChoices[Memory::ins().K[i]] = numChoices[i];
     strcpy(sharedData->machineState[Memory::ins().K[i]], machineState[i].c_str());
-    strcpy(sharedData->lastMachineState[Memory::ins().K[i]], lastMachineState[i].c_str());
+    strcpy(sharedData->lastMachineState[i], lastMachineState[i].c_str());
     sharedData->lastJointChoice[i] = lastJointChoice[i];
   }
 }
 
 const vector<int> &LinearSarsaLearner::validChoices(const vector<int> &num_choices) {
-  if (!validChoicesMap.count(num_choices)) {
+  Assert(num_choices.size() == HierarchicalFSM::num_keepers);
+  if (!validChoicesMap.count(num_choices) || !jointChoicesMap.count(num_choices)) {
     jointChoicesMap[num_choices] = validChoicesRaw(num_choices);
     for (uint i = 0; i < jointChoicesMap[num_choices].size(); ++i) {
+      Assert(jointChoicesMap[num_choices][i].size() == HierarchicalFSM::num_keepers);
       validChoicesMap[num_choices].push_back(i);
     }
   }
@@ -237,6 +236,7 @@ vector<vector<int>> LinearSarsaLearner::validChoicesRaw(const vector<int> &num_c
 
   vector<vector<int>> ret;
   auto c = validChoicesRaw({num_choices.begin() + 1, num_choices.end()});
+  Assert(num_choices[0] > 0);
   for (int i = 0; i < num_choices[0]; ++i) {
     for (auto &v : c) {
       vector<int> r{i};
@@ -336,13 +336,9 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
     return 0; // action state
   } else {
     if (Memory::ins().agentIdx == 0) {
-      if (current_time == lastJointChoiceTime && lastMachineState.size()) {
-//        Assert(lastMachineState != machineState);
-//        Assert(!isDeterministic(lastMachineState, lastJointChoiceIdx) ||
-//               deterministicMap[lastMachineState][lastJointChoiceIdx] == machineState);
-        if (lastMachineState != machineState) {
-          deterministicMap[lastMachineState][lastJointChoiceIdx] = machineState;
-        }
+      if (current_time == lastJointChoiceTime && lastMachineState.size()
+          && lastMachineState != machineState) {
+        deterministicMap[lastMachineState][lastJointChoiceIdx] = machineState;
       }
 
       lastJointChoiceIdx = step(current_time);
@@ -360,6 +356,7 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
       if (numChoices[Memory::ins().agentIdx] <= 1) { // dummy choice
         return step(current_time, num_choices);
       } else {
+        assert(lastJointChoice.size() == HierarchicalFSM::num_keepers);
         return lastJointChoice[Memory::ins().agentIdx];
       }
     } else { // race condition?
@@ -386,7 +383,7 @@ void LinearSarsaLearner::endEpisode(int current_time) {
     lastJointChoiceTime = UnknownTime;
     fill(lastMachineState.begin(), lastMachineState.end(), "");
     fill(machineState.begin(), machineState.end(), "");
-    fill(numChoices.begin(), numChoices.end(), 0);
+    fill(numChoices.begin(), numChoices.end(), 1);
     fill(lastJointChoice.begin(), lastJointChoice.end(), 0);
     saveSharedData();
 
@@ -633,6 +630,7 @@ void LinearSarsaLearner::increaseMinTrace() {
 }
 
 bool LinearSarsaLearner::loadWeights(const char *filename) {
+  FileLock lock("loadWeights");
   cerr << "Loading weights from " << filename << endl;
   int file = open(filename, O_RDONLY);
   if (file < 0) {
@@ -647,6 +645,7 @@ bool LinearSarsaLearner::loadWeights(const char *filename) {
 }
 
 bool LinearSarsaLearner::saveWeights(const char *filename) {
+  FileLock lock("saveWeights");
   int file = open(filename, O_CREAT | O_WRONLY, 0664);
   if (file < 0) {
     cerr << "failed to open weight file: " << filename << endl;
