@@ -181,6 +181,7 @@ long hash_safe(int *ints, int num_ints, collision_table *ct) {
       if (i > RL_MEMORY_SIZE - 1) {
         PRINT_VALUE("Out of Memory!");
         Log.log(101, "tiles hash out of memory");
+        Assert(0);
         const_cast<int &>(ct->safe) = 0;
         break;
       }

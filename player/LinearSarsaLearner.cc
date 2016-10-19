@@ -24,7 +24,8 @@ void SharedData::reset() {
   numNonzeroTraces = 0;
 
   memset(numChoices, 0, sizeof(numChoices));
-  memset(machineStateStr, 0, sizeof(machineStateStr));
+  memset(machineState, 0, sizeof(machineState));
+  memset(lastMachineState, 0, sizeof(lastMachineState));
   colTab.reset();
 }
 
@@ -43,7 +44,15 @@ vector<int> SharedData::getNumChoices() const {
 vector<string> SharedData::getMachineState() const {
   vector<string> ret((unsigned long) HierarchicalFSM::num_keepers);
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
-    ret[i] = machineStateStr[Memory::ins().K[i]];
+    ret[i] = machineState[Memory::ins().K[i]];
+  }
+  return ret;
+}
+
+vector<string> SharedData::getLastMachineState() const {
+  vector<string> ret((unsigned long) HierarchicalFSM::num_keepers);
+  for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
+    ret[i] = lastMachineState[Memory::ins().K[i]];
   }
   return ret;
 }
@@ -145,11 +154,6 @@ void LinearSarsaLearner::initialize(
 void LinearSarsaLearner::shutDown()
 {
   if (Memory::ins().agentIdx == 0 && bLearning && bSaveWeights) {
-    PRINT_VALUE(validChoicesMap);
-    PRINT_VALUE(jointChoicesMap);
-    PRINT_VALUE(numChoicesMap);
-    PRINT_VALUE(deterministicMap);
-
     cerr << "Saving weights at shutdown." << endl;
     saveWeights(saveWeightsFile.c_str());
   }
@@ -166,6 +170,7 @@ bool LinearSarsaLearner::loadSharedData() {
   lastJointChoiceTime = sharedData->lastJointChoiceTime;
   lastJointChoice = sharedData->getLastJointChoice();
   machineState = sharedData->getMachineState();
+  lastMachineState = sharedData->getLastMachineState();
   numChoices = sharedData->getNumChoices();
 
   Assert(!numChoicesMap.count(machineState) || numChoicesMap[machineState] == numChoices);
@@ -211,7 +216,8 @@ void LinearSarsaLearner::saveSharedData() {
 
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
     sharedData->numChoices[Memory::ins().K[i]] = numChoices[i];
-    strcpy(sharedData->machineStateStr[Memory::ins().K[i]], machineState[i].c_str());
+    strcpy(sharedData->machineState[Memory::ins().K[i]], machineState[i].c_str());
+    strcpy(sharedData->lastMachineState[Memory::ins().K[i]], lastMachineState[i].c_str());
     sharedData->lastJointChoice[i] = lastJointChoice[i];
   }
 }
@@ -316,14 +322,13 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
   SCOPED_LOG
   auto stackStr = HierarchicalFSM::getStackStr();
   sharedData->numChoices[Memory::ins().K[Memory::ins().agentIdx]] = num_choices;
-  strcpy(sharedData->machineStateStr[Memory::ins().K[Memory::ins().agentIdx]], stackStr.c_str());
+  strcpy(sharedData->machineState[Memory::ins().K[Memory::ins().agentIdx]], stackStr.c_str());
 
   Log.log(101, "LinearSarsaLearner::step agent %d write numChoices %d", Memory::ins().agentIdx, num_choices);
   Log.log(101, "LinearSarsaLearner::step agent %d write machineState %s", Memory::ins().agentIdx,
           stackStr.c_str());
 
   barrier->wait();
-  lastMachineState = machineState;
   bool action_state = loadSharedData();
   barrier->wait();
 
@@ -331,18 +336,20 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
     return 0; // action state
   } else {
     if (Memory::ins().agentIdx == 0) {
-      if (!action_state) {
-        if (current_time == lastJointChoiceTime && lastMachineState.size()) {
-          Assert(!isDeterministic(lastMachineState, lastJointChoiceIdx) ||
-                 deterministicMap[lastMachineState][lastJointChoiceIdx] == machineState);
+      if (current_time == lastJointChoiceTime && lastMachineState.size()) {
+//        Assert(lastMachineState != machineState);
+//        Assert(!isDeterministic(lastMachineState, lastJointChoiceIdx) ||
+//               deterministicMap[lastMachineState][lastJointChoiceIdx] == machineState);
+        if (lastMachineState != machineState) {
           deterministicMap[lastMachineState][lastJointChoiceIdx] = machineState;
         }
-
-        lastJointChoiceIdx = step(current_time);
-        lastJointChoiceTime = current_time;
-        lastJointChoice = jointChoicesMap[numChoices][lastJointChoiceIdx];
-        saveSharedData();
       }
+
+      lastJointChoiceIdx = step(current_time);
+      lastJointChoiceTime = current_time;
+      lastJointChoice = jointChoicesMap[numChoices][lastJointChoiceIdx];
+      lastMachineState = machineState;
+      saveSharedData();
     }
 
     barrier->wait();
@@ -377,6 +384,10 @@ void LinearSarsaLearner::endEpisode(int current_time) {
 
     lastJointChoiceIdx = -1;
     lastJointChoiceTime = UnknownTime;
+    fill(lastMachineState.begin(), lastMachineState.end(), "");
+    fill(machineState.begin(), machineState.end(), "");
+    fill(numChoices.begin(), numChoices.end(), 0);
+    fill(lastJointChoice.begin(), lastJointChoice.end(), 0);
     saveSharedData();
 
     if (bLearning && bSaveWeights && rand() % 1000 == 0) {
@@ -387,13 +398,6 @@ void LinearSarsaLearner::endEpisode(int current_time) {
   barrier->wait();
   loadSharedData();
   barrier->wait();
-
-  machineState.clear();
-  lastMachineState.clear();
-  numChoices.clear();
-  lastJointChoiceIdx = -1;
-  lastJointChoiceTime = UnknownTime;
-  lastJointChoice.clear();
 }
 
 int LinearSarsaLearner::loadTiles(
@@ -439,7 +443,8 @@ double LinearSarsaLearner::QValue(
     int num_tilings) {
   Log.log(101, "LinearSarsaLearner::QValue m=%s c=%d", to_prettystring(machine_state).c_str(), choice);
 
-  if (isDeterministic(machine_state, choice)) {
+  if (isDeterministic(machine_state, choice) &&
+      deterministicMap[machine_state][choice] != machine_state) {
     Log.log(101, "LinearSarsaLearner::QValue: deterministically Q[m=%s][c=%d] = V[m=%s]",
             to_prettystring(machine_state).c_str(), choice,
             to_prettystring(deterministicMap[machine_state][choice]).c_str());
@@ -460,7 +465,7 @@ double LinearSarsaLearner::computeQ(int choice, int (*tiles)[RL_MAX_NUM_TILINGS]
 
 double LinearSarsaLearner::Value(double *state, const vector<string> &machine_state) {
   auto tiles = new int[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
-  double bestValue = INT_MIN;
+  double bestValue = numeric_limits<double>::min();
 
   Log.log(101, "LinearSarsaLearner::Value m=%s", to_prettystring(machine_state).c_str());
 
@@ -505,8 +510,8 @@ int LinearSarsaLearner::selectChoice(const vector<int> &num_choices) {
 }
 
 int LinearSarsaLearner::argmaxQ(const vector<int> &num_choices) {
-  int bestAction = -1;
-  double bestValue = INT_MIN;
+  int bestAction = 0;
+  double bestValue = numeric_limits<double>::min();
   int numTies = 0;
 
   for (auto a : validChoices(num_choices)) {
@@ -523,7 +528,6 @@ int LinearSarsaLearner::argmaxQ(const vector<int> &num_choices) {
     }
   }
 
-  Assert(bestAction >= 0);
   return bestAction;
 }
 

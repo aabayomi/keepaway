@@ -56,7 +56,8 @@ struct SharedData {
   int numNonzeroTraces;
 
   int numChoices[OBJECT_MAX_OBJECTS]; // indexed by object type
-  char machineStateStr[OBJECT_MAX_OBJECTS][1024];
+  char machineState[OBJECT_MAX_OBJECTS][1024];
+  char lastMachineState[OBJECT_MAX_OBJECTS][1024];
 
   int lastJointChoiceIdx;
   int lastJointChoiceTime;
@@ -67,6 +68,8 @@ struct SharedData {
   vector<int> getLastJointChoice() const;
 
   vector<string> getMachineState() const;
+
+  vector<string> getLastMachineState() const;
 
   void reset();
 

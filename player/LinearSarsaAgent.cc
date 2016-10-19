@@ -2,7 +2,6 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <cmath>
-#include <climits>
 #include <sstream>
 #include <numeric>
 #include "LinearSarsaAgent.h"
@@ -290,8 +289,8 @@ const vector<int> &LinearSarsaAgent::validActions() const {
 
 // Returns index (action) of largest entry in Q array, breaking ties randomly
 int LinearSarsaAgent::argmaxQ() const {
-  int bestAction = -1;
-  double bestValue = INT_MIN;
+  int bestAction = 0;
+  double bestValue = numeric_limits<double>::min();
   int numTies = 0;
 
   for (int a : validActions()) {
@@ -308,7 +307,6 @@ int LinearSarsaAgent::argmaxQ() const {
     }
   }
 
-  Assert(bestAction >= 0);
   return bestAction;
 }
 

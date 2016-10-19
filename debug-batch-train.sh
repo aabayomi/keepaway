@@ -22,8 +22,7 @@ set -o nounset                              # Treat unset variables as an error
 make clean
 make debug
 
-for initialweight in 0.0 0.5; do
-    ./train.sh -l -b none -sf -g 1.0 -I $initialweight $* &
+for initialweight in 0.0 0.25 0.5 1.0; do
     ./train.sh -l -z -b none -sf -g 1.0 -I $initialweight $* &
 done
 
