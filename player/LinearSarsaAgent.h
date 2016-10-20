@@ -92,6 +92,7 @@ public:
                    std::string loadWeightsFile,
                    std::string saveWeightsFile,
                    double gamma,
+                   double lambda,
                    double initialWeight,
                    bool qLearning);
 

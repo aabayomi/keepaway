@@ -64,7 +64,6 @@ void Memory::PopStack() {
 
 int HierarchicalFSM::num_features;
 int HierarchicalFSM::num_keepers;
-double HierarchicalFSM::gamma;
 
 HierarchicalFSM::HierarchicalFSM(BasicPlayer *p, const std::string &name) :
     player(p), name(name) {
@@ -173,15 +172,15 @@ void HierarchicalFSM::initialize(int numFeatures,
                                  bool bLearn,
                                  double widths[],
                                  double Gamma,
+                                 double Lambda,
                                  double initialWeight,
                                  bool qLearning,
                                  string loadWeightsFile,
                                  string saveWeightsFile) {
   num_features = numFeatures;
   num_keepers = numKeepers;
-  gamma = Gamma;
   LinearSarsaLearner::ins().initialize(
-      bLearn, widths, initialWeight, qLearning,
+      bLearn, widths, Gamma, Lambda, initialWeight, qLearning,
       loadWeightsFile, saveWeightsFile);
 }
 

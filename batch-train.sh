@@ -23,15 +23,10 @@ make clean
 make release
 
 exec 1>console.log 2>&1                                                              
-for initialweight in 0.0 0.125 0.25 0.5 1.0; do
-    for lookahead in `seq 10 10`; do
-        gamma=`echo 1.0 - 1.0 / 2^$lookahead | bc -l`
-        ./train.sh -b none -sf -g $gamma -I $initialweight $* &
-        ./train.sh -z -b none -sf -g $gamma -I $initialweight $* &
+for lambda in 0.0 0.1 0.2 0.3 0.4 0.5; do
+    for initialweight in 0.0 0.25 0.5 1.0; do
+        ./train.sh -z -b none -sf -g 1.0 -I $initialweight $* &
     done
-
-    ./train.sh -b none -sf -g 1.0 -I $initialweight $* &
-    ./train.sh -z -b none -sf -g 1.0 -I $initialweight $* &
 done
 
 wait

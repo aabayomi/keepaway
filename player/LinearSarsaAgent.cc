@@ -26,6 +26,7 @@ LinearSarsaAgent::LinearSarsaAgent(
     string loadWeightsFile,
     string saveWeightsFile,
     double gamma,
+    double lambda,
     double initialWeight,
     bool qLearning)
     : SMDPAgent(numFeatures, wm),
@@ -34,6 +35,7 @@ LinearSarsaAgent::LinearSarsaAgent(
       barrier(0),
       sharedData(0),
       gamma(gamma),
+      lambda(lambda),
       initialWeight(initialWeight),
       qLearning(qLearning) {
   for (int i = 0; i < getNumFeatures(); i++) {
@@ -42,7 +44,6 @@ LinearSarsaAgent::LinearSarsaAgent(
 
   bSaveWeights = bLearning && saveWeightsFile.length() > 0;
   alpha = 0.125;
-  lambda = 0.0;
   epsilon = 0.01;
 
   fill(traces, traces + RL_MEMORY_SIZE, 0.0);
@@ -72,6 +73,7 @@ LinearSarsaAgent::LinearSarsaAgent(
     string exepath = getexepath();
     exepath += "LinearSarsaAgent::LinearSarsaAgent";
     exepath += to_string(gamma);
+    exepath += to_string(lambda);
     exepath += to_string(initialWeight);
     exepath += to_string(qLearning);
     auto h = hash<string>()(exepath); //hashing

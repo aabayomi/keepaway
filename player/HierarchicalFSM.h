@@ -106,6 +106,7 @@ public:
                          bool bLearn,
                          double widths[],
                          double gamma,
+                         double lambda,
                          double initialWeight,
                          bool qLearning,
                          string loadWeightsFile,
@@ -121,7 +122,6 @@ protected:
 public:
   static int num_features;
   static int num_keepers;
-  static double gamma;
 };
 
 class Keeper : public HierarchicalFSM {

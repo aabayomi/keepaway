@@ -81,7 +81,9 @@ public:
   static LinearSarsaLearner &ins();
 
   void initialize(
-      bool learning, double width[], double weight, bool qLearning,
+      bool learning, double width[],
+      double gamma, double lambda,
+      double weight, bool qLearning,
       string loadWeightsFile,
       string saveWeightsFile);
 
@@ -120,6 +122,7 @@ private:
   Barrier *barrier;
 
   double alpha;
+  double gamma;
   double lambda;
   double epsilon;
   double tileWidths[MAX_RL_STATE_VARS];

@@ -61,15 +61,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "HierarchicalFSM.h"
 
 #include "Parse.h"
-
-#ifdef WIN32
-#include <windows.h>  // needed for CreateThread
-#else
-
 #include "gzstream.h"
 #include <dlfcn.h>    // needed for extension loading.
-
-#endif
 
 extern Logger Log;     /*!< This is a reference to the normal Logger class   */
 
@@ -80,13 +73,7 @@ void printOptions();
     (<program name> -help) and uses these values to create the classes. After
     all the classes are linked, the mainLoop in the Player class is called. */
 int main(int argc, char *argv[]) {
-
-#ifdef WIN32
-  HANDLE         sense;
-#else
   pthread_t sense;
-#endif
-
   ServerSettings ss;
   PlayerSettings cs;
 
@@ -112,6 +99,7 @@ int main(int argc, char *argv[]) {
   bool bSuppliedLogFile = false;
   bool hierarchicalFSM = false;
   double gamma = 1.0;
+  double lambda = 0.0;
   double initialWeight = 0.0;
   bool qLearning = false;
 
@@ -196,6 +184,10 @@ int main(int argc, char *argv[]) {
             iMinLogLevel = Parse::parseFirstInt(&str);
           }
           break;
+        case 'L': // lambda
+          str = &argv[i + 1][0];
+          lambda = Parse::parseFirstDouble(&str);
+          break;
         case 'm':                                   // mode int
           str = &argv[i + 1][0];
           iMode = Parse::parseFirstInt(&str);
@@ -261,6 +253,7 @@ int main(int argc, char *argv[]) {
          "reconnect : " << iReconnect << endl <<
          "hierarchical FSM : " << hierarchicalFSM << endl <<
          "gamma : " << gamma << endl <<
+         "lambda : " << lambda << endl <<
          "initialWeight: " << initialWeight << endl <<
          "qlearning: " << qLearning << endl <<
          "be learning : " << bLearn << endl;
@@ -298,7 +291,7 @@ int main(int argc, char *argv[]) {
       auto linearSarsaAgent = new jol::LinearSarsaAgent(
           &wm, numFeatures, bLearn, resolutions,
           loadWeightsFile, saveWeightsFile,
-          gamma, initialWeight, qLearning);
+          gamma, lambda, initialWeight, qLearning);
 
       // Check for pure exploitation mode.
       size_t length = strlen(strPolicy);
@@ -318,9 +311,6 @@ int main(int argc, char *argv[]) {
       typedef jol::SMDPAgent *(*CreateAgent)(
           WorldModel &, int, bool, double *, string, string);
       CreateAgent createAgent = NULL;
-#ifdef WIN32
-      // TODO
-#else
       // Load the extension.
       void *extension = dlopen(extensionName, RTLD_NOW);
       if (!extension) {
@@ -336,7 +326,6 @@ int main(int argc, char *argv[]) {
         cerr << dlerror() << endl;
         return EXIT_FAILURE;
       }
-#endif
       sa = createAgent(
           wm, numFeatures, bLearn, resolutions,
           loadWeightsFile, saveWeightsFile);
@@ -355,7 +344,7 @@ int main(int argc, char *argv[]) {
     if (string(strTeamName) == "keepers") {
       fsm::HierarchicalFSM::initialize(
           numFeatures, iNumKeepers, bLearn,
-          resolutions, gamma, initialWeight, qLearning,
+          resolutions, gamma, lambda, initialWeight, qLearning,
           loadWeightsFile, saveWeightsFile);
     }
   }
@@ -363,17 +352,7 @@ int main(int argc, char *argv[]) {
   KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,
                     iNumKeepers, iNumTakers, dVersion, iReconnect);
 
-#ifdef WIN32
-  DWORD id1;
-  sense = CreateThread(NULL, 0, &sense_callback, &s, 0, &id1);
-  if (sense == NULL)
-  {
-      cerr << "create thread error" << endl;
-      return false;
-  }
-#else
   pthread_create(&sense, NULL, sense_callback, &s); // start listening
-#endif
 
   if (iMode == 0)
     bp.mainLoop();

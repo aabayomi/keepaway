@@ -64,6 +64,11 @@ LinearSarsaLearner::~LinearSarsaLearner() {
 }
 
 LinearSarsaLearner::LinearSarsaLearner() {
+  initialWeight = 0.0;
+  alpha = 0.125;
+  gamma = 1.0;
+  lambda = 0.0;
+  epsilon = 0.01;
   bLearning = false;
   qLearning = false;
   sharedData = 0;
@@ -73,7 +78,9 @@ LinearSarsaLearner::LinearSarsaLearner() {
 }
 
 void LinearSarsaLearner::initialize(
-    bool learning, double width[], double weight, bool QLearning,
+    bool learning, double width[],
+    double Gamma, double Lambda,
+    double weight, bool QLearning,
     string loadWeightsFile,
     string saveWeightsFile_)
 {
@@ -88,7 +95,8 @@ void LinearSarsaLearner::initialize(
 
   initialWeight = weight;
   alpha = 0.125;
-  lambda = 0.0;
+  gamma = Gamma;
+  lambda = Lambda;
   epsilon = 0.01;
 
   lastJointChoiceIdx = -1;
@@ -110,7 +118,8 @@ void LinearSarsaLearner::initialize(
   if (bLearning || !bLearning) {
     string exepath = getexepath();
     exepath += "LinearSarsaLearner::initialize";
-    exepath += to_string(HierarchicalFSM::gamma);
+    exepath += to_string(gamma);
+    exepath += to_string(lambda);
     exepath += to_string(initialWeight);
     exepath += to_string(qLearning);
     auto h = hash<string>()(exepath); //hashing
@@ -259,7 +268,6 @@ bool LinearSarsaLearner::isDeterministic(const vector<string> &machine_state, in
 
 double LinearSarsaLearner::reward(double tau) {
   Log.log(101, "LinearSarsaLearner::reward tau=%f", tau);
-  double gamma = HierarchicalFSM::gamma;
   double ret = tau;
 
   if (gamma < 1.0) {
@@ -287,15 +295,15 @@ int LinearSarsaLearner::step(int current_time) {
     Assert(!std::isnan(Q[choice]) && !std::isinf(Q[choice]));
 
     if (qLearning) {
-      delta += pow(HierarchicalFSM::gamma, tau) * Q[argmaxQ(numChoices)];
+      delta += pow(gamma, tau) * Q[argmaxQ(numChoices)];
     }
     else {
-      delta += pow(HierarchicalFSM::gamma, tau) * Q[choice];
+      delta += pow(gamma, tau) * Q[choice];
     }
 
     updateWeights(delta, numTilings);
     Q[choice] = QValue(state, machineState, choice, tiles_, numTilings);
-    decayTraces(HierarchicalFSM::gamma * lambda);
+    decayTraces(gamma * lambda);
     for (auto a : validChoices(numChoices)) {
       if (a != choice) {
         for (int j = 0; j < numTilings; j++)
