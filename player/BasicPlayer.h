@@ -106,7 +106,7 @@ public:
 
 class Barrier {
 public:
-  Barrier(int n, int *count, size_t hash);
+  Barrier(int n, size_t hash);
 
   ~Barrier();
 
@@ -120,6 +120,7 @@ private:
 private:
   int n;
   int *count;
+  string sharedMemoryName;
   sem_t *mutex;
   sem_t *turnstile;
   sem_t *turnstile2;

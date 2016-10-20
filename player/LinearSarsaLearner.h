@@ -13,6 +13,10 @@
 #include "HierarchicalFSM.h"
 #include <cstddef>
 #include <functional>
+#include "dot_graph.h"
+
+
+#define DETERMINISTIC_GRAPH 0
 
 namespace std {
 
@@ -60,9 +64,6 @@ struct SharedData {
   vector<string> getLastMachineState() const;
 
   void reset();
-
-public:
-  int numBlocked;
 };
 
 class HierarchicalFSM;
@@ -155,7 +156,7 @@ private:
 
   int argmaxQ(const vector<int> &num_choices);
 
-  void updateWeights(double delta, int numTilings);
+  void updateWeights(double delta, int num_tilings);
 
   void decayTraces(double decayRate);
 
@@ -177,8 +178,12 @@ private:
   unordered_map<vector<int>, vector<int>> validChoicesMap;
   unordered_map<vector<int>, vector<vector<int>>> jointChoicesMap;
   unordered_map<vector<string>, vector<int>> numChoicesMap;
-  unordered_map<vector<string>, unordered_map<int, vector<string>>> deterministicMap;
+  unordered_map<vector<string>, unordered_map<int, vector<string>>> detTransitionMap;
   bool qLearning;
+
+#if DETERMINISTIC_GRAPH
+  dot::Graph detTransitionGraph;
+#endif
 
   double reward(double tau);
 

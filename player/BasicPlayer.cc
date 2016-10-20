@@ -77,9 +77,19 @@ ScopedLock::~ScopedLock() {
   if (sem) sem_post(sem);
 }
 
-Barrier::Barrier(int n, int *count, size_t hash) : n(n), count(count), wait_id(0) {
-  Log.log(101, "Barrier::Barrier n=%d", n);
-  Log.log(101, "Barrier::Barrier count=%d", *count);
+Barrier::Barrier(int n, size_t hash) : n(n), count(0), wait_id(0) {
+  sharedMemoryName = "/barrier::count-" + to_string(hash) + ".shm";
+  int shm_fd = shm_open(sharedMemoryName.c_str(), O_CREAT | O_RDWR, 0666);
+  if (shm_fd == -1) {
+    printf("prod: Shared memory failed: %s\n", strerror(errno));
+    exit(1);
+  }
+
+  ftruncate(shm_fd, sizeof(int));
+  if ((count = (int *) mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0)) == MAP_FAILED) {
+    printf("prod: Map failed: %s\n", strerror(errno));
+    exit(1);
+  }
 
   if ((mutex = sem_open(("/barrier::mutex-" + to_string(hash)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
     perror("semaphore initilization");
@@ -95,6 +105,9 @@ Barrier::Barrier(int n, int *count, size_t hash) : n(n), count(count), wait_id(0
     perror("semaphore initilization");
     exit(1);
   }
+
+  Log.log(101, "Barrier::Barrier n=%d", n);
+  Log.log(101, "Barrier::Barrier count=%d", *count);
 }
 
 void Barrier::phase1() {
@@ -134,6 +147,7 @@ void Barrier::wait() {
 }
 
 Barrier::~Barrier() {
+  shm_unlink(sharedMemoryName.c_str());
   sem_close(mutex);
   sem_close(turnstile);
   sem_close(turnstile2);

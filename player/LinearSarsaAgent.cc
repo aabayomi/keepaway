@@ -90,7 +90,7 @@ LinearSarsaAgent::LinearSarsaAgent(
       exit(1);
     }
 
-    barrier = new Barrier(AtomicAction::num_keepers, &(sharedData->numBlocked), h);
+    barrier = new Barrier(AtomicAction::num_keepers, h);
     sharedData->reset();
   }
 

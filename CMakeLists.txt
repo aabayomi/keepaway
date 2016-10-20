@@ -70,7 +70,9 @@ set(SOURCE_FILES
         player/LinearSarsaLearner.cc
         player/LinearSarsaLearner.h
         player/gzstream.cc
-        player/gzstream.h)
+        player/gzstream.h
+        player/dot_graph.cc
+        player/dot_graph.h)
 
 add_executable(keepaway_player ${SOURCE_FILES})
 target_link_libraries(keepaway_player pthread dl rt z)

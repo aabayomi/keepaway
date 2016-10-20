@@ -12,10 +12,8 @@ namespace jol {
 struct SharedData {
   int lastAction;
   int lastActionTime;
-  int numBlocked;
 
   void reset() {
-    numBlocked = 0;
     lastAction = -1;
     lastActionTime = UnknownTime;
   }

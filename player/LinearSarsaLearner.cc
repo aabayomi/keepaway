@@ -9,7 +9,6 @@
 namespace fsm {
 
 void SharedData::reset() {
-  numBlocked = 0;
   lastJointChoiceIdx = -1;
   lastJointChoiceTime = UnknownTime;
   memset(lastJointChoice, 0, sizeof(lastJointChoice));
@@ -138,7 +137,7 @@ void LinearSarsaLearner::initialize(
     nonzeroTracesInverse = sharedData->nonzeroTracesInverse;
     colTab = &sharedData->colTab;
 
-    barrier = new Barrier(HierarchicalFSM::num_keepers, &(sharedData->numBlocked), h);
+    barrier = new Barrier(HierarchicalFSM::num_keepers, h);
 
     sharedData->reset();
     if (loadWeightsFile.empty() || !loadWeights(loadWeightsFile.c_str())) {
@@ -157,6 +156,12 @@ void LinearSarsaLearner::shutDown()
 
   if (sharedData) shm_unlink(sharedMemoryName.c_str());
   delete barrier;
+
+#if DETERMINISTIC_GRAPH
+  ofstream fout("detTransitionGraph_" + to_string(Memory::ins().agentIdx) + ".dot");
+  fout << detTransitionGraph << endl;
+  fout.close();
+#endif
 }
 
 bool LinearSarsaLearner::loadSharedData() {
@@ -249,7 +254,7 @@ vector<vector<int>> LinearSarsaLearner::validChoicesRaw(const vector<int> &num_c
 }
 
 bool LinearSarsaLearner::isDeterministic(const vector<string> &machine_state, int c) {
-  return deterministicMap.count(machine_state) && deterministicMap[machine_state].count(c);
+  return detTransitionMap.count(machine_state) && detTransitionMap[machine_state].count(c);
 }
 
 double LinearSarsaLearner::reward(double tau) {
@@ -266,14 +271,15 @@ double LinearSarsaLearner::reward(double tau) {
 
 int LinearSarsaLearner::step(int current_time) {
   int choice = -1;
+  auto *state = Memory::ins().state;
 
   if (lastJointChoiceIdx >= 0) {
     Assert(lastJointChoiceTime != UnknownTime);
     double tau = current_time - lastJointChoiceTime;
     double delta = reward(tau) - Q[lastJointChoiceIdx];
-    numTilings = loadTiles(Memory::ins().state, machineState, numChoices, tiles_);
+    numTilings = loadTiles(state, machineState, numChoices, tiles_);
     for (auto c : validChoices(numChoices)) {
-      Q[c] = QValue(Memory::ins().state, machineState, c, tiles_, numTilings);
+      Q[c] = QValue(state, machineState, c, tiles_, numTilings);
     }
 
     choice = selectChoice(numChoices);
@@ -288,7 +294,7 @@ int LinearSarsaLearner::step(int current_time) {
     }
 
     updateWeights(delta, numTilings);
-    Q[choice] = QValue(Memory::ins().state, machineState, choice, tiles_, numTilings);
+    Q[choice] = QValue(state, machineState, choice, tiles_, numTilings);
     decayTraces(HierarchicalFSM::gamma * lambda);
     for (auto a : validChoices(numChoices)) {
       if (a != choice) {
@@ -299,9 +305,9 @@ int LinearSarsaLearner::step(int current_time) {
   } else { // new episode
     decayTraces(0.0);
     Assert(numNonzeroTraces == 0);
-    numTilings = loadTiles(Memory::ins().state, machineState, numChoices, tiles_);
+    numTilings = loadTiles(state, machineState, numChoices, tiles_);
     for (auto c : validChoices(numChoices)) {
-      Q[c] = QValue(Memory::ins().state, machineState, c, tiles_, numTilings);
+      Q[c] = QValue(state, machineState, c, tiles_, numTilings);
     }
     choice = selectChoice(numChoices);
   }
@@ -338,7 +344,15 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
     if (Memory::ins().agentIdx == 0) {
       if (current_time == lastJointChoiceTime && lastMachineState.size()
           && lastMachineState != machineState) {
-        deterministicMap[lastMachineState][lastJointChoiceIdx] = machineState;
+        Log.log(101, "LinearSarsaLearner::step: save deterministical transition (%s) + (%d) -> (%s)",
+                to_prettystring(lastMachineState).c_str(), lastJointChoiceIdx, to_prettystring(machineState).c_str());
+        detTransitionMap[lastMachineState][lastJointChoiceIdx] = machineState;
+
+#if DETERMINISTIC_GRAPH
+        detTransitionGraph.addEdge(
+            to_prettystring(lastMachineState),
+            to_prettystring(machineState), "Blue", to_string(lastJointChoiceIdx));
+#endif
       }
 
       lastJointChoiceIdx = step(current_time);
@@ -404,10 +418,9 @@ int LinearSarsaLearner::loadTiles(
     int (*tiles)[RL_MAX_NUM_TILINGS]) {
   const int tilingsPerGroup = 32;
 
-  string str = to_prettystring(machine_state);
-  int h = (int) (hash<string>()(str) % INT_MAX); // joint machine state
-  Log.log(101, "LinearSarsaLearner::loadTiles machine state: [%s], #%d, (%d)",
-          str.c_str(), validChoices(num_choices).size(), h);
+  int h = (int) (hash<string>()(to_prettystring(machine_state)) % INT_MAX); // joint machine state
+  Log.log(101, "LinearSarsaLearner::loadTiles machine state: [%s], num_choices=%d, (hash=%d)",
+          to_prettystring(machine_state).c_str(), validChoices(num_choices).size(), h);
 
   int numTilings = 0;
   for (int v = 0; v < HierarchicalFSM::num_features; v++) {
@@ -438,16 +451,17 @@ double LinearSarsaLearner::QValue(
     int choice,
     int (*tiles)[RL_MAX_NUM_TILINGS],
     int num_tilings) {
-  Log.log(101, "LinearSarsaLearner::QValue m=%s c=%d", to_prettystring(machine_state).c_str(), choice);
-
   if (isDeterministic(machine_state, choice) &&
-      deterministicMap[machine_state][choice] != machine_state) {
-    Log.log(101, "LinearSarsaLearner::QValue: deterministically Q[m=%s][c=%d] = V[m=%s]",
+      detTransitionMap[machine_state][choice] != machine_state) {
+    Log.log(101, "LinearSarsaLearner::QValue: deterministically Q(s, m=%s, c=%d) = V(s, m=%s)",
             to_prettystring(machine_state).c_str(), choice,
-            to_prettystring(deterministicMap[machine_state][choice]).c_str());
-    return Value(state, deterministicMap[machine_state][choice]);
+            to_prettystring(detTransitionMap[machine_state][choice]).c_str());
+    return Value(state, detTransitionMap[machine_state][choice]);
   } else {
-    return computeQ(choice, tiles, num_tilings);
+    auto q = computeQ(choice, tiles, num_tilings);
+    Log.log(101, "LinearSarsaLearner::QValue: Q(s, m=%s, c=%d) = %f", to_prettystring(machine_state).c_str(), choice,
+            q);
+    return q;
   }
 }
 
@@ -462,23 +476,22 @@ double LinearSarsaLearner::computeQ(int choice, int (*tiles)[RL_MAX_NUM_TILINGS]
 
 double LinearSarsaLearner::Value(double *state, const vector<string> &machine_state) {
   auto tiles = new int[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
-  double bestValue = numeric_limits<double>::min();
-
-  Log.log(101, "LinearSarsaLearner::Value m=%s", to_prettystring(machine_state).c_str());
+  double v = numeric_limits<double>::min();
 
   Assert(numChoicesMap.count(machine_state));
   auto num_choices = numChoicesMap[machine_state];
   int num_tilings = loadTiles(state, machine_state, num_choices, tiles);
 
   for (auto c : validChoices(num_choices)) {
-    double value = QValue(state, machine_state, c, tiles, num_tilings);
-    if (value > bestValue) {
-      bestValue = value;
+    double tmp = QValue(state, machine_state, c, tiles, num_tilings);
+    if (tmp > v) {
+      v = tmp;
     }
   }
 
+  Log.log(101, "LinearSarsaLearner::Value: V(s, m=%s) = %f", to_prettystring(machine_state).c_str(), v);
   delete[] tiles;
-  return bestValue;
+  return v;
 }
 
 int LinearSarsaLearner::selectChoice(const vector<int> &num_choices) {
@@ -528,11 +541,11 @@ int LinearSarsaLearner::argmaxQ(const vector<int> &num_choices) {
   return bestAction;
 }
 
-void LinearSarsaLearner::updateWeights(double delta, int numTilings) {
+void LinearSarsaLearner::updateWeights(double delta, int num_tilings) {
   Log.log(101, "LinearSarsaLearner::updateWeights delta %f", delta);
 
-  Assert(numTilings > 0);
-  double tmp = delta * alpha / numTilings;
+  Assert(num_tilings > 0);
+  double tmp = delta * alpha / num_tilings;
 
   for (int i = 0; i < numNonzeroTraces; i++) {
     Assert(i < RL_MAX_NONZERO_TRACES);
