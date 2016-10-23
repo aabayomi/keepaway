@@ -8,7 +8,7 @@ LOGLEVEL="101"
 HIERARCHICALFSM=""
 QLEARNING=""
 GAMMA="1.0"
-LAMBDA="0.0"
+LAMBDA="0.5"
 INITIALWEIGHT="0.5"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
@@ -74,7 +74,7 @@ fi
 CONSOLE_LOG="$LOGDIR/`basename $QFILE .q`.console"
 
 ulimit -c unlimited
-echo ./keepaway.py $MEMORYCHECK $LEARNING \
+./keepaway.py $MEMORYCHECK $LEARNING \
     --keeper-output=$QFILE --keeper-input=$QFILE \
     $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
     $HIERARCHICALFSM --gamma=$GAMMA --Lambda=$LAMBDA\

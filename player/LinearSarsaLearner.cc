@@ -82,8 +82,7 @@ void LinearSarsaLearner::initialize(
     double Gamma, double Lambda,
     double weight, bool QLearning,
     string loadWeightsFile,
-    string saveWeightsFile_)
-{
+    string saveWeightsFile_) {
   bLearning = learning;
   bSaveWeights = bLearning && saveWeightsFile_.length() > 0;
   saveWeightsFile = saveWeightsFile_;
@@ -153,11 +152,12 @@ void LinearSarsaLearner::initialize(
       fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
       colTab->reset();
     }
+
+    loadMachineTransitions("transitions.xml");
   }
 }
 
-void LinearSarsaLearner::shutDown()
-{
+void LinearSarsaLearner::shutDown() {
   if (Memory::ins().agentIdx == 0 && bLearning && bSaveWeights) {
     cerr << "Saving weights at shutdown." << endl;
     saveWeights(saveWeightsFile.c_str());
@@ -166,11 +166,13 @@ void LinearSarsaLearner::shutDown()
   if (sharedData) shm_unlink(sharedMemoryName.c_str());
   delete barrier;
 
+  if (Memory::ins().agentIdx == 0) {
+    saveMachineTransitions("transitions.xml");
+
 #if DETERMINISTIC_GRAPH
-  ofstream fout("detTransitionGraph_" + to_string(Memory::ins().agentIdx) + ".dot");
-  fout << detTransitionGraph << endl;
-  fout.close();
+    detTransitionGraph.dump("detTransitionGraph_" + to_string(Memory::ins().agentIdx) + ".dot");
 #endif
+  }
 }
 
 bool LinearSarsaLearner::loadSharedData() {
@@ -245,6 +247,26 @@ const vector<int> &LinearSarsaLearner::validChoices(const vector<int> &num_choic
   return validChoicesMap[num_choices];
 }
 
+void LinearSarsaLearner::saveMachineTransitions(const char *filename) {
+  std::ofstream ofs(filename);
+  Assert(ofs.good());
+  boost::archive::xml_oarchive oa(ofs);
+  oa << BOOST_SERIALIZATION_NVP(validChoicesMap);
+  oa << BOOST_SERIALIZATION_NVP(jointChoicesMap);
+  oa << BOOST_SERIALIZATION_NVP(numChoicesMap);
+  oa << BOOST_SERIALIZATION_NVP(detTransitionMap);
+}
+
+void LinearSarsaLearner::loadMachineTransitions(const char *filename) {
+  std::ifstream ifs(filename);
+  if (!ifs.good()) return;
+  boost::archive::xml_iarchive ia(ifs);
+  ia >> BOOST_SERIALIZATION_NVP(validChoicesMap);
+  ia >> BOOST_SERIALIZATION_NVP(jointChoicesMap);
+  ia >> BOOST_SERIALIZATION_NVP(numChoicesMap);
+  ia >> BOOST_SERIALIZATION_NVP(detTransitionMap);
+}
+
 vector<vector<int>> LinearSarsaLearner::validChoicesRaw(const vector<int> &num_choices) {
   if (num_choices.empty()) return {{}};
 
@@ -264,6 +286,36 @@ vector<vector<int>> LinearSarsaLearner::validChoicesRaw(const vector<int> &num_c
 
 bool LinearSarsaLearner::isDeterministic(const vector<string> &machine_state, int c) {
   return detTransitionMap.count(machine_state) && detTransitionMap[machine_state].count(c);
+}
+
+namespace {
+bool dfs(
+    const vector<string> &root,
+    unordered_map<vector<string>, unordered_map<int, vector<string>>> &G,
+    unordered_set<vector<string>> &visited,
+    unordered_set<vector<string>> &path) {
+  if (path.count(root)) {
+    return true;
+  }
+
+  visited.insert(root);
+  path.insert(root);
+  if (G.count(root)) {
+    for (auto &pa: G[root]) {
+      if (dfs(pa.second, G, visited, path)) return true;
+    }
+  }
+  return false;
+};
+}
+
+bool LinearSarsaLearner::hasCircle(unordered_map<vector<string>, unordered_map<int, vector<string>>> &G) {
+  unordered_set<vector<string>> visited;
+  for (auto &pa : G) {
+    unordered_set<vector<string>> path;
+    if (!visited.count(pa.first) && dfs(pa.first, G, visited, path)) return true;
+  }
+  return false;
 }
 
 double LinearSarsaLearner::reward(double tau) {
@@ -296,8 +348,7 @@ int LinearSarsaLearner::step(int current_time) {
 
     if (qLearning) {
       delta += pow(gamma, tau) * Q[argmaxQ(numChoices)];
-    }
-    else {
+    } else {
       delta += pow(gamma, tau) * Q[choice];
     }
 
@@ -350,16 +401,33 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
     return 0; // action state
   } else {
     if (Memory::ins().agentIdx == 0) {
-      if (current_time == lastJointChoiceTime && lastMachineState.size()
+      if (current_time == lastJointChoiceTime
+          && lastMachineState.size()
+          && machineState.size()
           && lastMachineState != machineState) {
         Log.log(101, "LinearSarsaLearner::step: save deterministical transition (%s) + (%d) -> (%s)",
                 to_prettystring(lastMachineState).c_str(), lastJointChoiceIdx, to_prettystring(machineState).c_str());
         detTransitionMap[lastMachineState][lastJointChoiceIdx] = machineState;
 
+        if (hasCircle(detTransitionMap)) {
+          Log.log(101, "LinearSarsaLearner::step: detTransitionMap has circle");
+          detTransitionMap[lastMachineState].erase(lastJointChoiceIdx);
+          if (detTransitionMap[lastMachineState].empty()) {
+            detTransitionMap.erase(lastMachineState);
+          }
+        }
+
 #if DETERMINISTIC_GRAPH
-        detTransitionGraph.addEdge(
-            to_prettystring(lastMachineState),
-            to_prettystring(machineState), "Blue", to_string(lastJointChoiceIdx));
+        else {
+          auto n = detTransitionGraph.getNodes().size();
+          detTransitionGraph.addEdge(
+              to_prettystring(lastMachineState),
+              to_prettystring(machineState), "Blue", to_string(lastJointChoiceIdx));
+          if (n != detTransitionGraph.getNodes().size()) {
+            PRINT_VALUE(current_time);
+            PRINT_VALUE(detTransitionGraph.getNodes().size());
+          }
+        }
 #endif
       }
 

@@ -75,4 +75,4 @@ set(SOURCE_FILES
         player/dot_graph.h)
 
 add_executable(keepaway_player ${SOURCE_FILES})
-target_link_libraries(keepaway_player pthread dl rt z)
+target_link_libraries(keepaway_player pthread dl rt z boost_serialization)

@@ -96,6 +96,7 @@ public:
 
 private:
   std::unordered_map<std::string, int> id_map;
+
 public:
   Graph();
 
@@ -109,6 +110,8 @@ public:
   void addEdge(const int a, const int b, const std::string &color = "", const std::string &label = "");
 
   friend std::ostream &operator<<(std::ostream &os, const Graph &g);
+
+  void dump(const std::string &filename);
 };
 
 } //namspace dot_graph

@@ -15,6 +15,11 @@
 #include <functional>
 #include "dot_graph.h"
 
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/string.hpp>
 
 #define DETERMINISTIC_GRAPH 0
 
@@ -34,6 +39,7 @@ struct hash<vector<T>> {
 }
 
 namespace fsm {
+
 struct SharedData {
   double Q[MAX_RL_ACTIONS];
   int tiles[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
@@ -114,6 +120,7 @@ public:
 
 private:
   bool bLearning;
+  bool qLearning;
   string saveWeightsFile;
   bool bSaveWeights;
   SharedData *sharedData;
@@ -182,7 +189,10 @@ private:
   unordered_map<vector<int>, vector<vector<int>>> jointChoicesMap;
   unordered_map<vector<string>, vector<int>> numChoicesMap;
   unordered_map<vector<string>, unordered_map<int, vector<string>>> detTransitionMap;
-  bool qLearning;
+
+  void saveMachineTransitions(const char *filename);
+
+  void loadMachineTransitions(const char *filename);
 
 #if DETERMINISTIC_GRAPH
   dot::Graph detTransitionGraph;
@@ -191,6 +201,8 @@ private:
   double reward(double tau);
 
   bool isDeterministic(const vector<string> &machine_state, int c);
+
+  bool hasCircle(unordered_map<vector<string>, unordered_map<int, vector<string>>> &G);
 };
 
 }

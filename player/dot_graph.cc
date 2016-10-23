@@ -2,6 +2,9 @@
 
 #include <cstring>
 #include <sstream>
+#include <fstream>
+
+using namespace std;
 
 namespace dot {
 
@@ -44,6 +47,12 @@ void Graph::addEdge(const int a, const int b, const std::string &color, const st
   ssa << b;
 
   addEdge(ssa.str(), ssa.str(), color, label);
+}
+
+void Graph::dump(const string &filename) {
+  ofstream fout(filename);
+  fout << *this << endl;
+  fout.close();
 }
 
 void Graph::addEdge(const std::string &a, const std::string &b, const std::string &color, const std::string &label) {

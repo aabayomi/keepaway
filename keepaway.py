@@ -126,7 +126,7 @@ def launch_server(options):
         ('coach_port', options.coach_port)]
 
     # Hardcoded settings for keepaway play.
-    server_options += [('forbid_kick_off_offside', 0)]
+    server_options += [('forbid_kick_off_offside', 1)]
     server_options += [('half_time', -1)]
 
     # Either keepaway or trainer mode. Field size.
@@ -163,8 +163,8 @@ def launch_server(options):
     # TODO Any changes to other new defaults in rcssserver to retain benchmarks?
     server_options += [('stamina_inc_max', 3500)];
 
-    server_options += [('fullstate_l', options.fullstate)];
-    server_options += [('fullstate_r', options.fullstate)];
+    server_options += [('fullstate_l', int(options.fullstate))];
+    server_options += [('fullstate_r', int(options.fullstate))];
 
     # Synch mode. TODO What's default, and does synch offset matter when not
     # TODO in synch mode?
