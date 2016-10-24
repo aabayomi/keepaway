@@ -29,6 +29,6 @@ cleanall: clean
 	rm -fr /run/shm/sem.*
 	rm -fr Debug Release
 	rm -fr *.q logs/* *.lock core core.* vgcore.* 
-	rm -fr *.lock console.log nohup.out *.dot
+	rm -fr *.lock console.log nohup.out *.dot *.xml
 	./kill.sh 
 	killall -q keepaway_player 1>/dev/null 2>&1

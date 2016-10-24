@@ -210,7 +210,6 @@ void Keeper::run() {
   while (WM->getCurrentCycle() < 1) action(false);
 
   while (Memory::ins().bAlive) {
-    Assert(Memory::ins().getStack().size() == 1);
     if (WM->isNewEpisode()) {
       LinearSarsaLearner::ins().endEpisode(WM->getCurrentCycle());
       WM->setNewEpisode(false);
@@ -310,7 +309,7 @@ void Move::run() {
 
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
     Log.log(101, "Move::run action with d=%d", d);
-    Action(this, d)();
+    Action(this, {d})();
   }
 }
 
@@ -352,6 +351,7 @@ Pass::Pass(BasicPlayer *p) : HierarchicalFSM(p, "$Pass") {
     parameters.push_back(i);
   }
   passToChoice = new ChoicePoint<int>("@PassTo", parameters);
+  passSpeedChoice = new ChoicePoint<PassT>("@PassSpeed", {PASS_FAST, PASS_NORMAL});
 }
 
 Pass::~Pass() {
@@ -359,15 +359,17 @@ Pass::~Pass() {
 }
 
 void Pass::run() {
-  Assert(WM->isBallKickable());
-  MakeChoice<int> c(passToChoice);
-  auto k = c(WM->getCurrentCycle());
+  MakeChoice<int> c1(passToChoice);
+  auto k = c1(WM->getCurrentCycle());
+
+  MakeChoice<PassT> c2(passSpeedChoice);
+  auto t = c2(WM->getCurrentCycle());
 
   while (running() && WM->isBallKickable()) {
     VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[k]);
-    ACT->putCommandInQueue(player->directPass(tmPos, PASS_NORMAL));
-    Log.log(101, "Pass::run action with k=%d", k);
-    Action(this, k)();
+    ACT->putCommandInQueue(player->directPass(tmPos, t));
+    Log.log(101, "Pass::run action with k=%d t=%s", k, t == PASS_NORMAL ? "normal" : "fast");
+    Action(this, {k, t})();
   }
 }
 

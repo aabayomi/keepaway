@@ -177,6 +177,7 @@ public:
 
 private:
   ChoicePoint<int> *passToChoice;
+  ChoicePoint<PassT> *passSpeedChoice;
 };
 
 class Hold : public HierarchicalFSM {
@@ -198,10 +199,14 @@ public:
   }
 
   T operator()(int current_time) {
-    return cp->choose(current_time);
+    auto c = cp->choose(current_time);
+    Log.log(101, "MakeChoice::MakeChoice %s -> %s", cp->getName().c_str(), to_string(c).c_str());
+    Memory::ins().PushStack("[" + to_string(c) + "]");
+    return c;
   }
 
   ~MakeChoice() {
+    Memory::ins().PopStack();
     Memory::ins().PopStack();
   }
 
@@ -233,9 +238,9 @@ private:
 
 class Action {
 public:
-  Action(HierarchicalFSM *m, int p = 0) : m(m) {
-    Log.log(101, "Action::Action %d", p);
-    Memory::ins().PushStack(to_string(p));
+  Action(HierarchicalFSM *m, vector<int> parameters = {}) : m(m) {
+    Log.log(101, "Action::Action with parameters=%s", to_prettystring(parameters).c_str());
+    Memory::ins().PushStack("!" + to_prettystring(parameters));
   }
 
   void operator()() {

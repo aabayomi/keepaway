@@ -68,8 +68,8 @@ PlayerSettings::PlayerSettings( ) : GenericValues("PlayerSettings", 27)
   dClearBallOppMaxDist   = 30.0; // radius in which opp in clear ball has to be
   dClearBallToSideAngle  = 17.0; // minimum angle for clear ball to side
   dConeWidth             = 0.5;  // cone width to check for opponents in pass
-  dPassEndSpeed          = 1.2;  // end speed for ball when passed to teammate
-  dFastPassEndSpeed      = 1.8;  // end speed for ball when passed fast
+  dPassEndSpeed = 0.8;  // end speed for ball when passed to teammate
+  dFastPassEndSpeed = 1.2;  // end speed for ball when passed fast
   dPassExtraX            = 0.0;  // extra x value added to player passing pos
   dFractionWaitNoSee     = 0.61;  // % of cycle to wait in cycle with no see
   dFractionWaitSeeBegin  = 0.70; // % to wait in cycle with see in begin

@@ -446,7 +446,7 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
       if (numChoices[Memory::ins().agentIdx] <= 1) { // dummy choice
         return step(current_time, num_choices);
       } else {
-        assert(lastJointChoice.size() == HierarchicalFSM::num_keepers);
+        Assert(lastJointChoice.size() == HierarchicalFSM::num_keepers);
         return lastJointChoice[Memory::ins().agentIdx];
       }
     } else { // race condition?

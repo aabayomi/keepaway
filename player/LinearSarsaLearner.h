@@ -21,7 +21,7 @@
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/string.hpp>
 
-#define DETERMINISTIC_GRAPH 0
+#define DETERMINISTIC_GRAPH 1
 
 namespace std {
 
@@ -54,12 +54,12 @@ struct SharedData {
   int numNonzeroTraces;
 
   int numChoices[OBJECT_MAX_OBJECTS]; // indexed by object type
-  char machineState[OBJECT_MAX_OBJECTS][1024];
+  char machineState[OBJECT_MAX_OBJECTS][MAX_MSG];
 
   int lastJointChoiceIdx;
   int lastJointChoiceTime;
   int lastJointChoice[11]; // indexed by K0..Kn
-  char lastMachineState[11][1024];
+  char lastMachineState[11][MAX_MSG];
 
   vector<int> getNumChoices() const;
 
