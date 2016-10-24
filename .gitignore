@@ -19,3 +19,4 @@ breakpoints
 build/
 Debug/
 Release/
+data/

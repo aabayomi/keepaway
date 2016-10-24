@@ -3,12 +3,12 @@ all: debug release
 
 release: tools
 	mkdir -p Release
-	cd Release;	cmake -DCMAKE_BUILD_TYPE=Release ..; make -j4
+	cd Release;	cmake -DCMAKE_BUILD_TYPE=Release ..; make -j `nproc`
 	cd player; ln -sf ../Release/keepaway_player .
 
 debug: tools
 	mkdir -p Debug
-	cd Debug; cmake -DCMAKE_BUILD_TYPE=Debug ..; make -j4
+	cd Debug; cmake -DCMAKE_BUILD_TYPE=Debug ..; make -j `nproc`
 	cd player; ln -sf ../Debug/keepaway_player .
 
 clean:
