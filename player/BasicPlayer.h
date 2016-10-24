@@ -144,123 +144,160 @@ inline void SemTimedWait(sem_t *sem, int ms = 0) {
     functionality is available that chooses when to execute which skill, this
     is done in the Player class. The WorldModel is used to determine the way
     in which the skills are performed. */
-class BasicPlayer
-{
+class BasicPlayer {
 public:
-  ActHandler      *ACT; /*!< ActHandler to which commands can be sent        */
-  WorldModel      *WM;  /*!< WorldModel that contains information of world   */
-  ServerSettings  *SS;  /*!< All parameters used by the server               */
-  PlayerSettings  *PS;  /*!< All parameters used for the player              */
+  ActHandler *ACT; /*!< ActHandler to which commands can be sent        */
+  WorldModel *WM;  /*!< WorldModel that contains information of world   */
+  ServerSettings *SS;  /*!< All parameters used by the server               */
+  PlayerSettings *PS;  /*!< All parameters used for the player              */
 
   ////////////////////////// LOW-LEVEL SKILLS /////////////////////////////////
 
-  SoccerCommand   alignNeckWithBody       (                                  );
-  SoccerCommand   turnBodyToPoint         ( VecPosition   pos,
-                                            int           iPos = 1           );
-  SoccerCommand   turnBackToPoint         ( VecPosition   pos,
-                                            int           iPos = 1           );
-  SoccerCommand   turnNeckToPoint         ( VecPosition   pos,
-                                            SoccerCommand com                );
-  SoccerCommand   searchBall              (                                  );
-  SoccerCommand   dashToPoint             ( VecPosition   pos,
-                                            int           iCycles = 1        );
-  SoccerCommand   freezeBall              (                                  );
-  SoccerCommand   kickBallCloseToBody     ( AngDeg        ang,
-					    double        dKickRatio = 0.16  );
-  SoccerCommand   accelerateBallToVelocity( VecPosition   vel                );
-  SoccerCommand   catchBall               (                                  );
-  SoccerCommand   communicate             ( char          *str               );
-  SoccerCommand   teleportToPos           ( VecPosition   pos                );
-  SoccerCommand   listenTo                ( ObjectT       obj                );
-  SoccerCommand   tackle                  (                                  );
+  SoccerCommand alignNeckWithBody();
+
+  SoccerCommand turnBodyToPoint(VecPosition pos,
+                                int iPos = 1);
+
+  SoccerCommand turnBackToPoint(VecPosition pos,
+                                int iPos = 1);
+
+  SoccerCommand turnNeckToPoint(VecPosition pos,
+                                SoccerCommand com);
+
+  SoccerCommand searchBall();
+
+  SoccerCommand dashToPoint(VecPosition pos,
+                            int iCycles = 1);
+
+  SoccerCommand freezeBall();
+
+  SoccerCommand kickBallCloseToBody(AngDeg ang,
+                                    double dKickRatio = 0.16);
+
+  SoccerCommand accelerateBallToVelocity(VecPosition vel);
+
+  SoccerCommand catchBall();
+
+  SoccerCommand communicate(char *str);
+
+  SoccerCommand teleportToPos(VecPosition pos);
+
+  SoccerCommand listenTo(ObjectT obj);
+
+  SoccerCommand tackle();
 
   ////////////////////////// INTERMEDIATE SKILLS //////////////////////////////
 
-  SoccerCommand   turnBodyToObject        ( ObjectT       o                  );
-  SoccerCommand   turnNeckToObject        ( ObjectT       o,
-                                            SoccerCommand com                );
-  SoccerCommand   directTowards           ( VecPosition   posTo,
-                                            AngDeg        angWhenToTurn,
-                                            VecPosition   *pos = NULL,
-                                            VecPosition   *vel = NULL,
-                                            AngDeg        *angBody  = NULL   );
-  SoccerCommand   moveToPos               ( VecPosition   posTo,
-                                            AngDeg        angWhenToTurn,
-                                            double        dDistDashBack = 0.0,
-                                            bool          bMoveBack = false,
-                                            int           iCycles = 1        );
-  SoccerCommand   collideWithBall         (                                  );
-  SoccerCommand   interceptClose          (                                  );
-  SoccerCommand   interceptCloseGoalie    (                                  );
-  SoccerCommand   kickTo                  ( VecPosition   posTarget,
-                                            double        dEndSpeed          );
-  SoccerCommand   turnWithBallTo          ( AngDeg        ang,
-                                            AngDeg        angKickThr,
-                                            double        dFreezeThr         );
-  SoccerCommand   moveToPosAlongLine      ( VecPosition   pos,
-                                            AngDeg        ang,
-                                            double        dDistThr,
-                                            int           iSign,
-                                            AngDeg        angThr,
-                                            AngDeg        angCorr            );
+  SoccerCommand turnBodyToObject(ObjectT o);
+
+  SoccerCommand turnNeckToObject(ObjectT o,
+                                 SoccerCommand com);
+
+  SoccerCommand directTowards(VecPosition posTo,
+                              AngDeg angWhenToTurn,
+                              VecPosition *pos = NULL,
+                              VecPosition *vel = NULL,
+                              AngDeg *angBody = NULL);
+
+  SoccerCommand moveToPos(VecPosition posTo,
+                          AngDeg angWhenToTurn,
+                          double dDistDashBack = 0.0,
+                          bool bMoveBack = false,
+                          int iCycles = 1);
+
+  SoccerCommand collideWithBall();
+
+  SoccerCommand interceptClose();
+
+  SoccerCommand interceptCloseGoalie();
+
+  SoccerCommand kickTo(VecPosition posTarget,
+                       double dEndSpeed);
+
+  SoccerCommand turnWithBallTo(AngDeg ang,
+                               AngDeg angKickThr,
+                               double dFreezeThr);
+
+  SoccerCommand moveToPosAlongLine(VecPosition pos,
+                                   AngDeg ang,
+                                   double dDistThr,
+                                   int iSign,
+                                   AngDeg angThr,
+                                   AngDeg angCorr);
 
 
   ////////////////////////// HIGH-LEVEL SKILLS ////////////////////////////////
 
-  SoccerCommand   intercept               ( bool          isGoalie           );
-  SoccerCommand   dribble                 ( AngDeg        ang,
-                                            DribbleT      d                  );
-  SoccerCommand   directPass              ( VecPosition   pos,
-                                            PassT         passType           );
-  SoccerCommand   leadingPass             ( ObjectT       o,
-                                            double        dDist,
-                                            DirectionT    dir = DIR_NORTH    );
-  SoccerCommand   throughPass             ( ObjectT       o,
-                                            VecPosition   posEnd,
-                                            AngDeg        *angMax = NULL     );
-  SoccerCommand   outplayOpponent         ( ObjectT       o,
-                                            VecPosition   pos,
-                                            VecPosition   *posTo = NULL      );
-  SoccerCommand   clearBall               ( ClearBallT    type,
-                                            SideT         s = SIDE_ILLEGAL,
-                                            AngDeg        *angMax = NULL     );
-  SoccerCommand   mark                    ( ObjectT       o,
-                                            double        dDist,
-                                            MarkT         mark               );
-  SoccerCommand   defendGoalLine          ( double        dDist              );
-  SoccerCommand   interceptScoringAttempt (                                  );
-  SoccerCommand   holdBall                ( double        dDistThr = 0.7     );
+  SoccerCommand intercept(bool isGoalie);
+
+  SoccerCommand dribble(AngDeg ang,
+                        DribbleT d);
+
+  SoccerCommand directPass(VecPosition pos,
+                           PassT passType);
+
+  SoccerCommand leadingPass(ObjectT o,
+                            double dDist,
+                            DirectionT dir = DIR_NORTH);
+
+  SoccerCommand throughPass(ObjectT o,
+                            VecPosition posEnd,
+                            AngDeg *angMax = NULL);
+
+  SoccerCommand outplayOpponent(ObjectT o,
+                                VecPosition pos,
+                                VecPosition *posTo = NULL);
+
+  SoccerCommand clearBall(ClearBallT type,
+                          SideT s = SIDE_ILLEGAL,
+                          AngDeg *angMax = NULL);
+
+  SoccerCommand mark(ObjectT o,
+                     double dDist,
+                     MarkT mark);
+
+  SoccerCommand defendGoalLine(double dDist);
+
+  SoccerCommand interceptScoringAttempt();
+
+  SoccerCommand holdBall(double dDistThr = 0.7);
 
   ////////////////////////// UTILITY METHODS //////////////////////////////////
 
-  VecPosition     getThroughPassShootingPoint( ObjectT       objTeam,
-                                               VecPosition   posEnd,
-					       AngDeg        *angMax         );
-  VecPosition     getInterceptionPointBall(    int           *iCyclesBall,
-                                               bool          isGoalie        );
-  VecPosition     getActiveInterceptionPointBall
-                                          ( int           *iCyclesBall,
-                                            bool          isGoalie           );
-  VecPosition     getDribblePoint         ( DribbleT      dribble,
-                                            double        *dDist             );
-  VecPosition     getShootPositionOnLine  ( VecPosition   p1,
-                                            VecPosition   p2,
-                                            AngDeg        *angLargest = NULL );
-  double          getEndSpeedForPass      ( ObjectT       o,
-                                            VecPosition   posPass            );
-  VecPosition     getMarkingPosition      ( ObjectT       o,
-                                            double        dDist,
-                                            MarkT         mark               );
+  VecPosition getThroughPassShootingPoint(ObjectT objTeam,
+                                          VecPosition posEnd,
+                                          AngDeg *angMax);
+
+  VecPosition getInterceptionPointBall(int *iCyclesBall,
+                                       bool isGoalie);
+
+  VecPosition getActiveInterceptionPointBall
+      (int *iCyclesBall,
+       bool isGoalie);
+
+  VecPosition getDribblePoint(DribbleT dribble,
+                              double *dDist);
+
+  VecPosition getShootPositionOnLine(VecPosition p1,
+                                     VecPosition p2,
+                                     AngDeg *angLargest = NULL);
+
+  double getEndSpeedForPass(ObjectT o,
+                            VecPosition posPass);
+
+  VecPosition getMarkingPosition(ObjectT o,
+                                 double dDist,
+                                 MarkT mark);
 
   /////////////////////// KEEPAWAY SKILLS //////////////////////////////////
 
   SoccerCommand getOpenForPassFromInRectangle(Rect rect,
-                                              VecPosition posFrom );
+                                              VecPosition posFrom);
 
-  SoccerCommand markMostOpenOpponent( ObjectT withBall );
+  SoccerCommand markMostOpenOpponent(ObjectT withBall);
 
-  VecPosition   leastCongestedPointForPassInRectangle( Rect        rect,
-						       VecPosition posFrom );
-} ;
+  VecPosition leastCongestedPointForPassInRectangle(Rect rect,
+                                                    VecPosition posFrom);
+};
 
 #endif

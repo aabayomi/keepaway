@@ -277,6 +277,14 @@ double WorldModel::getMoveSpeed() {
   return m_moveSpeed;
 }
 
+void WorldModel::setKeepawayRectReduced(VecPosition pos1, VecPosition pos2) {
+  m_keepawayRectReduced.setRectanglePoints(pos1, pos2);
+}
+
+Rect WorldModel::getKeepawayRectReduced() {
+  return m_keepawayRectReduced;
+}
+
 void WorldModel::setKeepawayRect(VecPosition pos1, VecPosition pos2) {
   m_keepawayRect.setRectanglePoints(pos1, pos2);
 }
@@ -284,4 +292,3 @@ void WorldModel::setKeepawayRect(VecPosition pos1, VecPosition pos2) {
 Rect WorldModel::getKeepawayRect() {
   return m_keepawayRect;
 }
-

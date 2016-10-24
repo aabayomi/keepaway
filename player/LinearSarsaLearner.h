@@ -21,7 +21,7 @@
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/string.hpp>
 
-#define DETERMINISTIC_GRAPH 1
+#define DETERMINISTIC_GRAPH 0
 
 namespace std {
 

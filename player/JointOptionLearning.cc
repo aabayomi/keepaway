@@ -139,7 +139,7 @@ SoccerCommand Move::execute(BasicPlayer *player, ObjectT K[]) {
                        (player->WM->getBallPos() -
                         player->WM->getAgentGlobalPosition()).rotate(parameter * 90.0).normalize();
 
-  auto r = player->WM->getKeepawayRect();
+  auto r = player->WM->getKeepawayRectReduced();
   if (r.isInside(target)) {
     Log.log(101, "move to target %s", target.str().c_str());
     player->ACT->putCommandInQueue(soc = player->moveToPos(target, 30.0));

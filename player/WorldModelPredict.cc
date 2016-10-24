@@ -711,8 +711,7 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
   // for each new pos of the ball, check whether agent can reach ball
   // and update the best interception point
   while (iCyclesBall <= PS->getPlayerWhenToIntercept() &&
-         iCyclesBall <= iFirstBall + 20 &&
-         getKeepawayRect().isInside(posBall) &&
+         iCyclesBall <= iFirstBall + 20 && getKeepawayRect().isInside(posBall) &&
          isInField(posBall)) {
     // re-initialize all variables
     angBody = (angBodyIn == NULL) ? getGlobalBodyAngle(obj) : *angBodyIn;
@@ -825,7 +824,6 @@ SoccerCommand WorldModel::predictCommandToInterceptBall(ObjectT obj,
     *posIntercept = posBall;
 
   if (!getKeepawayRect().isInside(posBall)) {
-//    Log.log(101, "SoccerCommand WorldModel::predictCommandToInterceptBall !getKeepawayRect().isInside(posBall)");
     posBall = getBallPos();
   }
 

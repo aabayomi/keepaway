@@ -37,5 +37,5 @@ gnuplot graph.gnuplot
 gnuplot hist.gnuplot
 
 evince graph.eps &
-evince hist.eps &
+#evince hist.eps &
 

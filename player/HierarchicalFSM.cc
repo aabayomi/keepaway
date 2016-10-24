@@ -264,16 +264,16 @@ Move::~Move() {
 void Move::run() {
   Assert(!WM->isBallKickable());
   MakeChoice<int> c(moveToChoice);
-  auto d = c(WM->getCurrentCycle());
+  auto dir = c(WM->getCurrentCycle());
 
   bool flag = WM->isTmControllBall();
   while (running() && flag == WM->isTmControllBall()) {
     SoccerCommand soc;
     VecPosition target = WM->getAgentGlobalPosition() +
                          (WM->getBallPos() -
-                          WM->getAgentGlobalPosition()).rotate(d * 90.0).normalize();
+                          WM->getAgentGlobalPosition()).rotate(dir * 90.0).normalize();
 
-    auto r = WM->getKeepawayRect();
+    auto r = WM->getKeepawayRectReduced();
     if (r.isInside(target)) {
       ACT->putCommandInQueue(soc = player->moveToPos(target, 30.0));
     } else {
@@ -308,8 +308,8 @@ void Move::run() {
     }
 
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
-    Log.log(101, "Move::run action with d=%d", d);
-    Action(this, {d})();
+    Log.log(101, "Move::run action with dir=%d", dir);
+    Action(this, {dir})();
   }
 }
 
@@ -360,16 +360,18 @@ Pass::~Pass() {
 
 void Pass::run() {
   MakeChoice<int> c1(passToChoice);
-  auto k = c1(WM->getCurrentCycle());
+  auto tm = c1(WM->getCurrentCycle());
 
   MakeChoice<PassT> c2(passSpeedChoice);
-  auto t = c2(WM->getCurrentCycle());
+  auto sp = c2(WM->getCurrentCycle());
 
   while (running() && WM->isBallKickable()) {
-    VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[k]);
-    ACT->putCommandInQueue(player->directPass(tmPos, t));
-    Log.log(101, "Pass::run action with k=%d t=%s", k, t == PASS_NORMAL ? "normal" : "fast");
-    Action(this, {k, t})();
+    VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[tm]);
+    VecPosition tmVel = WM->getGlobalVelocity(Memory::ins().K[tm]);
+    VecPosition target = WM->predictFinalAgentPos(&tmPos, &tmVel);
+    ACT->putCommandInQueue(player->directPass(target, sp));
+    Log.log(101, "Pass::run action with teammate=%d speed=%s", tm, sp == PASS_NORMAL ? "normal" : "fast");
+    Action(this, {tm, sp})();
   }
 }
 

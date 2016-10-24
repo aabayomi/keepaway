@@ -68,7 +68,7 @@ if [ ! -z $QFILE2 ]; then
 fi
 
 if [ $BUILD != "none" ]; then
-    make $BUILD
+    make -j $BUILD
 fi
 
 CONSOLE_LOG="$LOGDIR/`basename $QFILE .q`.console"

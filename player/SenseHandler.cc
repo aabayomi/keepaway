@@ -68,12 +68,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef WIN32
 DWORD WINAPI sense_callback( LPVOID v )
 #else
-void* sense_callback( void *v )
+
+void *sense_callback(void *v)
 #endif
 {
-  Log.log( 1, "Starting to listen for server messages" );
-  SenseHandler* s = (SenseHandler*)v;
-  s->handleMessagesFromServer( );
+  Log.log(1, "Starting to listen for server messages");
+  SenseHandler *s = (SenseHandler *) v;
+  s->handleMessagesFromServer();
   return NULL;
 }
 
@@ -84,16 +85,15 @@ void* sense_callback( void *v )
     \param wm WorldModel to which new information will be sent for processing
     \param ss ServerSettings that contain the parameters used by the server
     \param ps PlayerSettings that determine how to interact with messages. */
-SenseHandler::SenseHandler( Connection *c, WorldModel *wm, ServerSettings *ss,
-                            PlayerSettings *ps )
-{
-  connection             = c;
-  SS                     = ss;
-  PS                     = ps;
-  WM                     = wm;
+SenseHandler::SenseHandler(Connection *c, WorldModel *wm, ServerSettings *ss,
+                           PlayerSettings *ps) {
+  connection = c;
+  SS = ss;
+  PS = ps;
+  WM = wm;
   m_iSeeCounter = 0;
-  iSimStep               = SS->getSimulatorStep()*1000;
-  iTimeSignal            = (int)(iSimStep*0.85);
+  iSimStep = SS->getSimulatorStep() * 1000;
+  iTimeSignal = (int) (iSimStep * 0.85);
   iTriCounter = 0;
 
 #ifdef WIN32
@@ -111,16 +111,16 @@ SenseHandler::SenseHandler( Connection *c, WorldModel *wm, ServerSettings *ss,
   struct sigaction sigact;
 
   sigact.sa_flags = SA_RESTART; // do not clearBlocked primitives (like recvfrom)
-  sigact.sa_handler = (void (*)(int))sigalarmHandler;
+  sigact.sa_handler = (void (*)(int)) sigalarmHandler;
   sigemptyset(&sigact.sa_mask);
-  sigaction( SIGALRM, &sigact, NULL );
+  sigaction(SIGALRM, &sigact, NULL);
 
   // set timer signal to indicate when ActHandler should sent commands to the
   // server, this structure will later be filled with exact timing values
-  itv.it_interval.tv_sec  = 0;
+  itv.it_interval.tv_sec = 0;
   itv.it_interval.tv_usec = 0;
-  itv.it_value.tv_sec     = 0;
-  itv.it_value.tv_usec    = 0;
+  itv.it_value.tv_sec = 0;
+  itv.it_value.tv_usec = 0;
 #endif
 
   //*met 8/16/05
@@ -130,20 +130,18 @@ SenseHandler::SenseHandler( Connection *c, WorldModel *wm, ServerSettings *ss,
 
 /*! This is the main routine of this class. It loops forever (till the thread
     is destroyed) and receives and parses the incoming messages.   */
-void SenseHandler::handleMessagesFromServer( )
-{
+void SenseHandler::handleMessagesFromServer() {
   static char strBuf[MAX_MSG];
   strBuf[0] = '\0';
 
-  int i=0;
+  int i = 0;
 
-  while( 1 )
-  {
-    strBuf[0]='\0';
-    if( i != -1 )                                         // if no error
-      i = connection->receiveMessage( strBuf, MAX_MSG );  // get message
-    if( strBuf[0] != '\0' )                               // if not empty
-      analyzeMessage( strBuf );                           // parse message
+  while (1) {
+    strBuf[0] = '\0';
+    if (i != -1)                                         // if no error
+      i = connection->receiveMessage(strBuf, MAX_MSG);  // get message
+    if (strBuf[0] != '\0')                               // if not empty
+      analyzeMessage(strBuf);                           // parse message
   }
 }
 
@@ -157,34 +155,28 @@ void SenseHandler::handleMessagesFromServer( )
     timer is set. The values that denote the fraction of the
     simulation step that is waited are all defined in PlayerSettings,
     such that they can be easily changed. */
-void SenseHandler::setTimeSignal( )
-{
-  if( WM->getAgentViewFrequency() == 1.0 ) // VA_NORMAL AND VQ_HIGH (default)
+void SenseHandler::setTimeSignal() {
+  if (WM->getAgentViewFrequency() == 1.0) // VA_NORMAL AND VQ_HIGH (default)
   {
-    if( iTriCounter % 3 == 0 )             // see will arrive first half cycle
+    if (iTriCounter % 3 == 0)             // see will arrive first half cycle
     {
-      iTimeSignal = (int)(iSimStep * PS->getFractionWaitSeeBegin() );
+      iTimeSignal = (int) (iSimStep * PS->getFractionWaitSeeBegin());
       iTriCounter = 0;
-    }
-    else if( iTriCounter % 3 == 1 )        // see will arrive 2nd half of cycle
+    } else if (iTriCounter % 3 == 1)        // see will arrive 2nd half of cycle
     {
-      iTimeSignal = (int)(iSimStep * PS->getFractionWaitSeeEnd() );
-    }
-    else                                   // no see will arrive
-      iTimeSignal = (int)(iSimStep * PS->getFractionWaitNoSee( ) );
-  }
-  else if( WM->getAgentViewFrequency() == 2.0 ) // VA_WIDE AND VQ_HIGH
+      iTimeSignal = (int) (iSimStep * PS->getFractionWaitSeeEnd());
+    } else                                   // no see will arrive
+      iTimeSignal = (int) (iSimStep * PS->getFractionWaitNoSee());
+  } else if (WM->getAgentViewFrequency() == 2.0) // VA_WIDE AND VQ_HIGH
   {
-    if( iTriCounter % 3 == 0 )              // see will arrive
+    if (iTriCounter % 3 == 0)              // see will arrive
     {
-      iTimeSignal = (int)(iSimStep * PS->getFractionWaitSeeEnd() );
+      iTimeSignal = (int) (iSimStep * PS->getFractionWaitSeeEnd());
       iTriCounter = 0;
-    }
-    else                                   // no see will arrive
-      iTimeSignal = (int)(iSimStep * PS->getFractionWaitNoSee() );
-  }
-  else                                     // VA_NARROW AND VQ_HIGH
-    iTimeSignal = (int)(iSimStep * PS->getFractionWaitSeeEnd() );
+    } else                                   // no see will arrive
+      iTimeSignal = (int) (iSimStep * PS->getFractionWaitNoSee());
+  } else                                     // VA_NARROW AND VQ_HIGH
+    iTimeSignal = (int) (iSimStep * PS->getFractionWaitSeeEnd());
 
   iTriCounter++;
 #ifdef WIN32
@@ -195,7 +187,7 @@ void SenseHandler::setTimeSignal( )
                          sigalarmHandler, (DWORD)0, TIME_ONESHOT );
 #else
   itv.it_value.tv_usec = iTimeSignal;
-  setitimer( ITIMER_REAL, &itv, NULL );
+  setitimer(ITIMER_REAL, &itv, NULL);
 #endif
 }
 
@@ -203,63 +195,66 @@ void SenseHandler::setTimeSignal( )
     message that corresponds to this message.
     \param strMsg message that should be parsed.
     \return bool indicating whether the message was parsed or not */
-bool SenseHandler::analyzeMessage( char *strMsg )
-{
-  Log.log( 1, strMsg );
+bool SenseHandler::analyzeMessage(char *strMsg) {
+  Log.log(1, strMsg);
   bool bReturn = false;
 
   synchronize(); //*met 8/16/05
 
-  switch( strMsg[1] )
-  {
+  switch (strMsg[1]) {
     case 'c':
-      if( strMsg[2] == 'h' )
-        return analyzeChangePlayerTypeMessage( strMsg );      // ( c hange_
-      else
-        ;                                                    // (clang
+      if (strMsg[2] == 'h')
+        return analyzeChangePlayerTypeMessage(strMsg);      // ( c hange_
+      else;                                                    // (clang
       break;
     case 'f':
-      return analyzeFullStateMessage( strMsg );      // ( f ullstate_
+      return analyzeFullStateMessage(strMsg);      // ( f ullstate_
     case 'o':                                                 // ( o k
-      if( strlen(strMsg) > 14 && strMsg[4] == 'c' && strMsg[10] == 'b' )
-        analyzeCheckBall( strMsg );                         // (ok check_ball
+      if (strlen(strMsg) > 14 && strMsg[4] == 'c' && strMsg[10] == 'b')
+        analyzeCheckBall(strMsg);                         // (ok check_ball
       return true;
-    case 's':
-    {
-      switch( strMsg[3] )
-      {
+    case 's': {
+      switch (strMsg[3]) {
         case 'e':
-          if( strMsg[5] == 'g')
-            return analyzeSeeGlobalMessage  ( strMsg ); // (se e_g
-          else if( WM->isFullStateOn( ) == false )
-            return analyzeSeeMessage        ( strMsg ); // (se e
+          if (strMsg[5] == 'g')
+            return analyzeSeeGlobalMessage(strMsg); // (se e_g
+          else if (WM->isFullStateOn() == false)
+            return analyzeSeeMessage(strMsg); // (se e
           break;
         case 'n':
-          bReturn = analyzeSenseMessage      ( strMsg ); // (se n se
-          if( WM->isFullStateOn( ) == true  )
-            WM->updateAfterSenseMessage( );
+          bReturn = analyzeSenseMessage(strMsg); // (se n se
+          if (WM->isFullStateOn() == true)
+            WM->updateAfterSenseMessage();
           return bReturn;
           break;
-        case 'r': return analyzeServerParamMessage( strMsg ); // (se r ver_param
-        default : break;
+        case 'r':
+          return analyzeServerParamMessage(strMsg); // (se r ver_param
+        default :
+          break;
       }
     }
       break;
-    case 'i':     return analyzeInitMessage       ( strMsg ); // ( i nit
-    case 'h':     return analyzeHearMessage       ( strMsg ); // ( h ear
-    case 'p':     return ( strMsg[8] == 't')
-                         ? analyzePlayerTypeMessage ( strMsg )  // (player_ t ype
-                         : analyzePlayerParamMessage( strMsg ); // (player_ p aram
-    case 'e':     printf("(%d,%d) %s\n", WM->getCurrentCycle(),
-                         WM->getPlayerNumber(),strMsg);// ( error
+    case 'i':
+      return analyzeInitMessage(strMsg); // ( i nit
+    case 'h':
+      return analyzeHearMessage(strMsg); // ( h ear
+    case 'p':
+      return (strMsg[8] == 't')
+             ? analyzePlayerTypeMessage(strMsg)  // (player_ t ype
+             : analyzePlayerParamMessage(strMsg); // (player_ p aram
+    case 'e':
+      printf("(%d,%d) %s\n", WM->getCurrentCycle(),
+             WM->getPlayerNumber(), strMsg);// ( error
       break;
-    case 't':     Log.logWithTime( 2, " incoming think message" );
-      WM->processRecvThink( true );          // ( think
+    case 't':
+      Log.logWithTime(2, " incoming think message");
+      WM->processRecvThink(true);          // ( think
       break;
-    default:      cerr << "(" << WM->getCurrentTime() << ", " <<
-                       WM->getPlayerNumber()
-                       << ") (SenseHandler::analyzeMessage) " <<
-                       "ignored message: " << strMsg << "\n";
+    default:
+      cerr << "(" << WM->getCurrentTime() << ", " <<
+           WM->getPlayerNumber()
+           << ") (SenseHandler::analyzeMessage) " <<
+           "ignored message: " << strMsg << "\n";
       return false;
   }
   return false;
@@ -270,47 +265,44 @@ bool SenseHandler::analyzeMessage( char *strMsg )
     tries to synchronize with the server. Then the message is stored in the
     world model, which processes it when it performs an update.
     \return bool indicating whether the message was parsed correctly. */
-bool SenseHandler::analyzeSeeMessage( char *strMsg )
-{
+bool SenseHandler::analyzeSeeMessage(char *strMsg) {
 //  Log.log( 101, "SenseHandler::analyzeSeeMessage: %s", strMsg );
-  strcpy( WM->strLastSeeMessage, strMsg );
+  strcpy(WM->strLastSeeMessage, strMsg);
 
-  Log.logWithTime( 2, " %s",strMsg );
+  Log.logWithTime(2, " %s", strMsg);
 
-  if( WM->getRelativeDistance( OBJECT_BALL ) < SS->getVisibleDistance() )
-    Log.logWithTime( 560, "%s", WM->strLastSeeMessage );
+  if (WM->getRelativeDistance(OBJECT_BALL) < SS->getVisibleDistance())
+    Log.logWithTime(560, "%s", WM->strLastSeeMessage);
 
-  Time    time = WM->getTimeLastRecvSenseMessage();
-  int iTime = Parse::parseFirstInt( &strMsg );         // get the time
-  if( time.getTime() != iTime )
-  {
+  Time time = WM->getTimeLastRecvSenseMessage();
+  int iTime = Parse::parseFirstInt(&strMsg);         // get the time
+  if (time.getTime() != iTime) {
     cerr << "(SenseHandler:analyzeSeeMessage) see and different time as sense:"
          << time.getTime() << " vs. " << iTime << endl;
     return false;
   }
 
   // count number of see message in this cycle
-  if( WM->getTimeLastSeeMessage() == time )
+  if (WM->getTimeLastSeeMessage() == time)
     m_iSeeCounter++;
   else
     m_iSeeCounter = 1;
 
   // do nothing with second see, since it adds nothings
-  if( m_iSeeCounter >= 2 )
-  {
-    Log.logWithTime( 4, "second see message in cycle; do nothing " );
+  if (m_iSeeCounter >= 2) {
+    Log.logWithTime(4, "second see message in cycle; do nothing ");
     return true;
   }
 
   // reset the send pattern when previous cycle(s) no see arrived
-  if( WM->getAgentViewFrequency() == 1.0 && // VA_NORMAL; previous cycle no see
-      time.getTimeDifference( WM->getTimeLastSeeMessage() )== 2 )
+  if (WM->getAgentViewFrequency() == 1.0 && // VA_NORMAL; previous cycle no see
+      time.getTimeDifference(WM->getTimeLastSeeMessage()) == 2)
     iTriCounter = 1;                // see will arive in 2nd half in next cycle
-  else if( WM->getAgentViewFrequency() == 2.0 && // VA_WIDE; two cycles no see
-           time.getTimeDifference( WM->getTimeLastSeeMessage() ) == 3 )
+  else if (WM->getAgentViewFrequency() == 2.0 && // VA_WIDE; two cycles no see
+           time.getTimeDifference(WM->getTimeLastSeeMessage()) == 3)
     iTriCounter = 1;                // no see will arrive next two cycles
 
-  WM->setTimeLastSeeMessage( time );   // set time of last see message
+  WM->setTimeLastSeeMessage(time);   // set time of last see message
   return true;
 }
 
@@ -319,191 +311,186 @@ bool SenseHandler::analyzeSeeMessage( char *strMsg )
     A see message looks like(see 0 ((g r) 64.1 13) ((f r t) 65.4 -16) ....
     \param strMsg message that should be parsed
     \return bool indicating whether the message was parsed correctly. */
-bool SenseHandler::analyzeSeeGlobalMessage( char *strMsg )
-{
+bool SenseHandler::analyzeSeeGlobalMessage(char *strMsg) {
 //  Log.log( 101, "SenseHandler::analyzeSeeGlobalMessage: %s", strMsg );
-  strcpy( WM->strLastSeeMessage, strMsg );
+  strcpy(WM->strLastSeeMessage, strMsg);
 
   ObjectT o;
-  bool    isGoalie;
-  double  dX, dY, dVelX, dVelY;
-  int     iTime;
-  AngDeg  angBody, angNeck;
-  Time    time = WM->getCurrentTime();
+  bool isGoalie;
+  double dX, dY, dVelX, dVelY;
+  int iTime;
+  AngDeg angBody, angNeck;
+  Time time = WM->getCurrentTime();
 
-  iTime = Parse::parseFirstInt( &strMsg );         // get the time
-  time.updateTime( iTime );
+  iTime = Parse::parseFirstInt(&strMsg);         // get the time
+  time.updateTime(iTime);
 
-  while( *strMsg != ')' )                          // " ((objname.." or ")"
+  while (*strMsg != ')')                          // " ((objname.." or ")"
   {
     dVelX = dVelY = UnknownDoubleValue;
     angBody = angNeck = UnknownAngleValue;
     strMsg += 2;          // go the start of the object name
 
     // get the object type at the current position in the string
-    o = SoccerTypes::getObjectFromStr( &strMsg, &isGoalie, WM->getTeamName() );
-    if( o == OBJECT_ILLEGAL )
-    {
-      Log.log( 4, "Illegal object" );
-      Log.log( 4, "total messages: %s", WM->strLastSeeMessage );
-      Log.log( 4, "rest of message: %s", strMsg );
+    o = SoccerTypes::getObjectFromStr(&strMsg, &isGoalie, WM->getTeamName());
+    if (o == OBJECT_ILLEGAL) {
+      Log.log(4, "Illegal object");
+      Log.log(4, "total messages: %s", WM->strLastSeeMessage);
+      Log.log(4, "rest of message: %s", strMsg);
     }
 
-    dX = Parse::parseFirstDouble( &strMsg );        // parse first value
-    dY = Parse::parseFirstDouble( &strMsg );        // parse second value
-    if ( *strMsg != ')' )                           // if it was no flag
+    dX = Parse::parseFirstDouble(&strMsg);        // parse first value
+    dY = Parse::parseFirstDouble(&strMsg);        // parse second value
+    if (*strMsg != ')')                           // if it was no flag
     {
-      dVelX = Parse::parseFirstDouble( &strMsg );   // parse delta x
-      dVelY = Parse::parseFirstDouble( &strMsg );   // parse delta y
-      if( *strMsg != ')' )                          // stil not finished
+      dVelX = Parse::parseFirstDouble(&strMsg);   // parse delta x
+      dVelY = Parse::parseFirstDouble(&strMsg);   // parse delta y
+      if (*strMsg != ')')                          // stil not finished
       {                                             // get body and neck angle
-        angBody = Parse::parseFirstDouble( &strMsg );
-        angNeck = Parse::parseFirstDouble( &strMsg );
+        angBody = Parse::parseFirstDouble(&strMsg);
+        angNeck = Parse::parseFirstDouble(&strMsg);
       }
     }
     // skip ending bracket of object information.
-    Parse::gotoFirstOccurenceOf( ')', &strMsg );
+    Parse::gotoFirstOccurenceOf(')', &strMsg);
     strMsg++;
 
     // process the parsed information (unread values are Unknown...)
-    WM->processSeeGlobalInfo( o, time, VecPosition(dX,dY),
-                              VecPosition(dVelX,dVelY), angBody, angNeck );
+    WM->processSeeGlobalInfo(o, time, VecPosition(dX, dY),
+                             VecPosition(dVelX, dVelY), angBody, angNeck);
   }
-  WM->setTimeLastSeeGlobalMessage( time );  // set time last see global message
+  WM->setTimeLastSeeGlobalMessage(time);  // set time last see global message
   return true;
 }
 
 /*! This method parses a full state message. This message contains all
     information from the playing field without noise. It will not be used
     during real tournaments. */
-bool SenseHandler::analyzeFullStateMessage( char *strMsg )
-{
+bool SenseHandler::analyzeFullStateMessage(char *strMsg) {
 //  Log.log( 101, "SenseHandler::analyzeFullStateMessage: %s", strMsg );
 //  Log.restartTimer( );
-  Log.restartTimer( );
-  Log.logWithTime( 2, " incoming fullstate message" );
-  Log.log( 4, " fullstate message: %s", strMsg );
-  strcpy( WM->strLastSeeMessage, strMsg );
+  Log.restartTimer();
+  Log.logWithTime(2, " incoming fullstate message");
+  Log.log(4, " fullstate message: %s", strMsg);
+  strcpy(WM->strLastSeeMessage, strMsg);
 
   ObjectT o;
-  bool    isGoalie;
-  double  dX, dY, dVelX, dVelY;
-  int     iTime;
-  AngDeg  angBody, angNeck;
-  Time    time = WM->getCurrentTime();
+  bool isGoalie;
+  double dX, dY, dVelX, dVelY;
+  int iTime;
+  AngDeg angBody, angNeck;
+  Time time = WM->getCurrentTime();
 
-  iTime = Parse::parseFirstInt( &strMsg );         // get the time
-  time.updateTime( iTime );
-  Log.log( 4, "fullstate time: %d", time.getTime() );
+  iTime = Parse::parseFirstInt(&strMsg);         // get the time
+  time.updateTime(iTime);
+  Log.log(4, "fullstate time: %d", time.getTime());
 
   strMsg++;                                      // skip space
-  Parse::gotoFirstOccurenceOf( ' ', &strMsg );   // skip (pmode
+  Parse::gotoFirstOccurenceOf(' ', &strMsg);   // skip (pmode
   strMsg++;                                      // skip space
 
-  Log.log( 4, "fullstate parse ref: %s", strMsg );
-  RefereeMessageT rm = SoccerTypes::getRefereeMessageFromStr( strMsg );
-  PlayModeT       pm = SoccerTypes::getPlayModeFromRefereeMessage( rm );
-  if( pm != PM_ILLEGAL )
-    WM->setPlayMode( pm );
+  Log.log(4, "fullstate parse ref: %s", strMsg);
+  RefereeMessageT rm = SoccerTypes::getRefereeMessageFromStr(strMsg);
+  PlayModeT pm = SoccerTypes::getPlayModeFromRefereeMessage(rm);
+  if (pm != PM_ILLEGAL)
+    WM->setPlayMode(pm);
 
-  Parse::gotoFirstOccurenceOf( 'e', &strMsg );   // go to end of vmode
+  Parse::gotoFirstOccurenceOf('e', &strMsg);   // go to end of vmode
   strMsg++;                                      // skip 'e'
   strMsg++;                                      // skip space
 
-  Log.log( 4, "fullstate parse qua: %s", strMsg );
-  ViewQualityT vq = SoccerTypes::getViewQualityFromStr( strMsg );
-  Parse::gotoFirstOccurenceOf( ' ', &strMsg );   // go to end of quality
+  Log.log(4, "fullstate parse qua: %s", strMsg);
+  ViewQualityT vq = SoccerTypes::getViewQualityFromStr(strMsg);
+  Parse::gotoFirstOccurenceOf(' ', &strMsg);   // go to end of quality
   strMsg++;
-  Log.log( 4, "fullstate parse ang: %s", strMsg );
-  ViewAngleT   va = SoccerTypes::getViewAngleFromStr( strMsg );
+  Log.log(4, "fullstate parse ang: %s", strMsg);
+  ViewAngleT va = SoccerTypes::getViewAngleFromStr(strMsg);
 
-  Log.log( 4, "fullstate parse count: %s", strMsg );
-  WM->setNrOfCommands( CMD_KICK       , Parse::parseFirstInt( &strMsg ) );
-  WM->setNrOfCommands( CMD_DASH       , Parse::parseFirstInt( &strMsg ) );
-  WM->setNrOfCommands( CMD_TURN       , Parse::parseFirstInt( &strMsg ) );
-  WM->setNrOfCommands( CMD_CATCH      , Parse::parseFirstInt( &strMsg ) );
-  WM->setNrOfCommands( CMD_MOVE       , Parse::parseFirstInt( &strMsg ) );
-  WM->setNrOfCommands( CMD_TURNNECK   , Parse::parseFirstInt( &strMsg ) );
-  WM->setNrOfCommands( CMD_CHANGEVIEW , Parse::parseFirstInt( &strMsg ) );
-  WM->setNrOfCommands( CMD_SAY        , Parse::parseFirstInt( &strMsg ) );
+  Log.log(4, "fullstate parse count: %s", strMsg);
+  WM->setNrOfCommands(CMD_KICK, Parse::parseFirstInt(&strMsg));
+  WM->setNrOfCommands(CMD_DASH, Parse::parseFirstInt(&strMsg));
+  WM->setNrOfCommands(CMD_TURN, Parse::parseFirstInt(&strMsg));
+  WM->setNrOfCommands(CMD_CATCH, Parse::parseFirstInt(&strMsg));
+  WM->setNrOfCommands(CMD_MOVE, Parse::parseFirstInt(&strMsg));
+  WM->setNrOfCommands(CMD_TURNNECK, Parse::parseFirstInt(&strMsg));
+  WM->setNrOfCommands(CMD_CHANGEVIEW, Parse::parseFirstInt(&strMsg));
+  WM->setNrOfCommands(CMD_SAY, Parse::parseFirstInt(&strMsg));
 
-  int iArmMovable = Parse::parseFirstInt( &strMsg );
-  int iArmExpires = Parse::parseFirstInt( &strMsg );
-  Parse::parseFirstDouble( &strMsg ); // skip pointto info, comes later
-  Parse::parseFirstDouble( &strMsg ); // skip pointto info, comes later
-  WM->setNrOfCommands( CMD_POINTTO    , Parse::parseFirstInt( &strMsg ) );
+  int iArmMovable = Parse::parseFirstInt(&strMsg);
+  int iArmExpires = Parse::parseFirstInt(&strMsg);
+  Parse::parseFirstDouble(&strMsg); // skip pointto info, comes later
+  Parse::parseFirstDouble(&strMsg); // skip pointto info, comes later
+  WM->setNrOfCommands(CMD_POINTTO, Parse::parseFirstInt(&strMsg));
 
-  Parse::gotoFirstOccurenceOf( 'b', &strMsg );   // go to ball position
+  Parse::gotoFirstOccurenceOf('b', &strMsg);   // go to ball position
 
-  Log.log( 4, "fullstate parse ball: %s", strMsg );
-  dX    = Parse::parseFirstDouble( &strMsg );    // parse first value
-  dY    = Parse::parseFirstDouble( &strMsg );    // parse second value
-  dVelX = Parse::parseFirstDouble( &strMsg );    // parse third value
-  dVelY = Parse::parseFirstDouble( &strMsg );    // parse fourth value
-  if( WM->isBeforeKickOff() )
+  Log.log(4, "fullstate parse ball: %s", strMsg);
+  dX = Parse::parseFirstDouble(&strMsg);    // parse first value
+  dY = Parse::parseFirstDouble(&strMsg);    // parse second value
+  dVelX = Parse::parseFirstDouble(&strMsg);    // parse third value
+  dVelY = Parse::parseFirstDouble(&strMsg);    // parse fourth value
+  if (WM->isBeforeKickOff())
     dX = dY = dVelX = dVelY = 0.0;
-  if( WM->getSide() == SIDE_RIGHT )
-  {
-    dX    *= -1;
-    dY    *= -1;
+  if (WM->getSide() == SIDE_RIGHT) {
+    dX *= -1;
+    dY *= -1;
     dVelX *= -1;
     dVelY *= -1;
   }
-  WM->processSeeGlobalInfo( OBJECT_BALL, time, VecPosition(dX,dY),
-                            VecPosition(dVelX,dVelY), -1, -1 );
+  WM->processSeeGlobalInfo(OBJECT_BALL, time, VecPosition(dX, dY),
+                           VecPosition(dVelX, dVelY), -1, -1);
   strMsg++;
-  Log.log( 4, "fullstate ball: %f %f %f %f", dX, dY, dVelX, dVelY );
+  Log.log(4, "fullstate ball: %f %f %f %f", dX, dY, dVelX, dVelY);
 
-  while( *strMsg != ')' )                          // " ((objname.." or ")"
+  while (*strMsg != ')')                          // " ((objname.." or ")"
   {
     dVelX = dVelY = UnknownDoubleValue;
     angBody = angNeck = UnknownAngleValue;
     strMsg += 2;          // go the start of the object name
-    Log.log( 4, "fullstate parse object: %s", strMsg );
+    Log.log(4, "fullstate parse object: %s", strMsg);
     // get the object type at the current position in the string
-    o = SoccerTypes::getObjectFromStr( &strMsg, &isGoalie,
-                                       (WM->getSide() == SIDE_LEFT ) ? "l" : "r" );
+    o = SoccerTypes::getObjectFromStr(&strMsg, &isGoalie,
+                                      (WM->getSide() == SIDE_LEFT) ? "l" : "r");
 
-    dX      = Parse::parseFirstDouble( &strMsg );   // parse x position
-    dY      = Parse::parseFirstDouble( &strMsg );   // parse y position
-    dVelX   = Parse::parseFirstDouble( &strMsg );   // parse x velocity
-    dVelY   = Parse::parseFirstDouble( &strMsg );   // parse y velocity
-    angBody = Parse::parseFirstDouble( &strMsg );   // parse body angle
-    angNeck = Parse::parseFirstDouble( &strMsg );   // parse neck angle
+    dX = Parse::parseFirstDouble(&strMsg);   // parse x position
+    dY = Parse::parseFirstDouble(&strMsg);   // parse y position
+    dVelX = Parse::parseFirstDouble(&strMsg);   // parse x velocity
+    dVelY = Parse::parseFirstDouble(&strMsg);   // parse y velocity
+    angBody = Parse::parseFirstDouble(&strMsg);   // parse body angle
+    angNeck = Parse::parseFirstDouble(&strMsg);   // parse neck angle
 
-    if( WM->getSide() == SIDE_RIGHT )
-    {
-      dX    *= -1;
-      dY    *= -1;
+    if (WM->getSide() == SIDE_RIGHT) {
+      dX *= -1;
+      dY *= -1;
       dVelX *= -1;
       dVelY *= -1;
-      angBody = VecPosition::normalizeAngle( angBody + 180 );
+      angBody = VecPosition::normalizeAngle(angBody + 180);
     }
 
-    double dStamina  = Parse::parseFirstDouble( &strMsg );  // get stamina
-    double dEffort   = Parse::parseFirstDouble( &strMsg );  // get effort
-    Parse::parseFirstDouble( &strMsg );  // skip recovery
+    double dStamina = Parse::parseFirstDouble(&strMsg);  // get stamina
+    double dEffort = Parse::parseFirstDouble(&strMsg);  // get effort
+    Parse::parseFirstDouble(&strMsg);  // skip recovery
 
     // skip ending bracket of stamina and then of object information.
-    Parse::gotoFirstOccurenceOf( ')', &strMsg );
-    Parse::gotoFirstOccurenceOf( ')', &strMsg );
+    Parse::gotoFirstOccurenceOf(')', &strMsg);
+    Parse::gotoFirstOccurenceOf(')', &strMsg);
 
     strMsg++;
     strMsg++;
 
-    Log.log( 1, "fullstate obj %d: %f %f %f %f %f %f", o, dX, dY, dVelX, dVelY,
-             angBody, angNeck );
+    Log.log(1, "fullstate obj %d: %f %f %f %f %f %f", o, dX, dY, dVelX, dVelY,
+            angBody, angNeck);
     // process the parsed information
-    if( o == WM->getAgentObjectType() )
-      WM->processNewAgentInfo( vq, va, dStamina, dEffort, -1.0, -1.0, -angNeck,
-                               -1,iArmMovable, iArmExpires, VecPosition(0,0));
+    if (o == WM->getAgentObjectType())
+      WM->processNewAgentInfo(vq, va, dStamina, dEffort, -1.0, -1.0, -angNeck,
+                              -1, iArmMovable, iArmExpires, VecPosition(0, 0));
 
-    WM->processSeeGlobalInfo( o, time, VecPosition(dX,dY),
-                              VecPosition(dVelX,dVelY), angBody, angNeck );
+    WM->processSeeGlobalInfo(o, time, VecPosition(dX, dY),
+                             VecPosition(dVelX, dVelY), angBody, angNeck);
 
   }
-  WM->setTimeLastSeeGlobalMessage( time );  // set time last see global message
-  WM->setTimeLastSenseMessage( time );      // set time last see global message
+  WM->setTimeLastSeeGlobalMessage(time);  // set time last see global message
+  WM->setTimeLastSenseMessage(time);      // set time last see global message
 
   return true;
 }
@@ -515,39 +502,38 @@ bool SenseHandler::analyzeFullStateMessage( char *strMsg )
     (turn 0) (say 0) (turn_neck 0) (catch 0) (move 0) (change_view 0))
     \param strMsg message that should be parsed
     \return bool indicating whether the message was parsed correctly. */
-bool SenseHandler::analyzeSenseMessage( char *strMsg )
-{
+bool SenseHandler::analyzeSenseMessage(char *strMsg) {
 //  Log.log( 101, "SenseHandler::analyzeSenseMessage: %s", strMsg );
-  Log.log( 999, "%s", strMsg );
+  Log.log(999, "%s", strMsg);
   // cerr << strMsg << endl;
   // set the synchronization counter, this is a value [0..2] indicating the
   // section of the pattern this cycle is in. It gives an indication when new
   // visual information will arrive.
 
-  if( SS->getSynchMode() == false )
+  if (SS->getSynchMode() == false)
     setTimeSignal();                        // set signal when to send action
-  strcpy( WM->strLastSenseMessage, strMsg );
+  strcpy(WM->strLastSenseMessage, strMsg);
 
-  if( WM->getRelativeDistance( OBJECT_BALL ) < SS->getVisibleDistance() )
-    Log.logWithTime( 560, "%s", WM->strLastSenseMessage );
+  if (WM->getRelativeDistance(OBJECT_BALL) < SS->getVisibleDistance())
+    Log.logWithTime(560, "%s", WM->strLastSenseMessage);
 
-  int iTime = Parse::parseFirstInt( &strMsg );// get time
+  int iTime = Parse::parseFirstInt(&strMsg);// get time
   Time timeOld = WM->getCurrentTime();
   Time timeNew = timeOld;
-  timeNew.updateTime( iTime );
+  timeNew.updateTime(iTime);
 
-  if( timeNew.getTimeDifference( timeOld ) > 1 )
-    Log.log( 1, "Missed a sense!!" );
+  if (timeNew.getTimeDifference(timeOld) > 1)
+    Log.log(1, "Missed a sense!!");
 
-  Log.logWithTime ( 2, "\n\nSENSE (%d, %d)", timeNew.getTime(),
-                    timeNew.getTimeStopped() );
+  Log.logWithTime(2, "\n\nSENSE (%d, %d)", timeNew.getTime(),
+                  timeNew.getTimeStopped());
 //  Log.restartTimer( );
-  Log.restartTimer( );
-  iSimStep               = SS->getSimulatorStep()*1000;
-  iTimeSignal            = (int)(iSimStep*0.85);
-  Log.logWithTime ( 2, " alarm after %d", iTimeSignal );
+  Log.restartTimer();
+  iSimStep = SS->getSimulatorStep() * 1000;
+  iTimeSignal = (int) (iSimStep * 0.85);
+  Log.logWithTime(2, " alarm after %d", iTimeSignal);
 
-  WM->setTimeLastSenseMessage( timeNew ); // set the time
+  WM->setTimeLastSenseMessage(timeNew); // set the time
 
 //  Log.log( 2, " end analyzing sense" );
   return true;
@@ -558,22 +544,21 @@ bool SenseHandler::analyzeSenseMessage( char *strMsg )
     An init message looks like (init [l|r] 10 before_kick_off)
     \param strMsg message that should be parsed
     \return bool indicating whether the message was parsed correctly. */
-bool SenseHandler::analyzeInitMessage( char *strMsg )
-{
-  Log.log( 999, "%s", strMsg );
+bool SenseHandler::analyzeInitMessage(char *strMsg) {
+  Log.log(999, "%s", strMsg);
   strMsg += 6;                                            // go to Side
-  WM->setSide( SoccerTypes::getSideFromStr( strMsg ) );   // get and set Side
-  int nr = Parse::parseFirstInt( &strMsg );               // get and set number
-  if( nr == 0 )                                           // coach
+  WM->setSide(SoccerTypes::getSideFromStr(strMsg));   // get and set Side
+  int nr = Parse::parseFirstInt(&strMsg);               // get and set number
+  if (nr == 0)                                           // coach
   {
-    WM->setPlayerNumber( nr );
-    cerr << strMsg  << endl;
+    WM->setPlayerNumber(nr);
+    cerr << strMsg << endl;
     return true;
   }
-  WM->setAgentObjectType( SoccerTypes::getTeammateObjectFromIndex( nr - 1 ) );
-  WM->setPlayerNumber( nr );
+  WM->setAgentObjectType(SoccerTypes::getTeammateObjectFromIndex(nr - 1));
+  WM->setPlayerNumber(nr);
   strMsg++;                                               // skip space to pm
-  WM->setPlayMode( SoccerTypes::getPlayModeFromStr( strMsg ) ); // get playmode
+  WM->setPlayMode(SoccerTypes::getPlayModeFromStr(strMsg)); // get playmode
   return true;
 }
 
@@ -585,64 +570,61 @@ bool SenseHandler::analyzeInitMessage( char *strMsg )
 
     \param strMsg message that should be parsed
     \return bool indicating whether the message was parsed correctly. */
-bool SenseHandler::analyzeHearMessage( char *strMsg )
-{
+bool SenseHandler::analyzeHearMessage(char *strMsg) {
   RefereeMessageT rm;
-  PlayModeT       pm;
-  strcpy( WM->strLastHearMessage, strMsg);
+  PlayModeT pm;
+  strcpy(WM->strLastHearMessage, strMsg);
 
-  int iTime = Parse::parseFirstInt( &strMsg );              // ignore time
-  Time time( iTime );
+  int iTime = Parse::parseFirstInt(&strMsg);              // ignore time
+  Time time(iTime);
 
-  switch( Parse::gotoFirstNonSpace( &strMsg ) )
-  {
+  switch (Parse::gotoFirstNonSpace(&strMsg)) {
     case 'r':                                               // referee
-      Log.log( 999, "%s", WM->strLastHearMessage );
-      WM->setTimeLastRefereeMessage( time );
-      Parse::gotoFirstOccurenceOf( ' ', &strMsg );          // go to start
-      Parse::gotoFirstNonSpace   ( &strMsg      );          // and first part
-      rm = SoccerTypes::getRefereeMessageFromStr( strMsg ); // get the ref msg
-      Log.logWithTime( 2, " referee message: %s %s",
-                       SoccerTypes::getRefereeMessageStr(rm), WM->strLastHearMessage);
-      pm = SoccerTypes::getPlayModeFromRefereeMessage( rm );// get play mode
-      if( pm != PM_ILLEGAL )                                // from ref msg
-        WM->setPlayMode( pm );                              // if was pm, set
+      Log.log(999, "%s", WM->strLastHearMessage);
+      WM->setTimeLastRefereeMessage(time);
+      Parse::gotoFirstOccurenceOf(' ', &strMsg);          // go to start
+      Parse::gotoFirstNonSpace(&strMsg);          // and first part
+      rm = SoccerTypes::getRefereeMessageFromStr(strMsg); // get the ref msg
+      Log.logWithTime(2, " referee message: %s %s",
+                      SoccerTypes::getRefereeMessageStr(rm), WM->strLastHearMessage);
+      pm = SoccerTypes::getPlayModeFromRefereeMessage(rm);// get play mode
+      if (pm != PM_ILLEGAL)                                // from ref msg
+        WM->setPlayMode(pm);                              // if was pm, set
 
-      switch( rm )
-      {
+      switch (rm) {
         case REFC_GOAL_LEFT:                            // goal left
-          if( WM->getSide() == SIDE_LEFT )
+          if (WM->getSide() == SIDE_LEFT)
             WM->addOneToGoalDiff();
           else
             WM->subtractOneFromGoalDiff();
-          WM->processSeeGlobalInfo( OBJECT_BALL, time, VecPosition( 0, 0 ),
-                                    VecPosition( 0, 0 ), 0, 0 );
+          WM->processSeeGlobalInfo(OBJECT_BALL, time, VecPosition(0, 0),
+                                   VecPosition(0, 0), 0, 0);
           break;
         case REFC_GOAL_RIGHT:                      // goal right
-          if( WM->getSide() == SIDE_RIGHT )
+          if (WM->getSide() == SIDE_RIGHT)
             WM->addOneToGoalDiff();
           else
             WM->subtractOneFromGoalDiff();
-          WM->processSeeGlobalInfo( OBJECT_BALL, time, VecPosition( 0, 0 ),
-                                    VecPosition( 0, 0 ), 0, 0 );
+          WM->processSeeGlobalInfo(OBJECT_BALL, time, VecPosition(0, 0),
+                                   VecPosition(0, 0), 0, 0);
           break;
         case REFC_GOALIE_CATCH_BALL_LEFT:         // catch ball
         case REFC_GOALIE_CATCH_BALL_RIGHT:
-          WM->processCatchedBall( rm, time );
+          WM->processCatchedBall(rm, time);
           break;
         case REFC_PENALTY_ONFIELD_LEFT:
-          WM->setSidePenalty( SIDE_LEFT );
+          WM->setSidePenalty(SIDE_LEFT);
           break;
         case REFC_PENALTY_ONFIELD_RIGHT:
-          WM->setSidePenalty( SIDE_RIGHT );
+          WM->setSidePenalty(SIDE_RIGHT);
           break;
         case REFC_PENALTY_MISS_LEFT:
         case REFC_PENALTY_SCORE_LEFT:
-          WM->setPlayMode( PM_FROZEN );
+          WM->setPlayMode(PM_FROZEN);
           break;
         case REFC_PENALTY_MISS_RIGHT:
         case REFC_PENALTY_SCORE_RIGHT:
-          WM->setPlayMode( PM_FROZEN );
+          WM->setPlayMode(PM_FROZEN);
           break;
         case REFC_TRAINING_KEEPAWAY:
           WM->resetEpisode();
@@ -654,41 +636,40 @@ bool SenseHandler::analyzeHearMessage( char *strMsg )
       }
       break;
     case 'o':                                               // online_coach_
-      analyzeCoachMessage( strMsg );
+      analyzeCoachMessage(strMsg);
       break;
     case 'c':
-      analyzeTrainerMessage( strMsg );
+      analyzeTrainerMessage(strMsg);
       break;
     case 's':                                               // self
       break;                                                // do nothing
     default:                                                // from direction
-      Log.logWithTime( 600, "incoming hear: %s", WM->strLastHearMessage );
-      analyzePlayerMessage( iTime, strMsg );    // from player
+      Log.logWithTime(600, "incoming hear: %s", WM->strLastHearMessage);
+      analyzePlayerMessage(iTime, strMsg);    // from player
       break;
   }
 
   return true;
 }
 
-bool SenseHandler::analyzePlayerMessage( int iTime, char *strMsg )
-{
-  Parse::gotoFirstNonSpace( &strMsg );            // skip space
+bool SenseHandler::analyzePlayerMessage(int iTime, char *strMsg) {
+  Parse::gotoFirstNonSpace(&strMsg);            // skip space
 
-  if( WM->getPlayerNumber() == 0 )                // if i am coach
+  if (WM->getPlayerNumber() == 0)                // if i am coach
     return false;                                 //   skip message
-  if( strlen( strMsg ) < 2 || strMsg[0] == 'o' )  // skip message since no dir.
+  if (strlen(strMsg) < 2 || strMsg[0] == 'o')  // skip message since no dir.
     return false;                                 // thus no content
 
-  Parse::parseFirstInt( &strMsg );                // skip direction
-  Parse::gotoFirstNonSpace( &strMsg );            // skip space
-  if( strlen( strMsg ) < 2 || strMsg[1] == 'p' )  // skip message when from opp
+  Parse::parseFirstInt(&strMsg);                // skip direction
+  Parse::gotoFirstNonSpace(&strMsg);            // skip space
+  if (strlen(strMsg) < 2 || strMsg[1] == 'p')  // skip message when from opp
     return false;
 
-  int iPlayer = Parse::parseFirstInt( &strMsg );  // get player number
-  Parse::gotoFirstNonSpace( &strMsg );            // skip space
+  int iPlayer = Parse::parseFirstInt(&strMsg);  // get player number
+  Parse::gotoFirstNonSpace(&strMsg);            // skip space
   strMsg++;                                       // skip " (=quote)
 
-  strMsg = strtok( strMsg, "\"" );                // remove last quote
+  strMsg = strtok(strMsg, "\"");                // remove last quote
 
 
 //   char buffer[256];
@@ -697,21 +678,19 @@ bool SenseHandler::analyzePlayerMessage( int iTime, char *strMsg )
 // 		   strcat( buffer, strMsg),
 // 		   40, COLOR_PINK );
 
-  Log.log( 600, "process comm msg, time %d, %s", iTime, strMsg);
-  WM->storePlayerMessage( iPlayer, strMsg, iTime );
+  Log.log(600, "process comm msg, time %d, %s", iTime, strMsg);
+  WM->storePlayerMessage(iPlayer, strMsg, iTime);
   return true;
 }
 
-bool SenseHandler::analyzeCoachMessage( char *strMsg )
-{
-  Log.log( 605, "received coach messages: %s" , strMsg );
+bool SenseHandler::analyzeCoachMessage(char *strMsg) {
+  Log.log(605, "received coach messages: %s", strMsg);
 
   return true;
 }
 
-bool SenseHandler::analyzeTrainerMessage( char *strMsg )
-{
-  Log.log( 605, "received trainer messages: %s" , strMsg );
+bool SenseHandler::analyzeTrainerMessage(char *strMsg) {
+  Log.log(605, "received trainer messages: %s", strMsg);
   // Currently, a trainer message just resets the episode
   WM->resetEpisode();
 
@@ -725,11 +704,10 @@ bool SenseHandler::analyzeTrainerMessage( char *strMsg )
     The format is as follows (check_ball <time> <status>).
     \param strMsg string that contains the check_ball message
     \return bool indicating whether update succeeded. */
-bool SenseHandler::analyzeCheckBall( char *strMsg )
-{
-  WM->setTimeCheckBall( Parse::parseFirstInt( &strMsg ) );
+bool SenseHandler::analyzeCheckBall(char *strMsg) {
+  WM->setTimeCheckBall(Parse::parseFirstInt(&strMsg));
   strMsg++;
-  WM->setCheckBallStatus( SoccerTypes::getBallStatusFromStr( strMsg ) );
+  WM->setCheckBallStatus(SoccerTypes::getBallStatusFromStr(strMsg));
   return true;
 }
 
@@ -739,24 +717,21 @@ bool SenseHandler::analyzeCheckBall( char *strMsg )
     with this player type.
     \param strMsg string that contains the player type message.
     \return bool indicating whether player type of agent changed. */
-bool SenseHandler::analyzeChangePlayerTypeMessage( char *strMsg )
-{
-  Log.log( 999, "%s", strMsg );
-  int iPlayer = Parse::parseFirstInt( &strMsg );
-  if( *strMsg != ')' ) // we are dealing with player of own team
+bool SenseHandler::analyzeChangePlayerTypeMessage(char *strMsg) {
+  Log.log(999, "%s", strMsg);
+  int iPlayer = Parse::parseFirstInt(&strMsg);
+  if (*strMsg != ')') // we are dealing with player of own team
   {
-    int      iType = Parse::parseFirstInt( &strMsg );
-    ObjectT  obj   = SoccerTypes::getTeammateObjectFromIndex( iPlayer - 1 );
-    Log.log( 605, "change player from message %d -> %d", obj, iType );
-    WM->setHeteroPlayerType( obj, iType );
-    Log.log( 605, "changed player from message %d -> %d", obj,
-             WM->getHeteroPlayerType( obj ) );
+    int iType = Parse::parseFirstInt(&strMsg);
+    ObjectT obj = SoccerTypes::getTeammateObjectFromIndex(iPlayer - 1);
+    Log.log(605, "change player from message %d -> %d", obj, iType);
+    WM->setHeteroPlayerType(obj, iType);
+    Log.log(605, "changed player from message %d -> %d", obj,
+            WM->getHeteroPlayerType(obj));
     return true;
-  }
-  else
-  {
-    ObjectT  obj   = SoccerTypes::getOpponentObjectFromIndex( iPlayer - 1 );
-    return WM->setSubstitutedOpp( obj );
+  } else {
+    ObjectT obj = SoccerTypes::getOpponentObjectFromIndex(iPlayer - 1);
+    return WM->setSubstitutedOpp(obj);
   }
 
 
@@ -769,141 +744,139 @@ bool SenseHandler::analyzeChangePlayerTypeMessage( char *strMsg )
     configuration file obsolete.
     \param strMsg string message with all the server parameters
     \return booli indicating whether string was parsed. */
-bool SenseHandler::analyzeServerParamMessage( char *strMsg )
-{
+bool SenseHandler::analyzeServerParamMessage(char *strMsg) {
 
-  Log.log( 4, "%s", strMsg );
+  Log.log(4, "%s", strMsg);
 
-  readServerParam( "goal_width",               strMsg );
-  readServerParam( "player_size",              strMsg );
-  readServerParam( "player_decay",             strMsg );
-  readServerParam( "player_rand",              strMsg );
-  readServerParam( "player_weight",            strMsg );
-  readServerParam( "player_speed_max",         strMsg );
-  readServerParam( "player_accel_max",         strMsg );
-  readServerParam( "stamina_max",              strMsg );
-  readServerParam( "stamina_inc_max",          strMsg );
-  readServerParam( "recover_dec_thr",          strMsg );
-  readServerParam( "recover_min",              strMsg );
-  readServerParam( "recover_dec",              strMsg );
-  readServerParam( "effort_dec_thr",           strMsg );
-  readServerParam( "effort_min",               strMsg );
-  readServerParam( "effort_dec",               strMsg );
-  readServerParam( "effort_inc_thr",           strMsg );
-  readServerParam( "effort_inc",               strMsg );
-  readServerParam( "kick_rand",                strMsg );
-  readServerParam( "ball_size",                strMsg );
-  readServerParam( "ball_decay",               strMsg );
-  readServerParam( "ball_rand",                strMsg );
-  readServerParam( "ball_weight",              strMsg );
-  readServerParam( "ball_speed_max",           strMsg );
-  readServerParam( "ball_accel_max",           strMsg );
-  readServerParam( "dash_power_rate",          strMsg );
-  readServerParam( "kick_power_rate",          strMsg );
-  readServerParam( "kickable_margin",          strMsg );
-  readServerParam( "catch_probability",        strMsg );
-  readServerParam( "catchable_area_l",         strMsg );
-  readServerParam( "catchable_area_w",         strMsg );
-  readServerParam( "goalie_max_moves",         strMsg );
-  readServerParam( "maxpower",                 strMsg );
-  readServerParam( "minpower",                 strMsg );
-  readServerParam( "maxmoment",                strMsg );
-  readServerParam( "minmoment",                strMsg );
-  readServerParam( "maxneckmoment",            strMsg );
-  readServerParam( "minneckmoment",            strMsg );
-  readServerParam( "maxneckang",               strMsg );
-  readServerParam( "minneckang",               strMsg );
-  readServerParam( "visible_angle",            strMsg );
-  readServerParam( "visible_distance",         strMsg );
-  readServerParam( "audio_cut_dist",           strMsg );
-  readServerParam( "quantize_step",            strMsg );
-  readServerParam( "quantize_step_l",          strMsg );
-  readServerParam( "ckick_margin",             strMsg );
-  readServerParam( "wind_dir",                 strMsg );
-  readServerParam( "wind_force",               strMsg );
-  readServerParam( "wind_rand",                strMsg );
-  readServerParam( "wind_random",              strMsg );
-  readServerParam( "inertia_moment",           strMsg );
-  readServerParam( "half_time",                strMsg );
-  readServerParam( "drop_ball_time",           strMsg );
-  readServerParam( "port",                     strMsg );
-  readServerParam( "coach_port",               strMsg );
-  readServerParam( "olcoach_port",             strMsg );
-  readServerParam( "say_coach_cnt_max",        strMsg );
-  readServerParam( "say_coach_msg_size",       strMsg );
-  readServerParam( "simulator_step",           strMsg );
-  readServerParam( "send_step",                strMsg );
-  readServerParam( "recv_step",                strMsg );
-  readServerParam( "sense_body_step",          strMsg );
-  readServerParam( "say_msg_size",             strMsg );
-  readServerParam( "clang_win_size",           strMsg );
-  readServerParam( "clang_define_win",         strMsg );
-  readServerParam( "clang_meta_win",           strMsg );
-  readServerParam( "clang_advice_win",         strMsg );
-  readServerParam( "clang_info_win",           strMsg );
-  readServerParam( "clang_mess_delay",         strMsg );
-  readServerParam( "clang_mess_per_cycle",     strMsg );
-  readServerParam( "hear_max",                 strMsg );
-  readServerParam( "hear_inc",                 strMsg );
-  readServerParam( "hear_decay",               strMsg );
-  readServerParam( "catch_ban_cycle",          strMsg );
-  readServerParam( "send_vi_step",             strMsg );
-  readServerParam( "use_offside",              strMsg );
-  readServerParam( "offside_active_area_size", strMsg );
-  readServerParam( "forbid_kick_off_offside",  strMsg );
-  readServerParam( "verbose",                  strMsg );
-  readServerParam( "offside_kick_margin",      strMsg );
-  readServerParam( "slow_down_factor",         strMsg );
-  readServerParam( "synch_mode",               strMsg );
-  readServerParam( "fullstate_l",              strMsg );
-  readServerParam( "fullstate_r",              strMsg );
-  readServerParam( "pen_dist_x",               strMsg );
-  readServerParam( "pen_max_goalie_dist_x",    strMsg );
-  readServerParam( "pen_allow_mult_kicks",     strMsg );
-  readServerParam( "tackle_dist",              strMsg );
-  readServerParam( "tackle_back_dist",         strMsg );
-  readServerParam( "tackle_width",             strMsg );
-  readServerParam( "tackle_cycles",            strMsg );
-  readServerParam( "tackle_power_rate",        strMsg );
-  readServerParam( "tackle_exponent",          strMsg );
+  readServerParam("goal_width", strMsg);
+  readServerParam("player_size", strMsg);
+  readServerParam("player_decay", strMsg);
+  readServerParam("player_rand", strMsg);
+  readServerParam("player_weight", strMsg);
+  readServerParam("player_speed_max", strMsg);
+  readServerParam("player_accel_max", strMsg);
+  readServerParam("stamina_max", strMsg);
+  readServerParam("stamina_inc_max", strMsg);
+  readServerParam("recover_dec_thr", strMsg);
+  readServerParam("recover_min", strMsg);
+  readServerParam("recover_dec", strMsg);
+  readServerParam("effort_dec_thr", strMsg);
+  readServerParam("effort_min", strMsg);
+  readServerParam("effort_dec", strMsg);
+  readServerParam("effort_inc_thr", strMsg);
+  readServerParam("effort_inc", strMsg);
+  readServerParam("kick_rand", strMsg);
+  readServerParam("ball_size", strMsg);
+  readServerParam("ball_decay", strMsg);
+  readServerParam("ball_rand", strMsg);
+  readServerParam("ball_weight", strMsg);
+  readServerParam("ball_speed_max", strMsg);
+  readServerParam("ball_accel_max", strMsg);
+  readServerParam("dash_power_rate", strMsg);
+  readServerParam("kick_power_rate", strMsg);
+  readServerParam("kickable_margin", strMsg);
+  readServerParam("catch_probability", strMsg);
+  readServerParam("catchable_area_l", strMsg);
+  readServerParam("catchable_area_w", strMsg);
+  readServerParam("goalie_max_moves", strMsg);
+  readServerParam("maxpower", strMsg);
+  readServerParam("minpower", strMsg);
+  readServerParam("maxmoment", strMsg);
+  readServerParam("minmoment", strMsg);
+  readServerParam("maxneckmoment", strMsg);
+  readServerParam("minneckmoment", strMsg);
+  readServerParam("maxneckang", strMsg);
+  readServerParam("minneckang", strMsg);
+  readServerParam("visible_angle", strMsg);
+  readServerParam("visible_distance", strMsg);
+  readServerParam("audio_cut_dist", strMsg);
+  readServerParam("quantize_step", strMsg);
+  readServerParam("quantize_step_l", strMsg);
+  readServerParam("ckick_margin", strMsg);
+  readServerParam("wind_dir", strMsg);
+  readServerParam("wind_force", strMsg);
+  readServerParam("wind_rand", strMsg);
+  readServerParam("wind_random", strMsg);
+  readServerParam("inertia_moment", strMsg);
+  readServerParam("half_time", strMsg);
+  readServerParam("drop_ball_time", strMsg);
+  readServerParam("port", strMsg);
+  readServerParam("coach_port", strMsg);
+  readServerParam("olcoach_port", strMsg);
+  readServerParam("say_coach_cnt_max", strMsg);
+  readServerParam("say_coach_msg_size", strMsg);
+  readServerParam("simulator_step", strMsg);
+  readServerParam("send_step", strMsg);
+  readServerParam("recv_step", strMsg);
+  readServerParam("sense_body_step", strMsg);
+  readServerParam("say_msg_size", strMsg);
+  readServerParam("clang_win_size", strMsg);
+  readServerParam("clang_define_win", strMsg);
+  readServerParam("clang_meta_win", strMsg);
+  readServerParam("clang_advice_win", strMsg);
+  readServerParam("clang_info_win", strMsg);
+  readServerParam("clang_mess_delay", strMsg);
+  readServerParam("clang_mess_per_cycle", strMsg);
+  readServerParam("hear_max", strMsg);
+  readServerParam("hear_inc", strMsg);
+  readServerParam("hear_decay", strMsg);
+  readServerParam("catch_ban_cycle", strMsg);
+  readServerParam("send_vi_step", strMsg);
+  readServerParam("use_offside", strMsg);
+  readServerParam("offside_active_area_size", strMsg);
+  readServerParam("forbid_kick_off_offside", strMsg);
+  readServerParam("verbose", strMsg);
+  readServerParam("offside_kick_margin", strMsg);
+  readServerParam("slow_down_factor", strMsg);
+  readServerParam("synch_mode", strMsg);
+  readServerParam("fullstate_l", strMsg);
+  readServerParam("fullstate_r", strMsg);
+  readServerParam("pen_dist_x", strMsg);
+  readServerParam("pen_max_goalie_dist_x", strMsg);
+  readServerParam("pen_allow_mult_kicks", strMsg);
+  readServerParam("tackle_dist", strMsg);
+  readServerParam("tackle_back_dist", strMsg);
+  readServerParam("tackle_width", strMsg);
+  readServerParam("tackle_cycles", strMsg);
+  readServerParam("tackle_power_rate", strMsg);
+  readServerParam("tackle_exponent", strMsg);
 
-  readServerParam( "keepaway_length",          strMsg );
-  readServerParam( "keepaway_width",           strMsg );
+  readServerParam("keepaway_length", strMsg);
+  readServerParam("keepaway_width", strMsg);
 
-  VecPosition corner( SS->getKeepawayLength() / 2 - 1.0, SS->getKeepawayWidth() / 2 - 1.0);
-  WM->setKeepawayRect( -corner, corner );
+  VecPosition corner_real(SS->getKeepawayLength() / 2, SS->getKeepawayWidth() / 2);
+  VecPosition corner_reduced(SS->getKeepawayLength() / 2 - 1.0, SS->getKeepawayWidth() / 2 - 1.0);
+  WM->setKeepawayRect(-corner_real, corner_real);
+  WM->setKeepawayRectReduced(-corner_reduced, corner_reduced);
 
-
-  SS->setMaximalKickDist      ( SS->getKickableMargin() +
-                                SS->getPlayerSize()     +
-                                SS->getBallSize()          );
+  SS->setMaximalKickDist(SS->getKickableMargin() +
+                         SS->getPlayerSize() +
+                         SS->getBallSize());
   //SS->show( cerr, ":" );
   return true;
 }
 
-bool SenseHandler::readServerParam( const char *strParam, char *strMsg )
-{
+bool SenseHandler::readServerParam(const char *strParam, char *strMsg) {
   char strFormat[128];
   char strValue[128] = "";
-  sprintf( strValue, "none" );
+  sprintf(strValue, "none");
 
-  sprintf( strFormat, "%s ", strParam );        // add space after parameters
-  char *str = strstr( strMsg, strFormat );      // and find param definition
-  sprintf( strFormat, "%s %%[^)]", strParam );  // read till closing bracket
+  sprintf(strFormat, "%s ", strParam);        // add space after parameters
+  char *str = strstr(strMsg, strFormat);      // and find param definition
+  sprintf(strFormat, "%s %%[^)]", strParam);  // read till closing bracket
 
-  if( str == NULL )
-  {
+  if (str == NULL) {
     cerr << "(SenseHandler::readServerParam) " << WM->getPlayerNumber() <<
-         "  error finding " << strParam <<endl;
+         "  error finding " << strParam << endl;
     return false;
   }
-  int ret = sscanf( str, strFormat, strValue ); // read in values
+  int ret = sscanf(str, strFormat, strValue); // read in values
 
-  if( ret == 1 )
-    SS->setValue( strParam, strValue );
+  if (ret == 1)
+    SS->setValue(strParam, strValue);
   else
-    cerr << "(SenseHandler::readServerParam) error reading " <<strParam <<endl;
-  return (ret == 1 ) ? true : false ;
+    cerr << "(SenseHandler::readServerParam) error reading " << strParam << endl;
+  return (ret == 1) ? true : false;
 }
 
 
@@ -913,29 +886,28 @@ bool SenseHandler::readServerParam( const char *strParam, char *strMsg )
     processNewHeteroPlayer.
     \param strMsg string that contains the player type information
     \return bool indicating whether the message was parsed correctly. */
-bool SenseHandler::analyzePlayerTypeMessage ( char *strMsg )
-{
-  Log.log( 999, "%s", strMsg );
+bool SenseHandler::analyzePlayerTypeMessage(char *strMsg) {
+  Log.log(999, "%s", strMsg);
 // cerr << strMsg << endl;
 
   // analyze all heterogeneous player information
-  int    iIndex           = Parse::parseFirstInt( &strMsg );
-  double dPlayerSpeedMax  = Parse::parseFirstDouble( &strMsg );
-  double dStaminaIncMax   = Parse::parseFirstDouble( &strMsg );
-  double dPlayerDecay     = Parse::parseFirstDouble( &strMsg );
-  double dInertiaMoment   = Parse::parseFirstDouble( &strMsg );
-  double dDashPowerRate   = Parse::parseFirstDouble( &strMsg );
-  double dPlayerSize      = Parse::parseFirstDouble( &strMsg );
-  double dKickableMargin  = Parse::parseFirstDouble( &strMsg );
-  double dKickRand        = Parse::parseFirstDouble( &strMsg );
-  double dExtraStamina    = Parse::parseFirstDouble( &strMsg );
-  double dEffortMax       = Parse::parseFirstDouble( &strMsg );
-  double dEffortMin       = Parse::parseFirstDouble( &strMsg );
+  int iIndex = Parse::parseFirstInt(&strMsg);
+  double dPlayerSpeedMax = Parse::parseFirstDouble(&strMsg);
+  double dStaminaIncMax = Parse::parseFirstDouble(&strMsg);
+  double dPlayerDecay = Parse::parseFirstDouble(&strMsg);
+  double dInertiaMoment = Parse::parseFirstDouble(&strMsg);
+  double dDashPowerRate = Parse::parseFirstDouble(&strMsg);
+  double dPlayerSize = Parse::parseFirstDouble(&strMsg);
+  double dKickableMargin = Parse::parseFirstDouble(&strMsg);
+  double dKickRand = Parse::parseFirstDouble(&strMsg);
+  double dExtraStamina = Parse::parseFirstDouble(&strMsg);
+  double dEffortMax = Parse::parseFirstDouble(&strMsg);
+  double dEffortMin = Parse::parseFirstDouble(&strMsg);
 
-  WM->processNewHeteroPlayer( iIndex, dPlayerSpeedMax, dStaminaIncMax,
-                              dPlayerDecay,    dInertiaMoment, dDashPowerRate, dPlayerSize,
-                              dKickableMargin, dKickRand,      dExtraStamina,  dEffortMax,
-                              dEffortMin );
+  WM->processNewHeteroPlayer(iIndex, dPlayerSpeedMax, dStaminaIncMax,
+                             dPlayerDecay, dInertiaMoment, dDashPowerRate, dPlayerSize,
+                             dKickableMargin, dKickRand, dExtraStamina, dEffortMax,
+                             dEffortMin);
   return true;
 }
 
@@ -944,31 +916,30 @@ bool SenseHandler::analyzePlayerTypeMessage ( char *strMsg )
     with this information.
     \param strMsg string that contains the player_param message.
     \bool will always be true. */
-bool SenseHandler::analyzePlayerParamMessage( char *strMsg )
-{
+bool SenseHandler::analyzePlayerParamMessage(char *strMsg) {
 //  cout << strMsg << endl;
-  Log.log( 999, "%s", strMsg );
-  readServerParam( "player_types",                     strMsg );
-  readServerParam( "subs_max",                         strMsg );
-  readServerParam( "player_speed_max_delta_min",       strMsg );
-  readServerParam( "player_speed_max_delta_max",       strMsg );
-  readServerParam( "stamina_inc_max_delta_factor",     strMsg );
-  readServerParam( "player_decay_delta_min",           strMsg );
-  readServerParam( "player_decay_delta_max",           strMsg );
-  readServerParam( "inertia_moment_delta_factor",      strMsg );
-  readServerParam( "dash_power_rate_delta_min",        strMsg );
-  readServerParam( "dash_power_rate_delta_max",        strMsg );
-  readServerParam( "player_size_delta_factor",         strMsg );
-  readServerParam( "kickable_margin_delta_min",        strMsg );
-  readServerParam( "kickable_margin_delta_max",        strMsg );
-  readServerParam( "kick_rand_delta_factor",           strMsg );
-  readServerParam( "extra_stamina_delta_min",          strMsg );
-  readServerParam( "extra_stamina_delta_max",          strMsg );
-  readServerParam( "effort_max_delta_factor",          strMsg );
-  readServerParam( "effort_min_delta_factor",          strMsg );
-  readServerParam( "new_dash_power_rate_delta_min",    strMsg );
-  readServerParam( "new_dash_power_rate_delta_max",    strMsg );
-  readServerParam( "new_stamina_inc_max_delta_factor", strMsg );
+  Log.log(999, "%s", strMsg);
+  readServerParam("player_types", strMsg);
+  readServerParam("subs_max", strMsg);
+  readServerParam("player_speed_max_delta_min", strMsg);
+  readServerParam("player_speed_max_delta_max", strMsg);
+  readServerParam("stamina_inc_max_delta_factor", strMsg);
+  readServerParam("player_decay_delta_min", strMsg);
+  readServerParam("player_decay_delta_max", strMsg);
+  readServerParam("inertia_moment_delta_factor", strMsg);
+  readServerParam("dash_power_rate_delta_min", strMsg);
+  readServerParam("dash_power_rate_delta_max", strMsg);
+  readServerParam("player_size_delta_factor", strMsg);
+  readServerParam("kickable_margin_delta_min", strMsg);
+  readServerParam("kickable_margin_delta_max", strMsg);
+  readServerParam("kick_rand_delta_factor", strMsg);
+  readServerParam("extra_stamina_delta_min", strMsg);
+  readServerParam("extra_stamina_delta_max", strMsg);
+  readServerParam("effort_max_delta_factor", strMsg);
+  readServerParam("effort_min_delta_factor", strMsg);
+  readServerParam("new_dash_power_rate_delta_min", strMsg);
+  readServerParam("new_dash_power_rate_delta_max", strMsg);
+  readServerParam("new_stamina_inc_max_delta_factor", strMsg);
 
   return true;
 }
@@ -988,50 +959,44 @@ bool SenseHandler::analyzePlayerParamMessage( char *strMsg )
 
     \return bool indicating whether method returned successfully.
 */
-bool SenseHandler::synchronize( )
-{
+bool SenseHandler::synchronize() {
   // don't sync in synchronization mode
-  if( SS->getSynchMode() == true )
+  if (SS->getSynchMode() == true)
     return true;
 
-  static Time timeSync         = -1;
-  static bool bNeedSync        = true;
+  static Time timeSync = -1;
+  static bool bNeedSync = true;
   char str[64];
 
   // if in normal play mode -> don't synchronize
-  if( WM->getPlayMode() == PM_PLAY_ON )
-  {
+  if (WM->getPlayMode() == PM_PLAY_ON) {
     m_bBusySync = false;
-    timeSync    = -1;
-    if( WM->getAgentViewQuality() == VQ_LOW )
-    {
-      sprintf( str, "(change_view normal high)" );
-      connection->sendMessage( str );
-      Log.log( 5, "sync: view quality low and play on -> high" );
+    timeSync = -1;
+    if (WM->getAgentViewQuality() == VQ_LOW) {
+      sprintf(str, "(change_view normal high)");
+      connection->sendMessage(str);
+      Log.log(5, "sync: view quality low and play on -> high");
       cout << "Debug - change view quality low to high" << endl;
     }
   }
 
-  if( bNeedSync == false ) {
+  if (bNeedSync == false) {
     return false;
-  }
-  else if(  WM->getCurrentTime() > Time( 0, 2 ) &&
-            WM->getPlayMode() != PM_PLAY_ON )
-  {
+  } else if (WM->getCurrentTime() > Time(0, 2) &&
+             WM->getPlayMode() != PM_PLAY_ON) {
     // first call to this method
-    if( m_bBusySync == false )
-    {
+    if (m_bBusySync == false) {
       // if we need synchronization due to late message arrivals, view
       // frequency is set to 0.5 (narrow low) making it possible to tune
       // the arrival of see messages such that they will arrive at the
       // beginning of the cycle.
 
-      Log.logWithTime( 5, "sync: start sync; change freq to 37.5ms");
-      sprintf( str, "(change_view narrow low)" );
-      connection->sendMessage( str );
+      Log.logWithTime(5, "sync: start sync; change freq to 37.5ms");
+      sprintf(str, "(change_view narrow low)");
+      connection->sendMessage(str);
       m_bBusySync = true;
-      timeSync    = Time(WM->getCurrentTime().getTime(),
-                         WM->getCurrentTime().getTimeStopped()+ 1 );
+      timeSync = Time(WM->getCurrentTime().getTime(),
+                      WM->getCurrentTime().getTimeStopped() + 1);
       // +1 to start counting in next cycle
       return true;
     }
@@ -1040,26 +1005,22 @@ bool SenseHandler::synchronize( )
     // 37.5, the sequence should be 3, 3, 2. So when 2 messages are
     // received in the previous cycle we know that we are at the start
     // of the pattern and are ready.
-    if( timeSync < WM->getCurrentTime() )
-    {
-      if( m_iSeeCounter == 2 )
-      {
-        Log.logWithTime( 5, "sync: received two sees in prev. cycle" );
-        sprintf( str, "(change_view normal high)" );
+    if (timeSync < WM->getCurrentTime()) {
+      if (m_iSeeCounter == 2) {
+        Log.logWithTime(5, "sync: received two sees in prev. cycle");
+        sprintf(str, "(change_view normal high)");
         cout << str << endl;
         cout << WM->getSide() << " " << WM->getPlayerNumber() << " is synch'ed" << endl;
-        connection->sendMessage( str );
-        m_iSyncCounter   = 0;
-        m_bBusySync      = false;
-        bNeedSync        = false;
-        iNrLateMessages  = 0;
+        connection->sendMessage(str);
+        m_iSyncCounter = 0;
+        m_bBusySync = false;
+        bNeedSync = false;
+        iNrLateMessages = 0;
         iNrTotalMessages = 0;
-      }
-      else
-      {
-        Log.logWithTime( 5, " sync:received %d sees in prev. cycle",
-                         m_iSeeCounter );
-        timeSync    = WM->getCurrentTime();
+      } else {
+        Log.logWithTime(5, " sync:received %d sees in prev. cycle",
+                        m_iSeeCounter);
+        timeSync = WM->getCurrentTime();
       }
     }
   }

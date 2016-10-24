@@ -22,7 +22,7 @@ set -o nounset                              # Treat unset variables as an error
 SLEEP="10"
 
 make clean
-make release
+make -j release
 
 exec 1>console.log 2>&1                                                              
 
