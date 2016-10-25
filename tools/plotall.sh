@@ -41,6 +41,6 @@ done
 gnuplot graph.gnuplot
 gnuplot hist.gnuplot
 
-okular graph.eps &
-# okular hist.eps &
+evince graph.eps &
+# evince hist.eps &
 

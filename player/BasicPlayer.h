@@ -128,14 +128,22 @@ private:
   unordered_map<string, string> sharedMemory;
 };
 
-inline void SemTimedWait(sem_t *sem, int ms = 0) {
+inline void SemTimedWait(sem_t *sem, int ms = 800) {
   if (ms > 0) {
+    ms = ms / 2 + rand() % ms; // randomize
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_nsec += ms * 1000000;
     ts.tv_sec += ts.tv_nsec / 1000000000;
     ts.tv_nsec %= 1000000000;
-    sem_timedwait(sem, &ts);
+
+    int ret;
+    while ((ret = sem_timedwait(sem, &ts)) == -1 && errno == EINTR)
+      continue;
+
+    if (ret == -1) {
+      PRINT_VALUE(strerror(errno));
+    }
   } else {
     sem_wait(sem);
   }
@@ -202,7 +210,7 @@ public:
 
   SoccerCommand moveToPos(VecPosition posTo,
                           AngDeg angWhenToTurn,
-                          double dDistDashBack = 0.0,
+                          double dDistDashBack = 1.0,
                           bool bMoveBack = false,
                           int iCycles = 1);
 

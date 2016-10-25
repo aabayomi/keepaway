@@ -8,6 +8,8 @@
 #include "gzstream.h"
 #include <boost/algorithm/string/replace.hpp>
 
+#define DETERMINISTIC_GRAPH 1
+
 namespace fsm {
 
 void SharedData::reset() {
@@ -146,8 +148,10 @@ void LinearSarsaLearner::initialize(
     nonzeroTracesInverse = sharedData->nonzeroTracesInverse;
     colTab = &sharedData->colTab;
 
-    barriers["enter"] = new Barrier(HierarchicalFSM::num_keepers, h, "enter");
-    barriers["exit"] = new Barrier(HierarchicalFSM::num_keepers, h, "exit");
+    barriers["enter1"] = new Barrier(HierarchicalFSM::num_keepers, h, "enter1");
+    barriers["exit1"] = new Barrier(HierarchicalFSM::num_keepers, h, "exit1");
+    barriers["enter2"] = new Barrier(HierarchicalFSM::num_keepers, h, "enter2");
+    barriers["exit2"] = new Barrier(HierarchicalFSM::num_keepers, h, "exit2");
     barriers["reset"] = new Barrier(HierarchicalFSM::num_keepers, h, "reset");
 
     sharedData->reset();
@@ -170,24 +174,27 @@ void LinearSarsaLearner::shutDown() {
     saveStaticTransitions("transitions.xml");
 
 #if DETERMINISTIC_GRAPH
-    dot::Graph dotg;
+    dot::Graph G;
     for (auto &e : staticTransitions) {
       auto s = to_prettystring(e.first);
       boost::replace_all(s, ", {", ",\n{");
+      G.addNode(s, "red");
       for (auto &o : e.second) {
         auto a = to_string(o.first);
         auto sa = s + ";  " + a;
-        dotg.addEdge(s, sa, "blue", a);
+        G.addNode(sa, "gray");
+        G.addEdge(s, sa, "blue", a);
         for (auto &x : o.second) {
           auto s_ = to_prettystring(x.first);
           boost::replace_all(s_, ", {", ",\n{");
           auto n = to_string(x.second);
-          dotg.addEdge(sa, s_, "green", n);
+          G.addNode(s_, "orange");
+          G.addEdge(sa, s_, "green", n);
         }
       }
     }
 
-    dotg.dump("transitions.dot");
+    G.dump("transitions.dot");
 #endif
   }
 
@@ -305,7 +312,9 @@ vector<vector<int>> LinearSarsaLearner::validChoicesRaw(const vector<int> &num_c
 }
 
 bool LinearSarsaLearner::isStaticTransition(const vector<string> &machine_state, int c) {
-  return staticTransitions.count(machine_state) && staticTransitions[machine_state].count(c);
+  return staticTransitions.count(machine_state)
+         && staticTransitions[machine_state].count(c)
+         && staticTransitions[machine_state][c].size();
 }
 
 namespace {
@@ -416,9 +425,9 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
   Log.log(101, "LinearSarsaLearner::step agent %d write machineState %s", Memory::ins().agentIdx,
           stackStr.c_str());
 
-  barriers["enter"]->wait();
+  barriers["enter1"]->wait();
   bool action_state = loadSharedData();
-  barriers["exit"]->wait();
+  barriers["exit1"]->wait();
 
   if (action_state) {
     return 0; // action state
@@ -452,9 +461,9 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
       saveSharedData();
     }
 
-    barriers["enter"]->wait();
+    barriers["enter2"]->wait();
     bool action_state2 = loadSharedData();
-    barriers["exit"]->wait();
+    barriers["exit2"]->wait();
 
     if (action_state2 == action_state) {
       if (numChoices[Memory::ins().agentIdx] <= 1) { // dummy choice
@@ -492,15 +501,11 @@ void LinearSarsaLearner::endEpisode(int current_time) {
     fill(numChoices.begin(), numChoices.end(), 1);
     fill(lastJointChoice.begin(), lastJointChoice.end(), 0);
     saveSharedData();
-
-    if (bLearning && bSaveWeights && rand() % 1000 == 0) {
-      saveWeights(saveWeightsFile.c_str());
-    }
   }
 
-  barriers["enter"]->wait();
+  barriers["enter2"]->wait();
   loadSharedData();
-  barriers["exit"]->wait();
+  barriers["exit2"]->wait();
 }
 
 int LinearSarsaLearner::loadTiles(
@@ -543,26 +548,29 @@ double LinearSarsaLearner::QValue(
     int choice,
     int (*tiles)[RL_MAX_NUM_TILINGS],
     int num_tilings) {
-  if (isStaticTransition(machine_state, choice) && staticTransitions[machine_state][choice].size()) {
+  if (isStaticTransition(machine_state, choice)) {
+    const int k = 5; // Rmax threshold
+
     if (Log.isInLogLevel(101))
       Log.log(101, "LinearSarsaLearner::QValue: static transition Q(s, m=%s, c=%d) = V(s, m=%s)",
               to_prettystring(machine_state).c_str(), choice,
               to_prettystring(staticTransitions[machine_state][choice]).c_str());
+
     double ret = 0.0;
     double sum = 0.0;
     for (auto &e : staticTransitions[machine_state][choice]) {
-      if (e.first != machine_state) {
+      if (e.first != machine_state && e.second >= k) {
         ret += e.second * Value(state, e.first);
         sum += e.second;
       }
     }
-    return ret / sum;
-  } else {
-    auto q = computeQ(choice, tiles, num_tilings);
-    Log.log(101, "LinearSarsaLearner::QValue: Q(s, m=%s, c=%d) = %f", to_prettystring(machine_state).c_str(), choice,
-            q);
-    return q;
+    if (sum > 0.0) return ret / sum;
   }
+
+  auto q = computeQ(choice, tiles, num_tilings);
+  Log.log(101, "LinearSarsaLearner::QValue: Q(s, m=%s, c=%d) = %f",
+          to_prettystring(machine_state).c_str(), choice, q);
+  return q;
 }
 
 double LinearSarsaLearner::computeQ(int choice, int (*tiles)[RL_MAX_NUM_TILINGS], int numTilings) {

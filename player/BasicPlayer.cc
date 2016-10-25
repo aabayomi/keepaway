@@ -87,25 +87,25 @@ Barrier::Barrier(int n, size_t hash, const string name) : n(n), name(name), coun
 
   ftruncate(shm_fd, sizeof(int));
   if ((count = (int *) mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0)) == MAP_FAILED) {
-    printf("prod: Map failed: %s\n", strerror(errno));
+    PRINT_VALUE(strerror(errno));
     exit(1);
   }
 
   sharedMemory["mutex"] = "/" + name + "::mutex-" + to_string(hash);
   if ((mutex = sem_open(sharedMemory["mutex"].c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
-    perror("semaphore initilization");
+    PRINT_VALUE(strerror(errno));
     exit(1);
   }
 
   sharedMemory["turnstile"] = "/" + name + "::turnstile-" + to_string(hash);
   if ((turnstile = sem_open(sharedMemory["turnstile"].c_str(), O_CREAT, 0666, 0)) == SEM_FAILED) {
-    perror("semaphore initilization");
+    PRINT_VALUE(strerror(errno));
     exit(1);
   }
 
   sharedMemory["turnstile2"] = "/" + name + "::turnstile2-" + to_string(hash);
   if ((turnstile2 = sem_open(sharedMemory["turnstile2"].c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
-    perror("semaphore initilization");
+    PRINT_VALUE(strerror(errno));
     exit(1);
   }
 

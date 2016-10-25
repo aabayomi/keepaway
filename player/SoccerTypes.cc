@@ -851,7 +851,6 @@ bool SoccerCommand::makeKickCommand( char *str  )
             (int)dPower, (int)dAngle );
     PRINT_VALUE(dPower);
     PRINT_VALUE(dAngle);
-    Assert(0);
     return false;
   }
   return true;

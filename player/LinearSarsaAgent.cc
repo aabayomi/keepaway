@@ -185,10 +185,6 @@ void LinearSarsaAgent::endEpisode(double reward_) {
     updateWeights(delta);
   }
 
-  if (bLearning && bSaveWeights && rand() % 1000 == 0) {
-    saveWeights(saveWeightsFile.c_str());
-  }
-
   lastAction = -1;
   lastActionTime = UnknownTime;
 }

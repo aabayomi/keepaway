@@ -255,16 +255,20 @@ void Keeper::run() {
 
 Move::Move(BasicPlayer *p) : HierarchicalFSM(p, "$Move") {
   moveToChoice = new ChoicePoint<int>("@MoveTo", {0, 1, 2, 3});
+  moveSpeedChoice = new ChoicePoint<double>("@MoveSpeed", {SS->getPlayerSpeedMax() / 2.0, SS->getPlayerSpeedMax()});
 }
 
 Move::~Move() {
   delete moveToChoice;
+  delete moveSpeedChoice;
 }
 
 void Move::run() {
-  Assert(!WM->isBallKickable());
-  MakeChoice<int> c(moveToChoice);
-  auto dir = c(WM->getCurrentCycle());
+  MakeChoice<int> c1(moveToChoice);
+  auto dir = c1(WM->getCurrentCycle());
+
+  MakeChoice<double> c2(moveSpeedChoice);
+  auto speed = c2(WM->getCurrentCycle());
 
   bool flag = WM->isTmControllBall();
   while (running() && flag == WM->isTmControllBall()) {
@@ -275,7 +279,9 @@ void Move::run() {
 
     auto r = WM->getKeepawayRectReduced();
     if (r.isInside(target)) {
-      ACT->putCommandInQueue(soc = player->moveToPos(target, 30.0));
+      auto distance = target.getDistanceTo(WM->getAgentGlobalPosition());
+      int cycles = rint(distance / speed);
+      ACT->putCommandInQueue(soc = player->moveToPos(target, 30.0, 1.0, false, cycles));
     } else {
       double minDist = std::numeric_limits<double>::max();
       VecPosition refinedTarget;
@@ -300,7 +306,9 @@ void Move::run() {
       }
 
       if (minDist < std::numeric_limits<double>::max()) {
-        ACT->putCommandInQueue(soc = player->moveToPos(refinedTarget, 30.0));
+        auto distance = target.getDistanceTo(WM->getAgentGlobalPosition());
+        int cycles = rint(distance / speed);
+        ACT->putCommandInQueue(soc = player->moveToPos(refinedTarget, 30.0, 1.0, false, cycles));
       } else {
         ACT->putCommandInQueue(soc = player->turnBodyToObject(OBJECT_BALL));
         ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
@@ -308,8 +316,8 @@ void Move::run() {
     }
 
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
-    Log.log(101, "Move::run action with dir=%d", dir);
-    Action(this, {dir})();
+    Log.log(101, "Move::run action with dir=%d speed=%f", dir, speed);
+    Action(this, {to_string(dir), to_string(speed)})();
   }
 }
 
@@ -318,7 +326,6 @@ Stay::Stay(BasicPlayer *p) : HierarchicalFSM(p, "$Stay") {
 }
 
 void Stay::run() {
-  Assert(!WM->isBallKickable());
   bool flag = WM->isTmControllBall();
   while (running() && flag == WM->isTmControllBall()) {
     SoccerCommand soc;
@@ -334,8 +341,6 @@ Intercept::Intercept(BasicPlayer *p) : HierarchicalFSM(p, "$Intercept") {
 }
 
 void Intercept::run() {
-  Assert(!WM->isBallKickable());
-  Assert(!WM->isTmControllBall());
   while (running() && !WM->isTmControllBall()) {
     SoccerCommand soc;
     ACT->putCommandInQueue(soc = player->intercept(false));
@@ -360,32 +365,40 @@ Pass::~Pass() {
 
 void Pass::run() {
   MakeChoice<int> c1(passToChoice);
-  auto tm = c1(WM->getCurrentCycle());
+  auto teammate = c1(WM->getCurrentCycle());
 
   MakeChoice<PassT> c2(passSpeedChoice);
-  auto sp = c2(WM->getCurrentCycle());
+  auto speed = c2(WM->getCurrentCycle());
 
   while (running() && WM->isBallKickable()) {
-    VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[tm]);
-    VecPosition tmVel = WM->getGlobalVelocity(Memory::ins().K[tm]);
+    VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[teammate]);
+    VecPosition tmVel = WM->getGlobalVelocity(Memory::ins().K[teammate]);
     VecPosition target = WM->predictFinalAgentPos(&tmPos, &tmVel);
-    ACT->putCommandInQueue(player->directPass(target, sp));
-    Log.log(101, "Pass::run action with teammate=%d speed=%s", tm, sp == PASS_NORMAL ? "normal" : "fast");
-    Action(this, {tm, sp})();
+    ACT->putCommandInQueue(player->directPass(target, speed));
+    Log.log(101, "Pass::run action with teammate=%d speed=%s", teammate, speed == PASS_NORMAL ? "normal" : "fast");
+    Action(this, {to_string(teammate), to_string(speed)})();
   }
 }
 
 Hold::Hold(BasicPlayer *p) : HierarchicalFSM(p, "$Hold") {
+  holdCycleChoice = new ChoicePoint<int>("@HoldCycle", {1, 3, 5, 7});
+}
 
+Hold::~Hold() {
+  delete holdCycleChoice;
 }
 
 void Hold::run() {
-  Assert(WM->isBallKickable());
-  SoccerCommand soc;
-  ACT->putCommandInQueue(soc = player->holdBall());
-  ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
-  Log.log(101, "Hold::run action");
-  Action(this)();
+  MakeChoice<int> c(holdCycleChoice);
+  int n = c(WM->getCurrentCycle());
+  int i = n;
+  while (WM->isBallKickable() && i--) {
+    SoccerCommand soc;
+    ACT->putCommandInQueue(soc = player->holdBall());
+    ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
+    Log.log(101, "Hold::run action with n=%d i=%d", n, i);
+    Action(this, {to_string(n)})();
+  }
 }
 
 }

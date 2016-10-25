@@ -27,7 +27,7 @@ while getopts  "b:g:L:q:I:lfmsnzMQ" flag; do
         Q) QLEARNING="--qlearning" ;;
         g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         L) LAMBDA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
-        I) INITIALWEIGHT="$OPTARG" ;;
+        I) INITIALWEIGHT="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         b) BUILD="$OPTARG" ;;
         n) LEARNING="--keeper-policy=learned!" ;;
         q) QFILE2="$OPTARG" ;;

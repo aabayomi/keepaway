@@ -170,7 +170,8 @@ def launch_server(options):
     # TODO in synch mode?
     server_options += [
         ('synch_mode', int(options.synch_mode)),
-        ('synch_offset', 100)]
+        ('synch_offset', 60),
+        ('synch_see_offset', 0)]
 
     if options.log_text:
         server_options += [
