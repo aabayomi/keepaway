@@ -19,6 +19,11 @@
 
 set -o nounset                              # Treat unset variables as an error
 
+if (( $# == 0 )); then
+    ./plotall.sh ../logs/*.kwy
+    exit
+fi
+
 make clean
 make
 
@@ -36,6 +41,6 @@ done
 gnuplot graph.gnuplot
 gnuplot hist.gnuplot
 
-evince graph.eps &
-#evince hist.eps &
+okular graph.eps &
+# okular hist.eps &
 

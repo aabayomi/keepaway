@@ -228,32 +228,21 @@ int collision_table::usage() {
   return count;
 }
 
-void collision_table::save(int file) {
-  write(file, (char *) &safe, sizeof(int));
-  write(file, (char *) &calls, sizeof(long));
-  write(file, (char *) &clearhits, sizeof(long));
-  write(file, (char *) &collisions, sizeof(long));
-  write(file, (char *) data, RL_MEMORY_SIZE * sizeof(long));
+void collision_table::save(std::ostream &ofs) {
+  ofs.write((char *) &safe, sizeof(int));
+  ofs.write((char *) &calls, sizeof(long));
+  ofs.write((char *) &clearhits, sizeof(long));
+  ofs.write((char *) &collisions, sizeof(long));
+  ofs.write((char *) data, RL_MEMORY_SIZE * sizeof(long));
 }
 
-void collision_table::restore(int file) {
-  read(file, (char *) &safe, sizeof(int));
-  read(file, (char *) &calls, sizeof(long));
-  read(file, (char *) &clearhits, sizeof(long));
-  read(file, (char *) &collisions, sizeof(long));
-  read(file, (char *) data, RL_MEMORY_SIZE * sizeof(long));
+void collision_table::restore(std::istream &ifs) {
+  ifs.read((char *) &safe, sizeof(int));
+  ifs.read((char *) &calls, sizeof(long));
+  ifs.read((char *) &clearhits, sizeof(long));
+  ifs.read((char *) &collisions, sizeof(long));
+  ifs.read((char *) data, RL_MEMORY_SIZE * sizeof(long));
 }
-
-/*
-void collision_table::save(char *filename) {
- write(open(filename, O_BINARY | O_CREAT | O_WRONLY);
-};
-
-void collision_table::restore(char *filename) {
- read(open(filename, O_BINARY | O_CREAT | O_WRONLY);
-}
-*/
-
 
 int i_tmp_arr[MAX_NUM_VARS];
 float f_tmp_arr[MAX_NUM_VARS];

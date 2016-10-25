@@ -106,7 +106,7 @@ public:
 
 class Barrier {
 public:
-  Barrier(int n, size_t hash);
+  Barrier(int n, size_t hash, const string name);
 
   ~Barrier();
 
@@ -118,13 +118,14 @@ private:
   void phase2();
 
 private:
+  string name;
   int n;
   int *count;
-  string sharedMemoryName;
   sem_t *mutex;
   sem_t *turnstile;
   sem_t *turnstile2;
   int wait_id;
+  unordered_map<string, string> sharedMemory;
 };
 
 inline void SemTimedWait(sem_t *sem, int ms = 0) {

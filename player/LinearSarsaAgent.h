@@ -25,7 +25,7 @@ protected:
   bool bLearning;
   bool bSaveWeights;
 
-  Barrier *barrier;
+  unordered_map<string, Barrier *> barriers;
   string sharedMemoryName;
   SharedData *sharedData;
 

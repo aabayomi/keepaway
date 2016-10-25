@@ -13,7 +13,7 @@ INITIALWEIGHT="0.5"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
 LOGDIR="logs"
-QFILE="pi"
+QFILE="Q"
 QFILE2=""
 MEMORYCHECK=""
 
@@ -49,8 +49,8 @@ if [ ! -z $INITIALWEIGHT ]; then
     QFILE="${QFILE}_w${INITIALWEIGHT}"
 fi
 
-if [ ! -z $FULLSTATE ]; then
-    QFILE="${QFILE}_fs"
+if [ -z $FULLSTATE ]; then
+    QFILE="${QFILE}_nfs"
 fi
 
 if [ ! -z $HIERARCHICALFSM ]; then
@@ -61,7 +61,7 @@ if [ ! -z $QLEARNING ]; then
     QFILE="${QFILE}_ql"
 fi
 
-QFILE="${QFILE}.q"
+QFILE="${QFILE}.gz"
 
 if [ ! -z $QFILE2 ]; then
     QFILE="$QFILE2" # overwrite QFILE
@@ -71,7 +71,7 @@ if [ $BUILD != "none" ]; then
     make -j `nproc` $BUILD
 fi
 
-CONSOLE_LOG="$LOGDIR/`basename $QFILE .q`.console"
+CONSOLE_LOG="$LOGDIR/`basename $QFILE .gz`.console"
 
 ulimit -c unlimited
 ./keepaway.py $MEMORYCHECK $LEARNING \
@@ -79,5 +79,5 @@ ulimit -c unlimited
     $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
     $HIERARCHICALFSM --gamma=$GAMMA --Lambda=$LAMBDA\
     --initial-weight=$INITIALWEIGHT \
-    $QLEARNING --label=`basename $QFILE .q` 2>&1 | tee $CONSOLE_LOG
+    $QLEARNING --label=`basename $QFILE .gz` 2>&1 | tee $CONSOLE_LOG
 

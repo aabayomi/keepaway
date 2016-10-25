@@ -77,9 +77,9 @@ ScopedLock::~ScopedLock() {
   if (sem) sem_post(sem);
 }
 
-Barrier::Barrier(int n, size_t hash) : n(n), count(0), wait_id(0) {
-  sharedMemoryName = "/barrier::count-" + to_string(hash) + ".shm";
-  int shm_fd = shm_open(sharedMemoryName.c_str(), O_CREAT | O_RDWR, 0666);
+Barrier::Barrier(int n, size_t hash, const string name) : n(n), name(name), count(0), wait_id(0) {
+  sharedMemory["shm"] = "/" + name + "::count-" + to_string(hash) + ".shm";
+  int shm_fd = shm_open(sharedMemory["shm"].c_str(), O_CREAT | O_RDWR, 0666);
   if (shm_fd == -1) {
     printf("prod: Shared memory failed: %s\n", strerror(errno));
     exit(1);
@@ -91,17 +91,20 @@ Barrier::Barrier(int n, size_t hash) : n(n), count(0), wait_id(0) {
     exit(1);
   }
 
-  if ((mutex = sem_open(("/barrier::mutex-" + to_string(hash)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
+  sharedMemory["mutex"] = "/" + name + "::mutex-" + to_string(hash);
+  if ((mutex = sem_open(sharedMemory["mutex"].c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
     perror("semaphore initilization");
     exit(1);
   }
 
-  if ((turnstile = sem_open(("/barrier::turnstile-" + to_string(hash)).c_str(), O_CREAT, 0666, 0)) == SEM_FAILED) {
+  sharedMemory["turnstile"] = "/" + name + "::turnstile-" + to_string(hash);
+  if ((turnstile = sem_open(sharedMemory["turnstile"].c_str(), O_CREAT, 0666, 0)) == SEM_FAILED) {
     perror("semaphore initilization");
     exit(1);
   }
 
-  if ((turnstile2 = sem_open(("/barrier::turnstile2-" + to_string(hash)).c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
+  sharedMemory["turnstile2"] = "/" + name + "::turnstile2-" + to_string(hash);
+  if ((turnstile2 = sem_open(sharedMemory["turnstile2"].c_str(), O_CREAT, 0666, 1)) == SEM_FAILED) {
     perror("semaphore initilization");
     exit(1);
   }
@@ -141,16 +144,16 @@ void Barrier::phase2() {
 void Barrier::wait() {
   SCOPED_LOG
   int id = wait_id++;
-  Log.log(101, "Barrier::wait wait_id=%d", id);
+  Log.log(101, "Barrier::wait name=%s wait_id=%d", name.c_str(), id);
   phase1();
   phase2();
 }
 
 Barrier::~Barrier() {
-  shm_unlink(sharedMemoryName.c_str());
-  sem_close(mutex);
-  sem_close(turnstile);
-  sem_close(turnstile2);
+  shm_unlink(sharedMemory["shm"].c_str());
+  sem_unlink(sharedMemory["mutex"].c_str());
+  sem_unlink(sharedMemory["turnstile"].c_str());
+  sem_unlink(sharedMemory["turnstile2"].c_str());
 }
 
 /********************** LOW-LEVEL SKILLS *************************************/

@@ -21,7 +21,7 @@
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/string.hpp>
 
-#define DETERMINISTIC_GRAPH 0
+#define DETERMINISTIC_GRAPH 1
 
 namespace std {
 
@@ -126,7 +126,7 @@ private:
   SharedData *sharedData;
 
 private:
-  Barrier *barrier;
+  unordered_map<string, Barrier *> barriers;
 
   double alpha;
   double gamma;
@@ -183,26 +183,23 @@ private:
   vector<vector<int>> validChoicesRaw(const vector<int> &num_choices);
 
   double initialWeight;
-  string sharedMemoryName;
+  string sharedMemory;
 
   unordered_map<vector<int>, vector<int>> validChoicesMap;
   unordered_map<vector<int>, vector<vector<int>>> jointChoicesMap;
   unordered_map<vector<string>, vector<int>> numChoicesMap;
-  unordered_map<vector<string>, unordered_map<int, vector<string>>> detTransitionMap;
+  unordered_map<vector<string>, unordered_map<int, unordered_map<vector<string>, double>>> staticTransitions;
 
-  void saveMachineTransitions(const char *filename);
+  void saveStaticTransitions(const char *filename);
 
-  void loadMachineTransitions(const char *filename);
-
-#if DETERMINISTIC_GRAPH
-  dot::Graph detTransitionGraph;
-#endif
+  void loadStaticTransitions(const char *filename);
 
   double reward(double tau);
 
-  bool isDeterministic(const vector<string> &machine_state, int c);
+  bool isStaticTransition(const vector<string> &machine_state, int c);
 
-  bool hasCircle(unordered_map<vector<string>, unordered_map<int, vector<string>>> &G);
+  bool hasCircle(
+      unordered_map<vector<string>, unordered_map<int, unordered_map<vector<string>, double>>> &G);
 };
 
 }

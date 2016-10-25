@@ -5,6 +5,7 @@
 #include <sstream>
 #include <numeric>
 #include "LinearSarsaAgent.h"
+#include "gzstream.h"
 
 // If all is well, there should be no mention of anything keepaway- or soccer-
 // related in this file.
@@ -15,7 +16,7 @@ namespace jol {
 
 LinearSarsaAgent::~LinearSarsaAgent() {
   if (sharedData) shm_unlink(sharedMemoryName.c_str());
-  delete barrier;
+  for (auto pa : barriers) delete pa.second;
 }
 
 LinearSarsaAgent::LinearSarsaAgent(
@@ -32,7 +33,6 @@ LinearSarsaAgent::LinearSarsaAgent(
     : SMDPAgent(numFeatures, wm),
       saveWeightsFile(saveWeightsFile),
       bLearning(bLearn),
-      barrier(0),
       sharedData(0),
       gamma(gamma),
       lambda(lambda),
@@ -92,7 +92,8 @@ LinearSarsaAgent::LinearSarsaAgent(
       exit(1);
     }
 
-    barrier = new Barrier(AtomicAction::num_keepers, h);
+    barriers["enter"] = new Barrier(AtomicAction::num_keepers, h, "enter");
+    barriers["exit"] = new Barrier(AtomicAction::num_keepers, h, "exit");
     sharedData->reset();
   }
 
@@ -217,11 +218,11 @@ int LinearSarsaAgent::selectAction() {
   }
 
   if (bLearning) {
-    barrier->wait();
+    barriers["enter"]->wait();
     lastAction = sharedData->lastAction;
     lastActionTime = sharedData->lastActionTime;
     Log.log(101, "got %d at %d [isTmControllBall %d]", lastAction, lastActionTime, WM->isTmControllBall());
-    barrier->wait();
+    barriers["exit"]->wait();
   }
 
   if (Log.isInLogLevel(101)) {
@@ -240,31 +241,48 @@ int LinearSarsaAgent::selectAction() {
   return lastAction;
 }
 
+
 bool LinearSarsaAgent::loadWeights(const char *filename) {
   FileLock lock("loadWeights");
   cerr << "Loading weights from " << filename << endl;
-  int file = open(filename, O_RDONLY);
-  if (file < 0) {
+
+#ifdef _Compress
+  igzstream is;
+#else
+  ifstream is;
+#endif
+
+  is.open(filename);
+  if (!is.good()) {
     cerr << "failed to open weight file: " << filename << endl;
     return false;
   }
-  read(file, (char *) weights, RL_MEMORY_SIZE * sizeof(double));
-  colTab.restore(file);
-  close(file);
+
+  is.read((char *) weights, RL_MEMORY_SIZE * sizeof(double));
+  colTab.restore(is);
+  is.close();
   cerr << "...done" << endl;
   return true;
 }
 
 bool LinearSarsaAgent::saveWeights(const char *filename) {
   FileLock lock("saveWeights");
-  int file = open(filename, O_CREAT | O_WRONLY, 0664);
-  if (file < 0) {
+
+#ifdef _Compress
+  ogzstream os;
+#else
+  ofstream os;
+#endif
+
+  os.open(filename);
+  if (!os.good()) {
     cerr << "failed to open weight file: " << filename << endl;
     return false;
   }
-  write(file, (char *) weights, RL_MEMORY_SIZE * sizeof(double));
-  colTab.save(file);
-  close(file);
+
+  os.write((char *) weights, RL_MEMORY_SIZE * sizeof(double));
+  colTab.save(os);
+  os.close();
   return true;
 }
 

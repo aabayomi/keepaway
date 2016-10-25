@@ -26,9 +26,9 @@ public:
 
   int usage();
 
-  void save(int);
+  void save(std::ostream &ofs);
 
-  void restore(int);
+  void restore(std::istream &ifs);
 };
 
 void GetTiles(
