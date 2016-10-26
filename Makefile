@@ -23,7 +23,8 @@ clean:
 tools:
 	cd tools; make
 
-cleanall: clean
+cleanall:
+	cd tools; make clean
 	rm -f /run/lock/*.file_lock
 	rm -f /run/shm/*.shm
 	rm -fr /run/shm/sem.*
