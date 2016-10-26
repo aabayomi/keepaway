@@ -1,1 +1,1 @@
-./evaluate.sh -b debug -sf -g 1.0 -l $*
+./evaluate.sh -b debug -l $*

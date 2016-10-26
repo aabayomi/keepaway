@@ -1,5 +1,6 @@
 *.o
 *.pyc
+CMakeLists.txt.user
 /logs/
 /player/demo_extension.so
 /player/keepaway_player

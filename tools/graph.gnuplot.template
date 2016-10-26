@@ -21,7 +21,7 @@ set border 3
 set xtics nomirror
 set ytics nomirror
 set multiplot
-# set grid
+set grid
 
 # Axes
 # set xrange [0:]

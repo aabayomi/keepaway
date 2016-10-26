@@ -1,4 +1,4 @@
 #!/bin/bash
 
-./run.sh -sfmn $* # need a -q arg option
+./run.sh -sfmnz $* # need a -q arg option
 
