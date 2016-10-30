@@ -5,8 +5,6 @@
 #include "LinearSarsaLearner.h"
 #include "gzstream.h"
 #include <boost/algorithm/string/replace.hpp>
-#include <climits>
-#include <sstream>
 
 #define DETERMINISTIC_GRAPH 1
 
@@ -30,29 +28,29 @@ void SharedData::reset() {
   memset(lastMachineState, 0, sizeof(lastMachineState));
 }
 
-vector<int> SharedData::getLastJointChoice() const {
-  return vector<int>(lastJointChoice,
+choice_t SharedData::getLastJointChoice() const {
+  return choice_t(lastJointChoice,
                      lastJointChoice + HierarchicalFSM::num_keepers);
 }
 
-vector<int> SharedData::getNumChoices() const {
-  vector<int> ret((unsigned long)HierarchicalFSM::num_keepers);
+num_choice_t SharedData::getNumChoices() const {
+  num_choice_t ret((unsigned long) HierarchicalFSM::num_keepers);
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
     ret[i] = numChoices[Memory::ins().K[i]];
   }
   return ret;
 }
 
-vector<string> SharedData::getMachineState() const {
-  vector<string> ret((unsigned long)HierarchicalFSM::num_keepers);
+machine_state_t SharedData::getMachineState() const {
+  machine_state_t ret((unsigned long) HierarchicalFSM::num_keepers);
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
     ret[i] = machineState[Memory::ins().K[i]];
   }
   return ret;
 }
 
-vector<string> SharedData::getLastMachineState() const {
-  vector<string> ret((unsigned long)HierarchicalFSM::num_keepers);
+machine_state_t SharedData::getLastMachineState() const {
+  machine_state_t ret((unsigned long) HierarchicalFSM::num_keepers);
   for (int i = 0; i < HierarchicalFSM::num_keepers; ++i) {
     ret[i] = lastMachineState[i];
   }
@@ -101,14 +99,14 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
   lastJointChoiceIdx = -1;
   lastJointChoiceTime = UnknownTime;
 
-  srand((unsigned int)0);
-  srand48((unsigned int)0);
+  srand((unsigned int) 0);
+  srand48((unsigned int) 0);
   int tmp[2];
   float tmpf[2];
 
   GetTiles(tmp, 1, 1, tmpf, 0); // A dummy call to set the hashing table
-  srand((unsigned int)time(NULL));
-  srand48((unsigned int)time(NULL));
+  srand((unsigned int) time(NULL));
+  srand48((unsigned int) time(NULL));
 
   numTilings = 0;
   minimumTrace = 0.01;
@@ -131,7 +129,7 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
     }
 
     ftruncate(shm_fd, sizeof(SharedData));
-    sharedData = (SharedData *)mmap(
+    sharedData = (SharedData *) mmap(
         0, sizeof(SharedData), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (sharedData == MAP_FAILED) {
       printf("prod: Map failed: %s\n", strerror(errno));
@@ -265,7 +263,7 @@ void LinearSarsaLearner::saveSharedData() {
 }
 
 const vector<int> &
-LinearSarsaLearner::validChoices(const vector<int> &num_choices) {
+LinearSarsaLearner::validChoices(const num_choice_t &num_choices) {
   Assert(num_choices.size() == HierarchicalFSM::num_keepers);
   if (!validChoicesMap.count(num_choices) ||
       !jointChoicesMap.count(num_choices)) {
@@ -300,12 +298,12 @@ void LinearSarsaLearner::loadStaticTransitions(const char *filename) {
   ia >> BOOST_SERIALIZATION_NVP(staticTransitions);
 }
 
-vector<vector<int>>
-LinearSarsaLearner::validChoicesRaw(const vector<int> &num_choices) {
+vector<choice_t>
+LinearSarsaLearner::validChoicesRaw(const num_choice_t &num_choices) {
   if (num_choices.empty())
     return {{}};
 
-  vector<vector<int>> ret;
+  vector<choice_t> ret;
   auto c = validChoicesRaw({num_choices.begin() + 1, num_choices.end()});
   Assert(num_choices[0] > 0);
   for (int i = 0; i < num_choices[0]; ++i) {
@@ -319,7 +317,7 @@ LinearSarsaLearner::validChoicesRaw(const vector<int> &num_choices) {
   return ret;
 }
 
-bool LinearSarsaLearner::isStaticTransition(const vector<string> &machine_state,
+bool LinearSarsaLearner::isStaticTransition(const machine_state_t &machine_state,
                                             int c) {
   return staticTransitions.count(machine_state) &&
          staticTransitions[machine_state].count(c) &&
@@ -328,11 +326,11 @@ bool LinearSarsaLearner::isStaticTransition(const vector<string> &machine_state,
 
 namespace {
 bool dfs(
-    const vector<string> &root,
-    unordered_map<vector<string>,
-                  unordered_map<int, unordered_map<vector<string>, double>>> &G,
-    unordered_set<vector<string>> &visited,
-    unordered_set<vector<string>> &path) {
+    const machine_state_t &root,
+    unordered_map<machine_state_t,
+        unordered_map<int, unordered_map<machine_state_t, double>>> &G,
+    unordered_set<machine_state_t> &visited,
+    unordered_set<machine_state_t> &path) {
   if (path.count(root)) {
     return true;
   }
@@ -351,13 +349,10 @@ bool dfs(
 };
 }
 
-bool LinearSarsaLearner::hasCircle(
-    unordered_map<vector<string>,
-                  unordered_map<int, unordered_map<vector<string>, double>>>
-        &G) {
-  unordered_set<vector<string>> visited;
+bool LinearSarsaLearner::hasCircle(transition_t &G) {
+  unordered_set<machine_state_t> visited;
   for (auto &pa : G) {
-    unordered_set<vector<string>> path;
+    unordered_set<machine_state_t> path;
     if (!visited.count(pa.first) && dfs(pa.first, G, visited, path))
       return true;
   }
@@ -453,7 +448,7 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
       if (current_time == lastJointChoiceTime && lastMachineState.size() &&
           machineState.size() && lastMachineState != machineState) {
         Log.log(101, "LinearSarsaLearner::step: save static transition (%s) + "
-                     "(%d) -> (%s)",
+                    "(%d) -> (%s)",
                 to_prettystring(lastMachineState).c_str(), lastJointChoiceIdx,
                 to_prettystring(machineState).c_str());
         staticTransitions[lastMachineState][lastJointChoiceIdx][machineState] +=
@@ -529,15 +524,15 @@ void LinearSarsaLearner::endEpisode(int current_time) {
 }
 
 int LinearSarsaLearner::loadTiles(double state[],
-                                  const vector<string> &machine_state,
-                                  const vector<int> &num_choices,
+                                  const machine_state_t &machine_state,
+                                  const num_choice_t &num_choices,
                                   int (*tiles)[RL_MAX_NUM_TILINGS]) {
   const int tilingsPerGroup = 32;
 
-  int h = (int)(hash<string>()(to_prettystring(machine_state)) %
-                INT_MAX); // joint machine state
+  int h = (int) (hash<string>()(to_prettystring(machine_state)) %
+                 INT_MAX); // joint machine state
   Log.log(101, "LinearSarsaLearner::loadTiles machine state: [%s], "
-               "num_choices=%d, (hash=%d)",
+              "num_choices=%d, (hash=%d)",
           to_prettystring(machine_state).c_str(),
           validChoices(num_choices).size(), h);
 
@@ -545,7 +540,7 @@ int LinearSarsaLearner::loadTiles(double state[],
   for (int v = 0; v < HierarchicalFSM::num_features; v++) {
     for (auto a : validChoices(num_choices)) {
       GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
-                (float)(state[v] / tileWidths[v]), a, v, h);
+                (float) (state[v] / tileWidths[v]), a, v, h);
     }
     numTilings += tilingsPerGroup;
   }
@@ -565,14 +560,14 @@ int LinearSarsaLearner::loadTiles(double state[],
  * @return
  */
 double LinearSarsaLearner::QValue(double *state,
-                                  const vector<string> &machine_state,
+                                  const machine_state_t &machine_state,
                                   int choice, int (*tiles)[RL_MAX_NUM_TILINGS],
                                   int num_tilings) {
   if (isStaticTransition(machine_state, choice)) {
     if (Log.isInLogLevel(101))
       Log.log(
           101, "LinearSarsaLearner::QValue: static transition Q(s, m=%s, c=%d) "
-               "= V(s, m=%s)",
+              "= V(s, m=%s)",
           to_prettystring(machine_state).c_str(), choice,
           to_prettystring(staticTransitions[machine_state][choice]).c_str());
 
@@ -606,7 +601,7 @@ double LinearSarsaLearner::computeQ(int choice,
 }
 
 double LinearSarsaLearner::Value(double *state,
-                                 const vector<string> &machine_state) {
+                                 const machine_state_t &machine_state) {
   auto tiles = new int[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
   double v = numeric_limits<double>::min();
 
@@ -627,7 +622,7 @@ double LinearSarsaLearner::Value(double *state,
   return v;
 }
 
-int LinearSarsaLearner::selectChoice(const vector<int> &num_choices) {
+int LinearSarsaLearner::selectChoice(const num_choice_t &num_choices) {
   int choice = -1;
 
   if (Log.isInLogLevel(101)) {
@@ -653,7 +648,7 @@ int LinearSarsaLearner::selectChoice(const vector<int> &num_choices) {
   return choice;
 }
 
-int LinearSarsaLearner::argmaxQ(const vector<int> &num_choices) {
+int LinearSarsaLearner::argmaxQ(const num_choice_t &num_choices) {
   int bestAction = 0;
   double bestValue = numeric_limits<double>::min();
   int numTies = 0;
@@ -793,7 +788,7 @@ bool LinearSarsaLearner::loadWeights(const char *filename) {
     return false;
   }
 
-  is.read((char *)weights, RL_MEMORY_SIZE * sizeof(double));
+  is.read((char *) weights, RL_MEMORY_SIZE * sizeof(double));
   colTab->restore(is);
   is.close();
   cerr << "...done" << endl;
@@ -815,7 +810,7 @@ bool LinearSarsaLearner::saveWeights(const char *filename) {
     return false;
   }
 
-  os.write((char *)weights, RL_MEMORY_SIZE * sizeof(double));
+  os.write((char *) weights, RL_MEMORY_SIZE * sizeof(double));
   colTab->save(os);
   os.close();
   return true;

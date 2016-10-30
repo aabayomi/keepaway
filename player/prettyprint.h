@@ -477,11 +477,33 @@ operator<<(basic_ostream<TChar, TCharTraits> &stream, const T &container) {
 }
 
 template<class T>
-string to_prettystring(const T &o) {
+inline string to_prettystring(T &o) {
   stringstream ss;
   ss << o;
   return ss.str();
 }
+
+template<class T>
+inline string to_prettystring(T *o) {
+  stringstream ss;
+  ss << o->getName();
+  return ss.str();
+}
+
+template<class T>
+inline string to_prettystring(const T &o) {
+  stringstream ss;
+  ss << o;
+  return ss.str();
+}
+
+template<class T>
+inline string to_prettystring(const T *o) {
+  stringstream ss;
+  ss << o->getName();
+  return ss.str();
+}
+
 }
 
 #endif  // H_PRETTY_PRINT

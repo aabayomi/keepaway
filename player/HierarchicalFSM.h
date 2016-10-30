@@ -10,15 +10,10 @@
 #include <vector>
 #include "BasicPlayer.h"
 #include "LinearSarsaLearner.h"
+#include "prettyprint.h"
 
 namespace fsm {
 class HierarchicalFSM;
-}
-
-namespace std {
-
-const string &to_string(fsm::HierarchicalFSM *m);
-
 }
 
 namespace fsm {
@@ -188,12 +183,8 @@ public:
   ~Hold();
 
   virtual void run();
-
-private:
-  ChoicePoint<int> *holdCycleChoice;
 };
 
 }
-
 
 #endif //KEEPAWAY_PLAYER_HIERARCHICALFSM_H

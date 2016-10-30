@@ -4,14 +4,6 @@
 
 #include "HierarchicalFSM.h"
 #include "ChoicePoint.h"
-#include <climits>
-#include <cstring>
-#include <sstream>
-
-namespace std {
-
-const string &to_string(fsm::HierarchicalFSM *m) { return m->getName(); }
-}
 
 namespace fsm {
 
@@ -263,11 +255,10 @@ Move::~Move() {
 }
 
 void Move::run() {
-  MakeChoice<int> c1(moveToChoice);
-  auto dir = c1(WM->getCurrentCycle());
-
-  MakeChoice<double> c2(moveSpeedChoice);
-  auto speed = c2(WM->getCurrentCycle());
+  auto c = makeComposedChoice(moveToChoice, moveSpeedChoice);
+  int dir;
+  double speed;
+  tie(dir, speed) = c->operator()(WM->getCurrentCycle());
 
   bool flag = WM->isTmControllBall();
   while (running() && flag == WM->isTmControllBall()) {
@@ -280,9 +271,9 @@ void Move::run() {
     auto r = WM->getKeepawayRectReduced();
     if (r.isInside(target)) {
       auto distance = target.getDistanceTo(WM->getAgentGlobalPosition());
-      int cycles = rint(distance / speed);
+      auto cycles = rint(distance / speed);
       ACT->putCommandInQueue(
-          soc = player->moveToPos(target, 30.0, 1.0, false, cycles));
+          soc = player->moveToPos(target, 30.0, 1.0, false, (int) cycles));
     } else {
       double minDist = std::numeric_limits<double>::max();
       VecPosition refinedTarget;
@@ -308,9 +299,9 @@ void Move::run() {
 
       if (minDist < std::numeric_limits<double>::max()) {
         auto distance = target.getDistanceTo(WM->getAgentGlobalPosition());
-        int cycles = rint(distance / speed);
+        auto cycles = rint(distance / speed);
         ACT->putCommandInQueue(
-            soc = player->moveToPos(refinedTarget, 30.0, 1.0, false, cycles));
+            soc = player->moveToPos(refinedTarget, 30.0, 1.0, false, (int) cycles));
       } else {
         ACT->putCommandInQueue(soc = player->turnBodyToObject(OBJECT_BALL));
         ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
@@ -355,7 +346,7 @@ Pass::Pass(BasicPlayer *p) : HierarchicalFSM(p, "$Pass") {
   }
   passToChoice = new ChoicePoint<int>("@PassTo", parameters);
   passSpeedChoice =
-      new ChoicePoint<PassT>("@PassSpeed", {PASS_FAST, PASS_NORMAL});
+      new ChoicePoint<PassT>("@PassSpeed", {PASS_SLOW, PASS_NORMAL, PASS_FAST});
 }
 
 Pass::~Pass() {
@@ -364,11 +355,10 @@ Pass::~Pass() {
 }
 
 void Pass::run() {
-  MakeChoice<int> c1(passToChoice);
-  auto teammate = c1(WM->getCurrentCycle());
-
-  MakeChoice<PassT> c2(passSpeedChoice);
-  auto speed = c2(WM->getCurrentCycle());
+  auto c = makeComposedChoice(passToChoice, passSpeedChoice);
+  int teammate;
+  PassT speed;
+  tie(teammate, speed) = c->operator()(WM->getCurrentCycle());
 
   while (running() && WM->isBallKickable()) {
     VecPosition tmPos = WM->getGlobalPosition(Memory::ins().K[teammate]);
@@ -376,27 +366,20 @@ void Pass::run() {
     VecPosition target = WM->predictFinalAgentPos(&tmPos, &tmVel);
     ACT->putCommandInQueue(player->directPass(target, speed));
     Log.log(101, "Pass::run action with teammate=%d speed=%s", teammate,
-            speed == PASS_NORMAL ? "normal" : "fast");
+            to_prettystring(speed).c_str());
     Action(this, {to_string(teammate), to_string(speed)})();
   }
 }
 
-Hold::Hold(BasicPlayer *p) : HierarchicalFSM(p, "$Hold") {
-  holdCycleChoice = new ChoicePoint<int>("@HoldCycle", {1, 2, 4, 8});
-}
+Hold::Hold(BasicPlayer *p) : HierarchicalFSM(p, "$Hold") {}
 
-Hold::~Hold() { delete holdCycleChoice; }
+Hold::~Hold() {}
 
 void Hold::run() {
-  MakeChoice<int> c(holdCycleChoice);
-  int n = c(WM->getCurrentCycle());
-  int i = n;
-  while (WM->isBallKickable() && i--) {
-    SoccerCommand soc;
-    ACT->putCommandInQueue(soc = player->holdBall());
-    ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
-    Log.log(101, "Hold::run action with n=%d i=%d", n, i);
-    Action(this, {to_string(n)})();
-  }
+  SoccerCommand soc;
+  ACT->putCommandInQueue(soc = player->holdBall());
+  ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
+  Action(this)();
 }
+
 }

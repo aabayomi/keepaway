@@ -38,6 +38,13 @@ struct hash<vector<T>> {
 
 namespace fsm {
 
+typedef vector<string> machine_state_t;
+typedef vector<int> num_choice_t;
+typedef vector<int> choice_t;
+typedef unordered_map<machine_state_t, \
+    unordered_map<int, \
+        unordered_map<machine_state_t, double>>> transition_t;
+
 struct SharedData {
   double Q[MAX_RL_ACTIONS];
   int tiles[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
@@ -59,13 +66,13 @@ struct SharedData {
   int lastJointChoice[11]; // indexed by K0..Kn
   char lastMachineState[11][MAX_MSG];
 
-  vector<int> getNumChoices() const;
+  num_choice_t getNumChoices() const;
 
-  vector<int> getLastJointChoice() const;
+  choice_t getLastJointChoice() const;
 
-  vector<string> getMachineState() const;
+  machine_state_t getMachineState() const;
 
-  vector<string> getLastMachineState() const;
+  machine_state_t getLastMachineState() const;
 
   void reset();
 };
@@ -111,10 +118,10 @@ public:
 public:
   int lastJointChoiceIdx;
   int lastJointChoiceTime;
-  vector<int> lastJointChoice;
-  vector<string> machineState; // indexed by K0..Kn
-  vector<string> lastMachineState; // indexed by K0..Kn
-  vector<int> numChoices;
+  choice_t lastJointChoice;
+  machine_state_t machineState; // indexed by K0..Kn
+  machine_state_t lastMachineState; // indexed by K0..Kn
+  num_choice_t numChoices;
 
 private:
   bool bLearning;
@@ -146,23 +153,23 @@ private:
 
   int loadTiles(
       double state[],
-      const vector<string> &machine_state,
-      const vector<int> &num_choices,
+      const machine_state_t &machine_state,
+      const num_choice_t &num_choices,
       int (*tiles)[RL_MAX_NUM_TILINGS]);
 
-  int selectChoice(const vector<int> &num_choices);
+  int selectChoice(const num_choice_t &num_choices);
 
   double computeQ(int choice, int (*tiles)[RL_MAX_NUM_TILINGS], int numTilings);
 
   double QValue(double *state,
-                const vector<string> &machine_state,
+                const machine_state_t &machine_state,
                 int choice,
                 int (*tiles)[RL_MAX_NUM_TILINGS],
                 int num_tilings);
 
-  double Value(double *state, const vector<string> &machine_state);
+  double Value(double *state, const machine_state_t &machine_state);
 
-  int argmaxQ(const vector<int> &num_choices);
+  int argmaxQ(const num_choice_t &num_choices);
 
   void updateWeights(double delta, int num_tilings);
 
@@ -176,17 +183,17 @@ private:
 
   void increaseMinTrace();
 
-  const vector<int> &validChoices(const vector<int> &num_choices);
+  const vector<int> &validChoices(const num_choice_t &num_choices);
 
-  vector<vector<int>> validChoicesRaw(const vector<int> &num_choices);
+  vector<choice_t> validChoicesRaw(const num_choice_t &num_choices);
 
   double initialWeight;
   string sharedMemory;
 
-  unordered_map<vector<int>, vector<int>> validChoicesMap;
-  unordered_map<vector<int>, vector<vector<int>>> jointChoicesMap;
-  unordered_map<vector<string>, vector<int>> numChoicesMap;
-  unordered_map<vector<string>, unordered_map<int, unordered_map<vector<string>, double>>> staticTransitions;
+  unordered_map<num_choice_t, vector<int>> validChoicesMap;
+  unordered_map<num_choice_t, vector<choice_t>> jointChoicesMap;
+  unordered_map<machine_state_t, num_choice_t> numChoicesMap;
+  transition_t staticTransitions;
 
   void saveStaticTransitions(const char *filename);
 
@@ -194,10 +201,9 @@ private:
 
   double reward(double tau);
 
-  bool isStaticTransition(const vector<string> &machine_state, int c);
+  bool isStaticTransition(const machine_state_t &machine_state, int c);
 
-  bool hasCircle(
-      unordered_map<vector<string>, unordered_map<int, unordered_map<vector<string>, double>>> &G);
+  bool hasCircle(transition_t &G);
 };
 
 }

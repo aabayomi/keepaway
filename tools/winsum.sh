@@ -19,7 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-MINWINDOW="100"
+MINWINDOW="30"
 WINDOW="`tail $1 -n 1 | awk '{print $1}'`"
 WINDOW="`expr $WINDOW / 10`"
 WINDOW=$(( $WINDOW > $MINWINDOW ? $WINDOW : $MINWINDOW ))

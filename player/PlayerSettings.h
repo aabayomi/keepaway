@@ -64,8 +64,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    GenericValues class and therefore each value in this class can be reached
    through the string name of the corresponding parameter. This may be helpful
    when the parameters are taken from a configuration file. */
-class PlayerSettings : public GenericValues
-{
+class PlayerSettings : public GenericValues {
   double dPlayerConfThr;         /*!< confidence threshold below which player
                                       information is assumed illegal         */
   double dPlayerHighConfThr;     /*!< confidence threshold above which player
@@ -77,7 +76,7 @@ class PlayerSettings : public GenericValues
   double dPlayerWhenToTurnAngle; /*!< angle when to turn to ball when moving */
   double dPlayerWhenToKick;      /*!< percentage of kick power rate when kick
                                       is performed                           */
-  int    iPlayerWhenToIntercept; /*!< how many cycles to ball when intercept */
+  int iPlayerWhenToIntercept; /*!< how many cycles to ball when intercept */
   double dClearBallDist;         /*!< distance before the penalty area to
                                       clear the ball to                      */
   double dClearBallOppMaxDist;   /*!< radius in which opponent has to be to
@@ -88,6 +87,7 @@ class PlayerSettings : public GenericValues
                                       opponents when passing to player.      */
   double dPassEndSpeed;          /*!< end speed ball when passed to teammate */
   double dFastPassEndSpeed;      /*!< end speed ball when passed fast        */
+  double dSlowPassEndSpeed;      /*!< end speed ball when passed fast        */
   double dPassExtraX;            /*!< extra x value added to x coordinate of
                                       player pos to which is passed          */
   double dFractionWaitNoSee;     /*!< % of simulation step that is waited
@@ -107,9 +107,9 @@ class PlayerSettings : public GenericValues
   double dShootRiskProbability;  /*!< This is the probability for the ball to
                                       enter the goal that is used when scoring
                                       with risk                              */
-  int    iCyclesCatchWait;       /*!< Cycles the coach waits after a catch has
+  int iCyclesCatchWait;       /*!< Cycles the coach waits after a catch has
                                       been performed before he shoots.       */
-  int    iServerTimeOut;         /*!< Number of seconds before the soccer
+  int iServerTimeOut;         /*!< Number of seconds before the soccer
                                       server is assumed dead.                */
   double dDribbleAngThr;         /*!< Threshold value for angle difference
                                       that indicates when the agent turns
@@ -120,96 +120,127 @@ class PlayerSettings : public GenericValues
   double dTurnWithBallFreezeThr; /*!< Threshold value for ball speed that
                                       indicates when the ball is frozen in
                                       turnWithBallTo skill.                  */
-  int    iInitialFormation;      /*!< Initial formation for the team.        */
+  int iInitialFormation;      /*!< Initial formation for the team.        */
   double dMaxYPercentage;        /*!< Maximum y percentage of the field width
                                       for the y position in a strategic
                                       position. */
 
 public:
-  PlayerSettings( );
+  PlayerSettings();
 
   // all standard get and set methods
 
-  double getPlayerConfThr        (          ) const;
-  bool   setPlayerConfThr        ( double d );
+  double getPlayerConfThr() const;
 
-  double getPlayerHighConfThr    (          ) const;
-  bool   setPlayerHighConfThr    ( double d );
+  bool setPlayerConfThr(double d);
 
-  double getBallConfThr          (          ) const;
-  bool   setBallConfThr          ( double d );
+  double getPlayerHighConfThr() const;
 
-  double getPlayerDistTolerance  (          ) const;
-  bool   setPlayerDistTolerance  ( double d );
+  bool setPlayerHighConfThr(double d);
 
-  double getPlayerWhenToTurnAngle(          ) const;
-  bool   setPlayerWhenToTurnAngle( double d );
+  double getBallConfThr() const;
 
-  double getPlayerWhenToKick     (          ) const;
-  bool   setPlayerWhenToKick     ( double d );
+  bool setBallConfThr(double d);
 
-  int    getPlayerWhenToIntercept(          ) const;
-  bool   setPlayerWhenToIntercept( int i    );
+  double getPlayerDistTolerance() const;
 
-  double getClearBallDist        (          ) const;
-  bool   setClearBallDist        ( double d );
+  bool setPlayerDistTolerance(double d);
 
-  double getClearBallOppMaxDist  (          ) const;
-  bool   setClearBallOppMaxDist  ( double d );
+  double getPlayerWhenToTurnAngle() const;
 
-  double getClearBallToSideAngle (          ) const;
-  bool   setClearBallToSideAngle ( double d );
+  bool setPlayerWhenToTurnAngle(double d);
 
-  double getConeWidth            (          ) const;
-  bool   setConeWidth            ( double d );
+  double getPlayerWhenToKick() const;
 
-  double getPassEndSpeed         (          ) const;
-  bool   setPassEndSpeed         ( double d );
+  bool setPlayerWhenToKick(double d);
 
-  double getFastPassEndSpeed     (          ) const;
-  bool   setFastPassEndSpeed     ( double d );
+  int getPlayerWhenToIntercept() const;
 
-  double getPassExtraX           (          ) const;
-  bool   setPassExtraX           ( double d );
+  bool setPlayerWhenToIntercept(int i);
 
-  double getFractionWaitNoSee    (          ) const;
-  bool   setFractionWaitNoSee    ( double d );
+  double getClearBallDist() const;
 
-  double getFractionWaitSeeBegin (          ) const;
-  bool   setFractionWaitSeeBegin ( double d );
+  bool setClearBallDist(double d);
 
-  double getFractionWaitSeeEnd   (          ) const;
-  bool   setFractionWaitSeeEnd   ( double d );
+  double getClearBallOppMaxDist() const;
 
-  double getMarkDistance         (          ) const;
-  bool   setMarkDistance         ( double d );
+  bool setClearBallOppMaxDist(double d);
 
-  double getStratAreaRadius      (          ) const;
-  bool   setStratAreaRadius      ( double d );
+  double getClearBallToSideAngle() const;
 
-  double getShootRiskProbability (          ) const;
-  bool   setShootRiskProbability ( double d );
+  bool setClearBallToSideAngle(double d);
 
-  int    getCyclesCatchWait      (          ) const;
-  bool   setCyclesCatchWait      ( int i    );
+  double getConeWidth() const;
 
-  int    getServerTimeOut        (          ) const;
-  bool   setServerTimeOut        ( int i    );
+  bool setConeWidth(double d);
 
-  double getDribbleAngThr        (          ) const;
-  bool   setDribbleAngThr        ( double d );
+  double getPassEndSpeed() const;
 
-  double getTurnWithBallAngThr   (          ) const;
-  bool   setTurnWithBallAngThr   ( double d );
+  bool setPassEndSpeed(double d);
 
-  double getTurnWithBallFreezeThr(          ) const;
-  bool   setTurnWithBallFreezeThr( double d );
+  double getFastPassEndSpeed() const;
 
-  int    getInitialFormation     (          ) const;
-  bool   setInitialFormation     ( int i    );
+  bool setFastPassEndSpeed(double d);
 
-  double getMaxYPercentage       (          ) const;
-  bool   setMaxYPercentage       ( double d );
+  double getSlowPassEndSpeed() const;
+
+  bool setSlowPassEndSpeed(double d);
+
+  double getPassExtraX() const;
+
+  bool setPassExtraX(double d);
+
+  double getFractionWaitNoSee() const;
+
+  bool setFractionWaitNoSee(double d);
+
+  double getFractionWaitSeeBegin() const;
+
+  bool setFractionWaitSeeBegin(double d);
+
+  double getFractionWaitSeeEnd() const;
+
+  bool setFractionWaitSeeEnd(double d);
+
+  double getMarkDistance() const;
+
+  bool setMarkDistance(double d);
+
+  double getStratAreaRadius() const;
+
+  bool setStratAreaRadius(double d);
+
+  double getShootRiskProbability() const;
+
+  bool setShootRiskProbability(double d);
+
+  int getCyclesCatchWait() const;
+
+  bool setCyclesCatchWait(int i);
+
+  int getServerTimeOut() const;
+
+  bool setServerTimeOut(int i);
+
+  double getDribbleAngThr() const;
+
+  bool setDribbleAngThr(double d);
+
+  double getTurnWithBallAngThr() const;
+
+  bool setTurnWithBallAngThr(double d);
+
+  double getTurnWithBallFreezeThr() const;
+
+  bool setTurnWithBallFreezeThr(double d);
+
+  int getInitialFormation() const;
+
+  bool setInitialFormation(int i);
+
+  double getMaxYPercentage() const;
+
+  bool setMaxYPercentage(double d);
 
 
 };

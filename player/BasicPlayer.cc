@@ -1617,6 +1617,8 @@ SoccerCommand BasicPlayer::directPass(VecPosition pos, PassT passType) {
     return kickTo(pos, PS->getPassEndSpeed());
   else if (passType == PASS_FAST)
     return kickTo(pos, PS->getFastPassEndSpeed());
+  else if (passType == PASS_SLOW)
+    return kickTo(pos, PS->getSlowPassEndSpeed());
   else {
     Assert(0);
     return SoccerCommand(CMD_ILLEGAL);
