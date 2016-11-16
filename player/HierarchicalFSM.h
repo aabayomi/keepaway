@@ -38,7 +38,8 @@ public:
   bool bAlive;
   int agentIdx;
   double state[MAX_RL_STATE_VARS]; // current state -- indexed by K0..Kn
-  ObjectT K[11]; // current mapping from index to players
+  ObjectT teammates[11]; // current mapping from index to teammates
+  ObjectT opponents[11]; // current mapping from index to opponents
 
 private:
   std::vector<string> stack;  // self call stack
@@ -87,6 +88,10 @@ protected:
 
   bool running();
 
+  bool isFastestToBall();
+
+  VecPosition refineTarget(VecPosition target);
+
   static std::string getStackStr();
 
 protected:
@@ -131,11 +136,11 @@ public:
   virtual void run();
 
 private:
-  ChoicePoint<HierarchicalFSM *> *choices[2];
+  ChoicePoint<HierarchicalFSM *> *choices;
   HierarchicalFSM *pass;
+  HierarchicalFSM *dribble;
   HierarchicalFSM *hold;
-  HierarchicalFSM *move;
-  HierarchicalFSM *stay;
+  HierarchicalFSM *getopen;
   HierarchicalFSM *intercept;
 };
 
@@ -148,10 +153,9 @@ public:
   virtual void run();
 
 private:
-  ChoicePoint<HierarchicalFSM *> *choice;
   HierarchicalFSM *hold;
-  HierarchicalFSM *move;
-  HierarchicalFSM *stay;
+  HierarchicalFSM *tackle;
+  HierarchicalFSM *mark;
   HierarchicalFSM *intercept;
 };
 
@@ -175,11 +179,33 @@ public:
   virtual void run();
 };
 
-class Intercept : public HierarchicalFSM {
+class GetOpen : public HierarchicalFSM {
 public:
-  Intercept(BasicPlayer *p);
+  GetOpen(BasicPlayer *p);
 
   virtual void run();
+};
+
+class Mark : public HierarchicalFSM {
+public:
+  Mark(BasicPlayer *p);
+
+  ~Mark();
+
+  virtual void run();
+
+private:
+  ChoicePoint<int> *markToChoice;
+};
+
+class Intercept : public HierarchicalFSM {
+public:
+  Intercept(BasicPlayer *p, bool tackle = false);
+
+  virtual void run();
+
+private:
+  bool tackle;
 };
 
 class Pass : public HierarchicalFSM {
@@ -195,11 +221,33 @@ private:
   ChoicePoint<PassT> *passSpeedChoice;
 };
 
+class Dribble : public HierarchicalFSM {
+public:
+  Dribble(BasicPlayer *p);
+
+  virtual ~Dribble();
+
+  virtual void run();
+
+private:
+  ChoicePoint<double> *dribbleToChoice;
+  ChoicePoint<DribbleT> *dribbleSpeedChoice;
+};
+
 class Hold : public HierarchicalFSM {
 public:
   Hold(BasicPlayer *p);
 
   ~Hold();
+
+  virtual void run();
+};
+
+class Tackle : public HierarchicalFSM {
+public:
+  Tackle(BasicPlayer *p);
+
+  ~Tackle();
 
   virtual void run();
 };

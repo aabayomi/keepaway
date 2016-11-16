@@ -2200,10 +2200,10 @@ bool WorldModel::isOppControllBall() {
   return WK0_dist_to_B < getMaximalKickDist(K0);
 }
 
-int WorldModel::getBallRunningStatus() {
+int WorldModel::getBalControllStatus() {
   return (isTmControllBall() << 1) | isOppControllBall();
 }
 
 bool WorldModel::isBallFree() {
-  return getBallRunningStatus() == 0;
+  return getBalControllStatus() == 0;
 }

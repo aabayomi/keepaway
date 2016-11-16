@@ -142,7 +142,7 @@ SoccerCommand Move::execute(BasicPlayer *player, ObjectT K[]) {
   auto r = player->WM->getKeepawayRectReduced();
   if (r.isInside(target)) {
     Log.log(101, "move to target %s", target.str().c_str());
-    player->ACT->putCommandInQueue(soc = player->moveToPos(target, 30.0));
+    player->ACT->putCommandInQueue(soc = player->moveToPos(target, 25.0, 1.0));
   } else {
     double minDist = std::numeric_limits<double>::max();
     VecPosition refinedTarget;
@@ -168,7 +168,7 @@ SoccerCommand Move::execute(BasicPlayer *player, ObjectT K[]) {
 
     if (minDist < std::numeric_limits<double>::max()) {
       Log.log(101, "move to refinedTarget %s", refinedTarget.str().c_str());
-      player->ACT->putCommandInQueue(soc = player->moveToPos(refinedTarget, 30.0));
+      player->ACT->putCommandInQueue(soc = player->moveToPos(refinedTarget, 25.0, 1.0));
     } else {
       Log.log(101, "player->turnBodyToObject( OBJECT_BALL )");
       return Stay().execute(player, K);

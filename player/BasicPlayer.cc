@@ -1506,7 +1506,7 @@ SoccerCommand BasicPlayer::intercept(bool isGoalie) {
 
   if (soc2.isIllegal()) {
     Log.log(101, "soc2 illegal");
-    return moveToPos(WM->getBallPos(), 30.0);
+    return moveToPos(WM->getBallPos(), 25.0);
   }
 
   return soc2;
@@ -2679,18 +2679,12 @@ SoccerCommand BasicPlayer::getOpenForPassFromInRectangle(Rect rect,
   VecPosition bestPoint =
       leastCongestedPointForPassInRectangle(rect, posFrom);
 
-#if USE_DRAW_LOG
-  LogDraw.logCircle( "BestPoint", bestPoint, 1, 100, true,
-           COLOR_TEAL );
-#endif
-
   double buffer = 1.5;
-
   if (WM->getAgentGlobalPosition().getDistanceTo(bestPoint) < buffer) {
     return turnBodyToPoint(WM->getGlobalPosition(OBJECT_BALL));
   } else {
-    return moveToPos(bestPoint,
-                     PS->getPlayerWhenToTurnAngle());
+    Log.log(101, "GetOpen move to %s", to_prettystring(bestPoint).c_str());
+    return moveToPos(bestPoint, 25.0, 1.0);
   }
 }
 
@@ -2707,8 +2701,6 @@ SoccerCommand BasicPlayer::markMostOpenOpponent(ObjectT withBall) {
     if (o == withBall) continue;
     VecPosition point = WM->getGlobalPosition(o);
     // if player is on sidelines, skip
-    if (fabs(point.getY()) == 37)
-      continue;
     int num = WM->getNrInSetInCone(OBJECT_SET_TEAMMATES,
                                    0.3, posFrom, point);
     if (num < min) {
@@ -2723,11 +2715,11 @@ SoccerCommand BasicPlayer::markMostOpenOpponent(ObjectT withBall) {
 
 VecPosition BasicPlayer::leastCongestedPointForPassInRectangle(Rect rect,
                                                                VecPosition posFrom) {
-  int x_granularity = 5; // 5 samples by 5 samples
-  int y_granularity = 5;
+  int x_granularity = 7; // 7 samples by 7 samples
+  int y_granularity = 7;
 
-  double x_buffer = 0.15; // 15% border on each side
-  double y_buffer = 0.15;
+  double x_buffer = 0.10; // 10% border on each side
+  double y_buffer = 0.10;
 
   double x_mesh = rect.getLength() * (1 - 2 * x_buffer) / (x_granularity - 1);
   double y_mesh = rect.getWidth() * (1 - 2 * y_buffer) / (y_granularity - 1);
@@ -2743,13 +2735,10 @@ VecPosition BasicPlayer::leastCongestedPointForPassInRectangle(Rect rect,
 
   for (int i = 0; i < x_granularity; i++) {
     for (int j = 0; j < y_granularity; j++) {
-      tmp = WM->congestion(point = VecPosition(x, y));
-//       LogDraw.logCircle( "congestion", point, 0.3, 1, true,
-//    			 COLOR_WHITE, tmp );
-
+      tmp = WM->congestion(point = VecPosition(x, y), false);
       if (tmp < best_congestion &&
           WM->getNrInSetInCone(OBJECT_SET_OPPONENTS,
-                               0.3, posFrom, point) == 0) {
+                               0.2, posFrom, point) == 0) {
         best_congestion = tmp;
         best_point = point;
       }
@@ -2761,7 +2750,7 @@ VecPosition BasicPlayer::leastCongestedPointForPassInRectangle(Rect rect,
 
   if (best_congestion == 1000) {
     /* take the point out of the rectangle -- meaning no point was valid */
-    best_point = rect.getPosCenter();
+    best_point = WM->getAgentGlobalPosition();
   }
 
   return best_point;

@@ -402,8 +402,8 @@ SoccerCommand KeepawayPlayer::taker()
   for ( int i = 0; i < numT; i++ )
     T[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
   WM->sortClosestTo( T, numT, OBJECT_BALL );
-  if (numT > 1 /*2*/ && T[0] != WM->getAgentObjectType() /*&&
-       T[ 1 ] != WM->getAgentObjectType()*/ ) {
+  if (numT > 2 && T[0] != WM->getAgentObjectType() &&
+      T[1] != WM->getAgentObjectType()) {
     ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS,
                                               OBJECT_BALL );
     ACT->putCommandInQueue( soc = markMostOpenOpponent( withBall ) );

@@ -23,8 +23,8 @@ make clean
 make -j `nproc` release
 
 exec 1>console.log 2>&1                                                              
-for lambda in 0.0 0.125 0.25 0.5; do
-    for initialweight in 0.0 0.125 0.25 0.5; do
+for lambda in 0.125 0.5; do
+    for initialweight in 0.125 0.5; do
         ./train.sh -z -b none -sf -g 1.0 -L $lambda -I $initialweight $* &
     done
 done

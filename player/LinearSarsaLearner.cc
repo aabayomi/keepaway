@@ -36,7 +36,7 @@ choice_t SharedData::getLastJointChoice() const {
 num_choice_t SharedData::getNumChoices() const {
   num_choice_t ret((unsigned long) HierarchicalFSM::numTeammates);
   for (int i = 0; i < HierarchicalFSM::numTeammates; ++i) {
-    ret[i] = numChoices[Memory::ins().K[i]];
+    ret[i] = numChoices[Memory::ins().teammates[i]];
   }
   return ret;
 }
@@ -44,7 +44,7 @@ num_choice_t SharedData::getNumChoices() const {
 machine_state_t SharedData::getMachineState() const {
   machine_state_t ret((unsigned long) HierarchicalFSM::numTeammates);
   for (int i = 0; i < HierarchicalFSM::numTeammates; ++i) {
-    ret[i] = machineState[Memory::ins().K[i]];
+    ret[i] = machineState[Memory::ins().teammates[i]];
   }
   return ret;
 }
@@ -258,8 +258,8 @@ void LinearSarsaLearner::saveSharedData() {
   sharedData->lastJointChoiceTime = lastJointChoiceTime;
 
   for (int i = 0; i < HierarchicalFSM::numTeammates; ++i) {
-    sharedData->numChoices[Memory::ins().K[i]] = numChoices[i];
-    strcpy(sharedData->machineState[Memory::ins().K[i]],
+    sharedData->numChoices[Memory::ins().teammates[i]] = numChoices[i];
+    strcpy(sharedData->machineState[Memory::ins().teammates[i]],
            machineState[i].c_str());
     strcpy(sharedData->lastMachineState[i], lastMachineState[i].c_str());
     sharedData->lastJointChoice[i] = lastJointChoice[i];
@@ -432,8 +432,8 @@ int LinearSarsaLearner::step(int current_time) {
 int LinearSarsaLearner::step(int current_time, int num_choices) {
   SCOPED_LOG
   auto stackStr = HierarchicalFSM::getStackStr();
-  sharedData->numChoices[Memory::ins().K[Memory::ins().agentIdx]] = num_choices;
-  strcpy(sharedData->machineState[Memory::ins().K[Memory::ins().agentIdx]],
+  sharedData->numChoices[Memory::ins().teammates[Memory::ins().agentIdx]] = num_choices;
+  strcpy(sharedData->machineState[Memory::ins().teammates[Memory::ins().agentIdx]],
          stackStr.c_str());
 
   Log.log(101, "LinearSarsaLearner::step agent %d write numChoices %d",

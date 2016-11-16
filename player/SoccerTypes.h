@@ -66,7 +66,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAX_RL_STATE_VARS         128
 #define MAX_RL_ACTIONS            512
 
-#define RL_MEMORY_SIZE (2 << 21)
+#define RL_MEMORY_SIZE (2 << 20)
 #define RL_MAX_NONZERO_TRACES (2 << 15)
 #define RL_MAX_NUM_TILINGS (2 << 12)
 
@@ -464,6 +464,8 @@ enum PassT {
 };
 
 std::ostream &operator<<(std::ostream &out, const PassT value);
+
+std::ostream &operator<<(std::ostream &out, const DribbleT value);
 
 /*! The ClearBallT enumeration contains different clear ball possibilities. */
 enum ClearBallT {

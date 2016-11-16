@@ -50,7 +50,7 @@ void WorldModel::setNumTakers(int iNum) {
 double WorldModel::congestion(VecPosition pos, bool considerMe) {
   double congest = 0;
   if (considerMe && pos != getAgentGlobalPosition())
-    congest = 1 / getAgentGlobalPosition().getDistanceTo(pos);
+    congest += 1 / getAgentGlobalPosition().getDistanceTo(pos);
 
   VecPosition playerPos;
 
