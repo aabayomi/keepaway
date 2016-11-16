@@ -2704,6 +2704,7 @@ SoccerCommand BasicPlayer::markMostOpenOpponent(ObjectT withBall) {
   for (ObjectT o = WM->iterateObjectStart(iIndex, OBJECT_SET_OPPONENTS, dConfThr);
        o != OBJECT_ILLEGAL;
        o = WM->iterateObjectNext(iIndex, OBJECT_SET_OPPONENTS, dConfThr)) {
+    if (o == withBall) continue;
     VecPosition point = WM->getGlobalPosition(o);
     // if player is on sidelines, skip
     if (fabs(point.getY()) == 37)

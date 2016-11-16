@@ -98,6 +98,14 @@ double WorldModel::keeperReward(int lastActionTime) {
 }
 
 int WorldModel::keeperStateVars(double state[]) {
+  return getStateVars(state, getNumKeepers(), getNumTakers());
+}
+
+int WorldModel::takerStateVars(double state[]) {
+  return getStateVars(state, getNumTakers(), getNumKeepers());
+}
+
+int WorldModel::getStateVars(double state[], int numTeammates, int numOpponents) {
   ObjectT K0 = getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
   VecPosition C = getKeepawayRect().getPosCenter();
 
@@ -107,40 +115,41 @@ int WorldModel::keeperStateVars(double state[]) {
 
   double WK0_dist_to_C = getGlobalPosition(K0).getDistanceTo(C);
 
-  int numK = getNumKeepers();
-  int numT = getNumTakers();
-
-  ObjectT K[numK];
-  for (int i = 0; i < numK; i++)
+  ObjectT K[numTeammates];
+  for (int i = 0; i < numTeammates; i++)
     K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
 
-  ObjectT T[numT];
-  for (int i = 0; i < numT; i++)
+  ObjectT T[numOpponents];
+  for (int i = 0; i < numOpponents; i++)
     T[i] = SoccerTypes::getOpponentObjectFromIndex(i);
 
-  double dist_to_K0_K[numK];
-  if (!sortClosestTo(K, numK, K0, dist_to_K0_K))
+  double dist_to_K0_K[numTeammates];
+  if (!sortClosestTo(K, numTeammates, K0, dist_to_K0_K)) {
+    Log.log(101, "WorldModel::getStateVars !sortClosestTo(K, numTeammates, K0, dist_to_K0_K)");
     return 0;
+  }
 
-  double dist_to_K0_T[numT];
-  if (!sortClosestTo(T, numT, K0, dist_to_K0_T))
+  double dist_to_K0_T[numOpponents];
+  if (!sortClosestTo(T, numOpponents, K0, dist_to_K0_T)) {
+    Log.log(101, "WorldModel::getStateVars !sortClosestTo(T, numOpponents, K0, dist_to_K0_T)");
     return 0;
+  }
 
-  double dist_to_C_K[numK];
-  for (int i = 1; i < numK; i++) {
+  double dist_to_C_K[numTeammates];
+  for (int i = 1; i < numTeammates; i++) {
     dist_to_C_K[i] = getGlobalPosition(K[i]).getDistanceTo(C);
   }
 
-  double dist_to_C_T[numT];
-  for (int i = 0; i < numT; i++) {
+  double dist_to_C_T[numOpponents];
+  for (int i = 0; i < numOpponents; i++) {
     dist_to_C_T[i] = getGlobalPosition(T[i]).getDistanceTo(C);
   }
 
-  double nearest_Opp_dist_K[numK];
+  double nearest_Opp_dist_K[numTeammates];
   VecPosition posPB = getGlobalPosition(K0);
-  for (int i = 1; i < numK; i++) {
+  for (int i = 1; i < numTeammates; i++) {
     VecPosition pos = getGlobalPosition(K[i]);
-    for (int j = 0; j < numT; j++) {
+    for (int j = 0; j < numOpponents; j++) {
       double tmp = getGlobalPosition(T[j]).getDistanceTo(pos);
       if (j == 0 || tmp < nearest_Opp_dist_K[i]) {
         nearest_Opp_dist_K[i] = tmp;
@@ -148,10 +157,10 @@ int WorldModel::keeperStateVars(double state[]) {
     }
   }
 
-  double nearest_Opp_ang_K[numK];
-  for (int i = 1; i < numK; i++) {
+  double nearest_Opp_ang_K[numTeammates];
+  for (int i = 1; i < numTeammates; i++) {
     VecPosition pos = getGlobalPosition(K[i]);
-    for (int j = 0; j < numT; j++) {
+    for (int j = 0; j < numOpponents; j++) {
       double tmp = posPB.getAngleBetweenPoints(pos, getGlobalPosition(T[j]));
       if (j == 0 || tmp < nearest_Opp_ang_K[i]) {
         nearest_Opp_ang_K[i] = tmp;
@@ -162,22 +171,22 @@ int WorldModel::keeperStateVars(double state[]) {
   int j = 0;
   state[j++] = WK0_dist_to_C;
 
-  for (int i = 1; i < numK; i++)
+  for (int i = 1; i < numTeammates; i++)
     state[j++] = dist_to_K0_K[i];
 
-  for (int i = 0; i < numT; i++)
+  for (int i = 0; i < numOpponents; i++)
     state[j++] = dist_to_K0_T[i];
 
-  for (int i = 1; i < numK; i++)
+  for (int i = 1; i < numTeammates; i++)
     state[j++] = dist_to_C_K[i];
 
-  for (int i = 0; i < numT; i++)
+  for (int i = 0; i < numOpponents; i++)
     state[j++] = dist_to_C_T[i];
 
-  for (int i = 1; i < numK; i++)
+  for (int i = 1; i < numTeammates; i++)
     state[j++] = nearest_Opp_dist_K[i];
 
-  for (int i = 1; i < numK; i++)
+  for (int i = 1; i < numTeammates; i++)
     state[j++] = nearest_Opp_ang_K[i];
 
   state[j++] = dist_to_K0_B;
@@ -194,6 +203,65 @@ int WorldModel::keeperStateVars(double state[]) {
 // where to put it, though because
 // I want to keep the LinearSarsa
 // class generic.
+
+int WorldModel::getStateRangesAndResolutions(double ranges[],
+                                             double minValues[],
+                                             double resolutions[],
+                                             int numTeammates, int numOpponents) {
+  int j = 0;
+
+  double maxRange = hypot(25, 25);
+
+  ranges[j] = maxRange / 2.0;        // dist_to_K0_center
+  minValues[j] = 0;
+  resolutions[j++] = 2.0;
+
+  for (int i = 1; i < numTeammates; i++) {     // dist_to_K0_Teammate
+    ranges[j] = maxRange;
+    minValues[j] = 0;
+    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 1);
+  }
+
+  for (int i = 0; i < numOpponents; i++) {     // dist_to_K0_Opponent
+    ranges[j] = maxRange;
+    minValues[j] = 0;
+    resolutions[j++] = 3.0 + (i - 1) / (numOpponents - 1);
+  }
+
+  for (int i = 1; i < numTeammates; i++) {     // dist_to_center_Teammate
+    ranges[j] = maxRange / 2.0;
+    minValues[j] = 0;
+    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 1);
+  }
+
+  for (int i = 0; i < numOpponents; i++) {     // dist_to_center_Opponent
+    ranges[j] = maxRange / 2.0;
+    minValues[j] = 0;
+    resolutions[j++] = 3.0;
+  }
+
+  for (int i = 1; i < numTeammates; i++) {     // nearest_Opp_dist_Teammate
+    ranges[j] = maxRange / 2.0;
+    minValues[j] = 0;
+    resolutions[j++] = 4.0;
+  }
+
+  for (int i = 1; i < numTeammates; i++) {     // nearest_Opp_ang_Teammate
+    ranges[j] = 180;
+    minValues[j] = 0;
+    resolutions[j++] = 10.0;
+  }
+
+  ranges[j] = maxRange;        // dist_to_K0_B
+  minValues[j] = 0.0;
+  resolutions[j++] = 1.0;
+
+  ranges[j] = maxRange / 2.0;        // dist_to_C_B
+  minValues[j] = 0.0;
+  resolutions[j++] = 2.0;
+
+  return j;
+}
 
 // Yaxin: changed from keeperTileWidths to keeperResolutions and keeperRanges,
 int WorldModel::keeperStateRangesAndResolutions(
@@ -213,61 +281,28 @@ int WorldModel::keeperStateRangesAndResolutions(
     return 0;
   }
 
-  int j = 0;
-
-  double maxRange = hypot(25, 25);
-
-  ranges[j] = maxRange / 2.0;        // dist_to_K0_center
-  minValues[j] = 0;
-  resolutions[j++] = 2.0;
-
-  for (int i = 1; i < numK; i++) {     // dist_to_K0_Teammate
-    ranges[j] = maxRange;
-    minValues[j] = 0;
-    resolutions[j++] = 2.0 + (i - 1) / (numK - 2);
-  }
-
-  for (int i = 0; i < numT; i++) {     // dist_to_K0_Opponent
-    ranges[j] = maxRange;
-    minValues[j] = 0;
-    resolutions[j++] = 3.0 + (i - 1) / (numT - 1);
-  }
-
-  for (int i = 1; i < numK; i++) {     // dist_to_center_Teammate
-    ranges[j] = maxRange / 2.0;
-    minValues[j] = 0;
-    resolutions[j++] = 2.0 + (i - 1) / (numK - 2);
-  }
-
-  for (int i = 0; i < numT; i++) {     // dist_to_center_Opponent
-    ranges[j] = maxRange / 2.0;
-    minValues[j] = 0;
-    resolutions[j++] = 3.0;
-  }
-
-  for (int i = 1; i < numK; i++) {     // nearest_Opp_dist_Teammate
-    ranges[j] = maxRange / 2.0;
-    minValues[j] = 0;
-    resolutions[j++] = 4.0;
-  }
-
-  for (int i = 1; i < numK; i++) {     // nearest_Opp_ang_Teammate
-    ranges[j] = 180;
-    minValues[j] = 0;
-    resolutions[j++] = 10.0;
-  }
-
-  ranges[j] = maxRange;        // dist_to_K0_B
-  minValues[j] = 0.0;
-  resolutions[j++] = 1.0;
-
-  ranges[j] = maxRange / 2.0;        // dist_to_C_B
-  minValues[j] = 0.0;
-  resolutions[j++] = 2.0;
-
-  return j;
+  return getStateRangesAndResolutions(ranges, minValues, resolutions, numK, numT);
 }
 
+int WorldModel::takerStateRangesAndResolutions(
+    double ranges[],
+    double minValues[],
+    double resolutions[],
+    int numK, int numT) {
+  if (numK < 3) {
+    cerr << "keeperTileWidths: num keepers must be at least 3, found: "
+         << numK << endl;
+    return 0;
+  }
+
+  if (numT < 2) {
+    cerr << "keeperTileWidths: num takers must be at least 2, found: "
+         << numT << endl;
+    return 0;
+  }
+
+  return getStateRangesAndResolutions(ranges, minValues, resolutions, numT, numK);
+}
 
 void WorldModel::setMoveSpeed(double speed) {
   m_moveSpeed = speed;

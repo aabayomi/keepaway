@@ -75,7 +75,7 @@ void KeepawayPlayer::mainLoop( )
   if (!WM->waitForNewInformation()) bContLoop = false;
   if (bContLoop) WM->updateAll();
 
-  if (WM->getSide() == SIDE_RIGHT || SA) { // joint option learner or taker
+  if (/*WM->getSide() == SIDE_RIGHT ||*/ SA) { // joint option learner
     if (!WM->waitForNewInformation()) bContLoop = false;
 
     while (bContLoop)                                 // as long as server alive
@@ -123,8 +123,14 @@ void KeepawayPlayer::mainLoop( )
         bContLoop = false;
     }
   } else { // hierarchical FSM learner
-    fsm::Keeper *keeper = new fsm::Keeper(this);
-    fsm::Run(keeper).operator()();
+    fsm::HierarchicalFSM *player = 0;
+    if (WM->getSide() == SIDE_LEFT) {
+      player = new fsm::Keeper(this);
+    } else {
+      player = new fsm::Taker(this);
+    }
+    fsm::Run(player).operator()();
+    delete player;
   }
 
   // shutdown, print hole and number of players seen statistics
@@ -355,59 +361,60 @@ SoccerCommand KeepawayPlayer::taker()
   }
 
   // Maintain possession if you have the ball.
-  if ( WM->isBallKickable() &&
-       WM->getClosestInSetTo( OBJECT_SET_TEAMMATES, OBJECT_BALL) ==
-       WM->getAgentObjectType() ) {
+  if (WM->isBallKickable()) {
     ACT->putCommandInQueue( soc = holdBall( 0.3 ) );
-    Log.log(101, "holdBall( 0.3 )");
     return soc;
   }
 
-  // If not first (or second) closest, then mark open opponent
+  if (WM->getProbTackleSucceeds(WM->getAgentObjectType()) > 0.75) {
+    ACT->putCommandInQueue(soc = tackle());
+    return soc;
+  }
+
+  if (WM->isBallFree()) { // ball free
+    map<int, set<int >> iCycle;
+    int agentCycle = INT_MAX;
+    for (int i = 0; i < WM->getNumTakers(); ++i) {
+      int tmp = INT_MAX;
+      auto o = SoccerTypes::getTeammateObjectFromIndex(i);
+      SoccerCommand illegal;
+      WM->predictCommandToInterceptBall(o, illegal, &tmp);
+      iCycle[tmp].insert(o);
+      if (o == WM->getAgentObjectType())
+        agentCycle = tmp;
+      Log.log(101, "Taker::run ballFree teammate idx %d iCycle %d", i,
+              tmp);
+    }
+
+    if (agentCycle < 100
+        && *iCycle.begin()->second.begin() == WM->getAgentObjectType()) {
+      Log.log(101, "Taker::run ballFree agentCycle %d = minCycle %d",
+              agentCycle, agentCycle);
+      ACT->putCommandInQueue(soc = intercept(false));
+      ACT->putCommandInQueue(turnNeckToObject(OBJECT_BALL, soc));
+      return soc;
+    }
+  }
+
+  // If not first, then mark open opponent
   int numT = WM->getNumTakers();
-  ObjectT T[ 11 ];
+  ObjectT T[numT];
   for ( int i = 0; i < numT; i++ )
     T[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
   WM->sortClosestTo( T, numT, OBJECT_BALL );
-
-  if (numT > 1 && T[0] != WM->getAgentObjectType() &&
-      T[ 1 ] != WM->getAgentObjectType() ) {
+  if (numT > 1 /*2*/ && T[0] != WM->getAgentObjectType() /*&&
+       T[ 1 ] != WM->getAgentObjectType()*/ ) {
     ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS,
                                               OBJECT_BALL );
-    Log.log(101, "markMostOpenOpponent( withBall )");
     ACT->putCommandInQueue( soc = markMostOpenOpponent( withBall ) );
     ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
+    Log.log(101, "Taker::run mark");
     return soc;
   }
 
-  // If teammate has it, don't mess with it
-  double dDist = std::numeric_limits<double>::max();
-  ObjectT closest = WM->getClosestInSetTo( OBJECT_SET_PLAYERS,
-                                           OBJECT_BALL, &dDist );
-
-  if ( SoccerTypes::isTeammate( closest ) &&
-       closest != WM->getAgentObjectType() &&
-       dDist < WM->getMaximalKickDist(closest)) {
-    Log.log(101, "turnBodyToObject( OBJECT_BALL )");
-    ACT->putCommandInQueue( soc = turnBodyToObject( OBJECT_BALL ) );
-    ACT->putCommandInQueue( alignNeckWithBody() );
-    return soc;
-  }
-
-  closest = WM->getClosestInSetTo(OBJECT_SET_OPPONENTS,
-                                  OBJECT_BALL, &dDist);
-
-  if (SoccerTypes::isOpponent(closest) &&
-      dDist < WM->getMaximalKickDist(closest)) { // opp can kick
-    Log.log(101, "move to ball");
-    soc = moveToPos(WM->getBallPos(), 30.0);
-  }
-  else {
-    Log.log(101, "intercept");
-    soc = intercept( false );
-  }
-
-  ACT->putCommandInQueue( soc );
+  // Otherwise try to intercept the ball
+  Log.log(101, "Taker::run try to intercept the ball");
+  ACT->putCommandInQueue(soc = intercept(false));
   ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
   return soc;
 }

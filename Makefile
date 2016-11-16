@@ -29,7 +29,7 @@ cleanall:
 	rm -f /run/shm/*.shm
 	rm -fr /run/shm/sem.*
 	rm -fr Debug Release
-	rm -fr Q*.gz logs/* *.lock core core.* vgcore.* 
+	rm -fr keeper_Q*.gz taker_Q*.gz logs/* *.lock core core.* vgcore.* 
 	rm -fr *.lock console.log nohup.out *.dot *.xml
 	./kill.sh 
 	killall -q keepaway_player 1>/dev/null 2>&1

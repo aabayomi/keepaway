@@ -26,9 +26,9 @@ void Memory::resetState() {
 string Memory::to_string() {
   stringstream ss;
   PRINT_VALUE_STREAM(ss, agentIdx);
-  PRINT_VALUE_STREAM(ss, vector<ObjectT>(K, K + HierarchicalFSM::num_keepers));
+  PRINT_VALUE_STREAM(ss, vector<ObjectT>(K, K + HierarchicalFSM::numTeammates));
   PRINT_VALUE_STREAM(
-      ss, vector<double>(state, state + HierarchicalFSM::num_features));
+      ss, vector<double>(state, state + HierarchicalFSM::numFeatures));
   PRINT_VALUE_STREAM(ss, stack);
 
   return ss.str();
@@ -50,8 +50,9 @@ void Memory::PopStack() {
   }
 }
 
-int HierarchicalFSM::num_features;
-int HierarchicalFSM::num_keepers;
+int HierarchicalFSM::numFeatures;
+int HierarchicalFSM::numTeammates;
+int HierarchicalFSM::numOpponents;
 
 HierarchicalFSM::HierarchicalFSM(BasicPlayer *p, const std::string &name)
     : player(p), name(name) {
@@ -116,31 +117,29 @@ string HierarchicalFSM::getState() {
     return "ball lost";
   }
 
-  int numK = WM->getNumKeepers();
-  Assert(numK == num_keepers);
-
-  int features = WM->keeperStateVars(Memory::ins().state);
-  Assert(features == 0 || features == num_features);
-  if (features != num_features)
+  int features = WM->getStateVars(Memory::ins().state, numTeammates, numOpponents);
+  if (features != numFeatures) {
     return "features != SA->getNumFeatures()";
+  }
 
-  for (int i = 0; i < numK; i++)
+  for (int i = 0; i < numTeammates; i++)
     Memory::ins().K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
 
   ObjectT K0 = WM->getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
-  if (!WM->sortClosestTo(Memory::ins().K, numK, K0))
+  if (!WM->sortClosestTo(Memory::ins().K, numTeammates, K0))
     return "!WM->sortClosestTo(K, numK, K0)";
-  if (K0 != Memory::ins().K[0])
+  if (K0 != Memory::ins().K[0]) {
     return "K0 != K[0]";
+  }
 
   auto &agentIdx = Memory::ins().agentIdx;
   agentIdx = 0;
-  while (agentIdx < numK &&
+  while (agentIdx < numTeammates &&
          Memory::ins().K[agentIdx] != WM->getAgentObjectType())
     agentIdx += 1;
-  Assert(agentIdx < numK);
+  Assert(agentIdx < numTeammates);
 
-  if (agentIdx >= numK)
+  if (agentIdx >= numTeammates)
     return "agentIdx >= numK";
   return "";
 }
@@ -158,16 +157,25 @@ string HierarchicalFSM::getStackStr() {
   return str;
 }
 
-void HierarchicalFSM::initialize(int numFeatures, int numKeepers, bool bLearn,
+void HierarchicalFSM::initialize(int numFeatures_, int numKeepers_, int numTakers_, bool bLearn,
                                  double widths[], double Gamma, double Lambda,
                                  double initialWeight, bool qLearning,
                                  string loadWeightsFile,
-                                 string saveWeightsFile) {
-  num_features = numFeatures;
-  num_keepers = numKeepers;
+                                 string saveWeightsFile,
+                                 string teamName) {
+  numFeatures = numFeatures_;
+
+  if (teamName == "keepers") {
+    numTeammates = numKeepers_;
+    numOpponents = numTakers_;
+  } else {
+    numTeammates = numTakers_;
+    numOpponents = numKeepers_;
+  }
+
   LinearSarsaLearner::ins().initialize(bLearn, widths, Gamma, Lambda,
                                        initialWeight, qLearning,
-                                       loadWeightsFile, saveWeightsFile);
+                                       loadWeightsFile, saveWeightsFile, teamName);
 }
 
 Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "{") {
@@ -203,10 +211,10 @@ void Keeper::run() {
     }
 
     Log.log(101, "Keeper::run agentIdx %d", Memory::ins().agentIdx);
-    if (!WM->isBallKickable() && !WM->isTmControllBall()) { // ball free
+    if (WM->isBallFree()) { // ball free
       int minCycle = INT_MAX;
       int agentCycle = INT_MAX;
-      for (int i = 0; i < WM->getNumKeepers(); ++i) {
+      for (int i = 0; i < numTeammates; ++i) {
         int iCycle = INT_MAX;
         auto o = Memory::ins().K[i];
         SoccerCommand illegal;
@@ -218,7 +226,7 @@ void Keeper::run() {
                 iCycle);
       }
 
-      if (agentCycle == minCycle) {
+      if (agentCycle == minCycle/* && minCycle < 100*/) {
         Log.log(101, "Keeper::run ballFree agentCycle %d = minCycle %d",
                 agentCycle, minCycle);
         Run(intercept).operator()();
@@ -243,10 +251,78 @@ void Keeper::run() {
   Log.log(101, "Keeper::run exit");
 }
 
+
+Taker::Taker(BasicPlayer *p) : HierarchicalFSM(p, "{") {
+  hold = new Hold(p);
+  move = new Move(p);
+  stay = new Stay(p);
+  intercept = new Intercept(p);
+
+  choice = new ChoicePoint<HierarchicalFSM *>("@Free", {stay, move});
+}/* && minCycle < 100*/
+
+Taker::~Taker() {
+  delete choice;
+
+  delete hold;
+  delete move;
+  delete stay;
+  delete intercept;
+}
+
+void Taker::run() {
+  while (WM->getCurrentCycle() < 1)
+    action(false);
+
+  while (Memory::ins().bAlive) {
+    if (WM->isNewEpisode()) {
+      LinearSarsaLearner::ins().endEpisode(WM->getCurrentCycle());
+      WM->setNewEpisode(false);
+    }
+
+    Log.log(101, "Taker::run agentIdx %d", Memory::ins().agentIdx);
+    if (WM->isBallFree()) { // ball free
+      int minCycle = INT_MAX;
+      int agentCycle = INT_MAX;
+      for (int i = 0; i < numTeammates; ++i) {
+        int iCycle = INT_MAX;
+        auto o = Memory::ins().K[i];
+        SoccerCommand illegal;
+        WM->predictCommandToInterceptBall(o, illegal, &iCycle);
+        minCycle = min(minCycle, iCycle);
+        if (o == WM->getAgentObjectType())
+          agentCycle = iCycle;
+        Log.log(101, "Taker::run ballFree teammate idx %d iCycle %d", i,
+                iCycle);
+      }
+
+      if (agentCycle == minCycle/* && minCycle < 100*/) {
+        Log.log(101, "Taker::run ballFree agentCycle %d = minCycle %d",
+                agentCycle, minCycle);
+        Run(intercept).operator()();
+      } else {
+        MakeChoice<HierarchicalFSM *> c(choice);
+        auto m = c(WM->getCurrentCycle());
+        Run(m).operator()();
+      }
+    } else {
+      if (WM->isBallKickable()) {
+        Run(hold).operator()();
+      } else {
+        MakeChoice<HierarchicalFSM *> c(choice);
+        auto m = c(WM->getCurrentCycle());
+        Run(m).operator()();
+      }
+    }
+  }
+
+  Log.log(101, "Taker::run exit");
+}
+
 Move::Move(BasicPlayer *p) : HierarchicalFSM(p, "$Move") {
   moveToChoice = new ChoicePoint<int>("@MoveTo", {0, 1, 2, 3});
   moveSpeedChoice = new ChoicePoint<double>(
-      "@MoveSpeed", {SS->getPlayerSpeedMax() / 2.0, SS->getPlayerSpeedMax()});
+      "@MoveSpeed", {/*SS->getPlayerSpeedMax() / 2.0, */SS->getPlayerSpeedMax()});
 }
 
 Move::~Move() {
@@ -260,8 +336,8 @@ void Move::run() {
   double speed;
   tie(dir, speed) = c->operator()(WM->getCurrentCycle());
 
-  bool flag = WM->isTmControllBall();
-  while (running() && flag == WM->isTmControllBall()) {
+  int status = WM->getBallRunningStatus();
+  while (running() && status == WM->getBallRunningStatus()) {
     SoccerCommand soc;
     VecPosition target = WM->getAgentGlobalPosition() +
                          (WM->getBallPos() - WM->getAgentGlobalPosition())
@@ -317,8 +393,8 @@ void Move::run() {
 Stay::Stay(BasicPlayer *p) : HierarchicalFSM(p, "$Stay") {}
 
 void Stay::run() {
-  bool flag = WM->isTmControllBall();
-  while (running() && flag == WM->isTmControllBall()) {
+  int status = WM->getBallRunningStatus();
+  while (running() && status == WM->getBallRunningStatus()) {
     SoccerCommand soc;
     ACT->putCommandInQueue(soc = player->turnBodyToObject(OBJECT_BALL));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
@@ -330,7 +406,8 @@ void Stay::run() {
 Intercept::Intercept(BasicPlayer *p) : HierarchicalFSM(p, "$Intercept") {}
 
 void Intercept::run() {
-  while (running() && !WM->isTmControllBall()) {
+  int status = WM->getBallRunningStatus();
+  while (running() && status == WM->getBallRunningStatus()) {
     SoccerCommand soc;
     ACT->putCommandInQueue(soc = player->intercept(false));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
@@ -341,12 +418,12 @@ void Intercept::run() {
 
 Pass::Pass(BasicPlayer *p) : HierarchicalFSM(p, "$Pass") {
   vector<int> parameters;
-  for (int i = 1; i < num_keepers; ++i) {
+  for (int i = 1; i < numTeammates; ++i) {
     parameters.push_back(i);
   }
   passToChoice = new ChoicePoint<int>("@PassTo", parameters);
   passSpeedChoice =
-      new ChoicePoint<PassT>("@PassSpeed", {PASS_SLOW, PASS_NORMAL, PASS_FAST});
+      new ChoicePoint<PassT>("@PassSpeed", {/*PASS_SLOW, */PASS_NORMAL, PASS_FAST});
 }
 
 Pass::~Pass() {

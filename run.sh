@@ -12,6 +12,7 @@ LAMBDA="0.5"
 INITIALWEIGHT="0.5"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
+LEARNING="$LEARNING --taker-learn --taker-policy=learned"
 LOGDIR="logs"
 QFILE="Q"
 QFILE2=""
@@ -29,7 +30,7 @@ while getopts  "b:g:L:q:I:lfmsnzMQ" flag; do
         L) LAMBDA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         I) INITIALWEIGHT="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         b) BUILD="$OPTARG" ;;
-        n) LEARNING="--keeper-policy=learned!" ;;
+        n) LEARNING="--keeper-policy=learned! --taker-policy=learned!" ;;
         q) QFILE2="$OPTARG" ;;
         M) MEMORYCHECK="--memory-check" ;;
     esac
@@ -74,8 +75,10 @@ fi
 CONSOLE_LOG="$LOGDIR/`basename $QFILE .gz`.console"
 
 ulimit -c unlimited
-./keepaway.py $MEMORYCHECK $LEARNING \
-    --keeper-output=$QFILE --keeper-input=$QFILE \
+./keepaway.py --taker-count=2 --keeper-count=3 \
+    $MEMORYCHECK $LEARNING \
+    --keeper-output="keeper_$QFILE" --keeper-input="keeper_$QFILE" \
+    --taker-output="taker_$QFILE" --taker-input="taker_$QFILE" \
     $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
     $HIERARCHICALFSM --gamma=$GAMMA --Lambda=$LAMBDA\
     --initial-weight=$INITIALWEIGHT \

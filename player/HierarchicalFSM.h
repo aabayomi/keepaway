@@ -98,6 +98,7 @@ public:
 
   static void initialize(int numFeatures,
                          int numKeepers,
+                         int numTakers,
                          bool bLearn,
                          double widths[],
                          double gamma,
@@ -105,7 +106,8 @@ public:
                          double initialWeight,
                          bool qLearning,
                          string loadWeightsFile,
-                         string saveWeightsFile);
+                         string saveWeightsFile,
+                         string teamName);
 
 protected:
   ActHandler *ACT; /*!< ActHandler to which commands can be sent        */
@@ -115,8 +117,9 @@ protected:
   ChoicePoint<int> *dummyChoice;
 
 public:
-  static int num_features;
-  static int num_keepers;
+  static int numFeatures;
+  static int numTeammates;
+  static int numOpponents;
 };
 
 class Keeper : public HierarchicalFSM {
@@ -130,6 +133,22 @@ public:
 private:
   ChoicePoint<HierarchicalFSM *> *choices[2];
   HierarchicalFSM *pass;
+  HierarchicalFSM *hold;
+  HierarchicalFSM *move;
+  HierarchicalFSM *stay;
+  HierarchicalFSM *intercept;
+};
+
+class Taker : public HierarchicalFSM {
+public:
+  Taker(BasicPlayer *p);
+
+  ~Taker();
+
+  virtual void run();
+
+private:
+  ChoicePoint<HierarchicalFSM *> *choice;
   HierarchicalFSM *hold;
   HierarchicalFSM *move;
   HierarchicalFSM *stay;
@@ -185,6 +204,22 @@ public:
   virtual void run();
 };
 
+}
+
+namespace std {
+template<>
+inline string to_prettystring(fsm::HierarchicalFSM *&o) {
+  stringstream ss;
+  ss << o->getName();
+  return ss.str();
+}
+
+template<>
+inline string to_prettystring(const fsm::HierarchicalFSM *&o) {
+  stringstream ss;
+  ss << o->getName();
+  return ss.str();
+}
 }
 
 #endif //KEEPAWAY_PLAYER_HIERARCHICALFSM_H

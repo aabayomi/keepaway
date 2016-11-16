@@ -38,6 +38,9 @@ for var in "$@"; do
     ./hist.sh $var $output
 done
 
+sed -i '$ s/...$//g' graph.gnuplot
+sed -i '$ s/...$//g' hist.gnuplot
+
 gnuplot graph.gnuplot
 gnuplot hist.gnuplot
 

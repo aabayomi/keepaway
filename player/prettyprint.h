@@ -484,23 +484,9 @@ inline string to_prettystring(T &o) {
 }
 
 template<class T>
-inline string to_prettystring(T *o) {
-  stringstream ss;
-  ss << o->getName();
-  return ss.str();
-}
-
-template<class T>
 inline string to_prettystring(const T &o) {
   stringstream ss;
   ss << o;
-  return ss.str();
-}
-
-template<class T>
-inline string to_prettystring(const T *o) {
-  stringstream ss;
-  ss << o->getName();
   return ss.str();
 }
 
