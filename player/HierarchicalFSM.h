@@ -90,7 +90,7 @@ protected:
 
   bool isFastestToBall();
 
-  VecPosition refineTarget(VecPosition target);
+  VecPosition refineTarget(VecPosition target, VecPosition backup);
 
   static std::string getStackStr();
 
@@ -136,12 +136,17 @@ public:
   virtual void run();
 
 private:
-  ChoicePoint<HierarchicalFSM *> *choices;
+  ChoicePoint<HierarchicalFSM *> *choice_ball;
+  ChoicePoint<HierarchicalFSM *> *choice_free;
+
   HierarchicalFSM *pass;
+  HierarchicalFSM *pass_random;
   HierarchicalFSM *dribble;
   HierarchicalFSM *hold;
-  HierarchicalFSM *getopen;
+  HierarchicalFSM *move;
+  HierarchicalFSM *stay;
   HierarchicalFSM *intercept;
+  HierarchicalFSM *getopen;
 };
 
 class Taker : public HierarchicalFSM {
@@ -153,9 +158,13 @@ public:
   virtual void run();
 
 private:
+  ChoicePoint<HierarchicalFSM *> *choice_free;
+  ChoicePoint<bool> *choice_tackle;
+
   HierarchicalFSM *hold;
   HierarchicalFSM *tackle;
-  HierarchicalFSM *mark;
+  HierarchicalFSM *move;
+  HierarchicalFSM *stay;
   HierarchicalFSM *intercept;
 };
 
@@ -210,13 +219,16 @@ private:
 
 class Pass : public HierarchicalFSM {
 public:
-  Pass(BasicPlayer *p);
+  Pass(BasicPlayer *p, bool random = false);
 
   virtual ~Pass();
 
   virtual void run();
 
+  void passTo(int tm, PassT speed);
+
 private:
+  bool random;
   ChoicePoint<int> *passToChoice;
   ChoicePoint<PassT> *passSpeedChoice;
 };

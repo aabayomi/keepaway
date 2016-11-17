@@ -5,7 +5,8 @@
 #include "HierarchicalFSM.h"
 #include "ChoicePoint.h"
 
-#define TAKER_LEARN 0
+#define KEEPER_LEARN 1
+#define TAKER_LEARN 1
 
 namespace fsm {
 
@@ -157,7 +158,7 @@ string HierarchicalFSM::getState() {
   return "";
 }
 
-VecPosition HierarchicalFSM::refineTarget(VecPosition target) {
+VecPosition HierarchicalFSM::refineTarget(VecPosition target, VecPosition backup) {
   auto r = WM->getKeepawayRectReduced();
   if (r.isInside(target)) {
     return target;
@@ -188,7 +189,7 @@ VecPosition HierarchicalFSM::refineTarget(VecPosition target) {
       return refinedTarget;
     }
 
-    return target;
+    return backup;
   }
 }
 
@@ -253,22 +254,29 @@ void HierarchicalFSM::initialize(int numFeatures_, int numKeepers_, int numTaker
 
 Keeper::Keeper(BasicPlayer *p) : HierarchicalFSM(p, "{") {
   pass = new Pass(p);
+  pass_random = new Pass(p, true);
   dribble = new Dribble(p);
   hold = new Hold(p);
-  getopen = new GetOpen(p);
+  move = new Move(p);
+  stay = new Stay(p);
   intercept = new Intercept(p);
+  getopen = new GetOpen(p);
 
-  choices = new ChoicePoint<HierarchicalFSM *>("@Ball", {pass, hold});
+  choice_ball = new ChoicePoint<HierarchicalFSM *>("@Ball", {pass, hold});
+  choice_free = new ChoicePoint<HierarchicalFSM *>("@Free", {stay, move});
 }
 
 Keeper::~Keeper() {
-  delete choices;
+  delete choice_ball;
+  delete choice_free;
 
   delete pass;
   delete dribble;
   delete hold;
-  delete getopen;
+  delete move;
+  delete stay;
   delete intercept;
+  delete getopen;
 }
 
 void Keeper::run() {
@@ -283,15 +291,28 @@ void Keeper::run() {
 
     Log.log(101, "Keeper::run agentIdx %d", Memory::ins().agentIdx);
 
+#if KEEPER_LEARN
     if (WM->isBallKickable()) {
-      MakeChoice<HierarchicalFSM *> c(choices);
-      auto m = c(WM->getCurrentCycle());
+      MakeChoice<HierarchicalFSM *> choice(choice_ball);
+      auto m = choice(WM->getCurrentCycle());
       Run(m).operator()();
+    } else if (isFastestToBall()) {
+      Run(intercept).operator()();
+    } else {
+      MakeChoice<HierarchicalFSM *> choice(choice_free);
+      auto m = choice(WM->getCurrentCycle());
+      Run(m).operator()();
+    }
+#else
+    if (WM->isBallKickable()) {
+      if (rand() % 2) Run(hold).operator()();
+      else Run(pass_random).operator()();
     } else if (isFastestToBall()) {
       Run(intercept).operator()();
     } else {
       Run(getopen).operator()();
     }
+#endif
   }
 
   Log.log(101, "Keeper::run exit");
@@ -301,14 +322,20 @@ void Keeper::run() {
 Taker::Taker(BasicPlayer *p) : HierarchicalFSM(p, "{") {
   hold = new Hold(p);
   tackle = new Tackle(p);
-  mark = new Mark(p);
+  move = new Move(p);
+  stay = new Stay(p);
   intercept = new Intercept(p, true);
+
+  choice_free = new ChoicePoint<HierarchicalFSM *>("@Free", {stay, move});
+  choice_tackle = new ChoicePoint<bool>("@Tackle", {true, false});
 }
 
 Taker::~Taker() {
+  delete choice_free;
+  delete choice_tackle;
+
   delete hold;
   delete tackle;
-  delete mark;
   delete intercept;
 }
 
@@ -328,14 +355,23 @@ void Taker::run() {
     if (WM->isBallKickable()) {
       Run(hold).operator()();
     }
-    else if (WM->getProbTackleSucceeds(WM->getAgentObjectType()) > 0.75) {
-      Run(tackle).operator()();
-    }
-    else if (isFastestToBall() || Memory::ins().agentIdx == 0) {
-      Run(intercept).operator()();
-    }
     else {
-      Run(mark).operator()();
+      if (WM->getProbTackleSucceeds(WM->getAgentObjectType()) > 0.0) {
+        MakeChoice<bool> choice(choice_tackle);
+        auto t = choice(WM->getCurrentCycle());
+        if (t) {
+          Run(tackle).operator()();
+          continue;
+        }
+      }
+
+      if (isFastestToBall()) {
+        Run(intercept).operator()();
+      } else {
+        MakeChoice<HierarchicalFSM *> choice(choice_free);
+        auto m = choice(WM->getCurrentCycle());
+        Run(m).operator()();
+      }
     }
 #else
     if (WM->isBallKickable()) {
@@ -354,7 +390,7 @@ void Taker::run() {
 Move::Move(BasicPlayer *p) : HierarchicalFSM(p, "$Move") {
   moveToChoice = new ChoicePoint<int>("@MoveTo", {0, 1, 2, 3});
   moveSpeedChoice = new ChoicePoint<double>(
-      "@MoveSpeed", {SS->getPlayerSpeedMax() / 2.0, SS->getPlayerSpeedMax()});
+      "@MoveSpeed", {/*SS->getPlayerSpeedMax() / 2.0, */SS->getPlayerSpeedMax()});
 }
 
 Move::~Move() {
@@ -370,19 +406,23 @@ void Move::run() {
 
   int status = WM->getBalControllStatus();
   while (running() && status == WM->getBalControllStatus()) {
+    ObjectT fastest = WM->getFastestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
+    int iCycles = WM->predictNrCyclesToObject(fastest, OBJECT_BALL);
+    VecPosition posPassFrom = WM->predictPosAfterNrCycles(OBJECT_BALL, iCycles);
+    posPassFrom = refineTarget(posPassFrom, WM->getBallPos());
     SoccerCommand soc;
     VecPosition target = WM->getAgentGlobalPosition() +
-                         (WM->getBallPos() - WM->getAgentGlobalPosition())
+                         (posPassFrom - WM->getAgentGlobalPosition())
                              .rotate(dir * 90.0)
                              .normalize();
 
-    target = refineTarget(target);
+    target = refineTarget(target, WM->getAgentGlobalPosition());
     auto distance = target.getDistanceTo(WM->getAgentGlobalPosition());
     auto cycles = rint(distance / speed);
     ACT->putCommandInQueue(
         soc = player->moveToPos(target, 25.0, 1.0, false, (int) cycles));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
-    Log.log(101, "Move::run action with dir=%d speed=%f", dir, speed);
+    Log.log(101, "Move::run action with dir=%d speed=%f target=%s", dir, speed, to_prettystring(target).c_str());
     Action(this, {to_prettystring(dir), to_prettystring(speed)})();
   }
 }
@@ -409,7 +449,7 @@ void GetOpen::run() {
     ObjectT fastest = WM->getFastestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
     int iCycles = WM->predictNrCyclesToObject(fastest, OBJECT_BALL);
     VecPosition posPassFrom = WM->predictPosAfterNrCycles(OBJECT_BALL, iCycles);
-    posPassFrom = refineTarget(posPassFrom);
+    posPassFrom = refineTarget(posPassFrom, WM->getBallPos());
     ACT->putCommandInQueue(soc = player->getOpenForPassFromInRectangle(WM->getKeepawayRect(), posPassFrom));
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
     Log.log(101, "GetOpen::run action");
@@ -430,8 +470,8 @@ Mark::~Mark() {
 }
 
 void Mark::run() {
-  MakeChoice<int> c(markToChoice);
-  auto opp = c(WM->getCurrentCycle());
+  MakeChoice<int> choice(markToChoice);
+  auto opp = choice(WM->getCurrentCycle());
   auto o = Memory::ins().opponents[opp];
 
   int status = WM->getBalControllStatus();
@@ -455,21 +495,21 @@ void Intercept::run() {
     ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
     Log.log(101, "Intercept::run action");
     Action(this)();
-    if (tackle && WM->getProbTackleSucceeds(WM->getAgentObjectType()) > 0.75) {
-      Log.log(101, "Intercept::run break to tackle");
+    if (tackle && WM->getProbTackleSucceeds(WM->getAgentObjectType()) > 0.0) {
+      Log.log(101, "Intercept::run break to consider tackle");
       break;
     }
   }
 }
 
-Pass::Pass(BasicPlayer *p) : HierarchicalFSM(p, "$Pass") {
+Pass::Pass(BasicPlayer *p, bool random) : HierarchicalFSM(p, "$Pass"), random(random) {
   vector<int> parameters;
   for (int i = 1; i < numTeammates; ++i) {
     parameters.push_back(i);
   }
   passToChoice = new ChoicePoint<int>("@PassTo", parameters);
   passSpeedChoice =
-      new ChoicePoint<PassT>("@PassSpeed", {PASS_SLOW, PASS_NORMAL, PASS_FAST});
+      new ChoicePoint<PassT>("@PassSpeed", {/*PASS_SLOW, */PASS_NORMAL, PASS_FAST});
 }
 
 Pass::~Pass() {
@@ -477,12 +517,7 @@ Pass::~Pass() {
   delete passSpeedChoice;
 }
 
-void Pass::run() {
-  auto c = makeComposedChoice(passToChoice, passSpeedChoice);
-  int tm;
-  PassT speed;
-  tie(tm, speed) = c->operator()(WM->getCurrentCycle());
-
+void Pass::passTo(int tm, PassT speed) {
   int status = WM->getBalControllStatus();
   while (running() && status == WM->getBalControllStatus()) {
     VecPosition tmPos = WM->getGlobalPosition(Memory::ins().teammates[tm]);
@@ -495,9 +530,22 @@ void Pass::run() {
   }
 }
 
+void Pass::run() {
+  int tm = rand() % (numTeammates - 1) + 1;
+  PassT speed = vector<PassT>({PASS_SLOW, PASS_NORMAL, PASS_FAST})[rand() % 3];
+
+  if (random) {
+    passTo(tm, speed);
+  } else {
+    auto c = makeComposedChoice(passToChoice, passSpeedChoice);
+    tie(tm, speed) = c->operator()(WM->getCurrentCycle());
+    passTo(tm, speed);
+  }
+}
+
 Dribble::Dribble(BasicPlayer *p) : HierarchicalFSM(p, "$Dribble") {
   vector<double> dirs;
-  for (double d = 0.0; d < 360.0; d += 45.0) {
+  for (double d = 0.0; d < 360.0; d += 90.0) {
     dirs.push_back(d);
   }
   dribbleToChoice = new ChoicePoint<double>("@DribbleTo", dirs);
@@ -517,7 +565,7 @@ void Dribble::run() {
 
   SoccerCommand soc;
   VecPosition target = WM->getAgentGlobalPosition() + VecPosition::getVecPositionFromPolar(1.0, dir);
-  target = refineTarget(target);
+  target = refineTarget(target, WM->getAgentGlobalPosition());
   ACT->putCommandInQueue(
       soc = player->dribble((target - WM->getAgentGlobalPosition()).getDirection(), speed));
   ACT->putCommandInQueue(player->turnNeckToObject(OBJECT_BALL, soc));
