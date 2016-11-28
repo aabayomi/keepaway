@@ -118,8 +118,8 @@ private:
   void phase2();
 
 private:
-  string name;
   int n;
+  string name;
   int *count;
   sem_t *mutex;
   sem_t *turnstile;

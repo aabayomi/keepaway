@@ -140,7 +140,6 @@ private:
   ChoicePoint<HierarchicalFSM *> *choice_free;
 
   HierarchicalFSM *pass;
-  HierarchicalFSM *pass_random;
   HierarchicalFSM *dribble;
   HierarchicalFSM *hold;
   HierarchicalFSM *move;
@@ -158,13 +157,10 @@ public:
   virtual void run();
 
 private:
-  ChoicePoint<HierarchicalFSM *> *choice_free;
-  ChoicePoint<bool> *choice_tackle;
+  ChoicePoint<HierarchicalFSM*> *choice_taker;
 
   HierarchicalFSM *hold;
-  HierarchicalFSM *tackle;
-  HierarchicalFSM *move;
-  HierarchicalFSM *stay;
+  HierarchicalFSM *mark;
   HierarchicalFSM *intercept;
 };
 
@@ -178,7 +174,6 @@ public:
 
 private:
   ChoicePoint<int> *moveToChoice;
-  ChoicePoint<double> *moveSpeedChoice;
 };
 
 class Stay : public HierarchicalFSM {
@@ -209,26 +204,20 @@ private:
 
 class Intercept : public HierarchicalFSM {
 public:
-  Intercept(BasicPlayer *p, bool tackle = false);
+  Intercept(BasicPlayer *p);
 
   virtual void run();
-
-private:
-  bool tackle;
 };
 
 class Pass : public HierarchicalFSM {
 public:
-  Pass(BasicPlayer *p, bool random = false);
+  Pass(BasicPlayer *p);
 
   virtual ~Pass();
 
   virtual void run();
 
-  void passTo(int tm, PassT speed);
-
 private:
-  bool random;
   ChoicePoint<int> *passToChoice;
   ChoicePoint<PassT> *passSpeedChoice;
 };

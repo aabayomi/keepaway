@@ -39,11 +39,6 @@ public:
 private:
   std::string name;
   std::vector<T> choices;
-
-public:
-  const vector<T> &getChoices() const {
-    return choices;
-  }
 };
 
 
@@ -53,7 +48,7 @@ public:
 template<class T>
 class MakeChoice {
 public:
-  MakeChoice(ChoicePoint<T> *cp, bool owned = false) : cp(cp), owned(owned) {
+  MakeChoice(ChoicePoint<T> *cp) : cp(cp) {
     Log.log(101, "MakeChoice::MakeChoice %s", cp->getName().c_str());
     Memory::ins().PushStack(cp->getName());
   }
@@ -69,27 +64,26 @@ public:
   ~MakeChoice() {
     Memory::ins().PopStack();
     Memory::ins().PopStack();
-    if (owned) delete cp;
   }
 
 private:
   ChoicePoint<T> *cp;
-  bool owned;
 };
 
-template<class T, class U>
-shared_ptr<MakeChoice<tuple<T, U>>> makeComposedChoice(ChoicePoint<T> *t, ChoicePoint<U> *u) {
-  vector<tuple<T, U>> parameters;
-  for (int i = 0; i < t->getChoices().size(); ++i) {
-    for (int j = 0; j < u->getChoices().size(); ++j) {
-      parameters.push_back(make_tuple(t->getChoices()[i], u->getChoices()[j]));
-    }
-  }
-  return shared_ptr<MakeChoice<tuple<T, U>>>(
-      new MakeChoice<tuple<T, U>>(
-          new ChoicePoint<tuple<T, U>>(
-              t->getName() + "*" + u->getName().substr(1), parameters), true));
-};
+//template<class T, class U>
+//shared_ptr<MakeChoice<tuple<T, U>>> makeComposedChoice(ChoicePoint<T> *t, ChoicePoint<U> *u) {
+//  vector<tuple<T, U>> parameters;
+//  for (int i = 0; i < t->getChoices().size(); ++i) {
+//    for (int j = 0; j < u->getChoices().size(); ++j) {
+//      parameters.push_back(make_tuple(t->getChoices()[i], u->getChoices()[j]));
+//    }
+//  }
+//
+//  return shared_ptr<MakeChoice<tuple<T, U>>>(
+//      new MakeChoice<tuple<T, U>>(
+//          new ChoicePoint<tuple<T, U>>(
+//              t->getName() + "*" + u->getName().substr(1), parameters), true));
+//};
 
 /**
  * run a child machine while taking care of call stack

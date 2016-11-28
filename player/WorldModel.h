@@ -1218,7 +1218,7 @@ public:
 
   bool isOppControllBall();
 
-  int getBalControllStatus();
+  int getBallControllStatus();
 
   bool isBallFree();
 };

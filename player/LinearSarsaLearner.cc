@@ -116,12 +116,12 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
   if (bLearning || !bLearning) {
     string exepath = getexepath();
     exepath += "LinearSarsaLearner::initialize";
+    exepath += loadWeightsFile;
+    exepath += saveWeightsFile;
     exepath += to_string(gamma);
     exepath += to_string(lambda);
     exepath += to_string(initialWeight);
     exepath += to_string(qLearning);
-    exepath += loadWeightsFile;
-    exepath += saveWeightsFile;
     exepath += teamName;
     auto h = hash<string>()(exepath); // hashing
     sharedMemory = "/" + to_string(h) + ".shm";
@@ -375,7 +375,7 @@ double LinearSarsaLearner::reward(double tau) {
 }
 
 int LinearSarsaLearner::step(int current_time) {
-  int choice;
+  int choice = -1;
   auto *state = Memory::ins().state;
 
   if (lastJointChoiceIdx >= 0) {
@@ -455,7 +455,8 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
                     "(%d) -> (%s)",
                 to_prettystring(lastMachineState).c_str(), lastJointChoiceIdx,
                 to_prettystring(machineState).c_str());
-        staticTransitions[lastMachineState][lastJointChoiceIdx][machineState] += 1.0;
+        staticTransitions[lastMachineState][lastJointChoiceIdx][machineState] +=
+            1.0;
 
         if (hasCircle(staticTransitions)) {
           Log.log(101,

@@ -750,9 +750,6 @@ ObjectT WorldModel::getFastestInSetTo(ObjectSetT set, ObjectT obj,
     createInterceptFeatures();
     Log.log(460, "call fastest again");
     return getFastestInSetTo(set, obj, iCyclesToIntercept);
-//    if (set == OBJECT_SET_TEAMMATES || set == OBJECT_SET_TEAMMATES_NO_GOALIE)
-//      objFastestOpp =
-//          getFastestInSetTo(OBJECT_SET_OPPONENTS, obj, &iCyclesFastestOpp);
     if (set == OBJECT_SET_TEAMMATES || set == OBJECT_SET_TEAMMATES_NO_GOALIE)
       objFastestOpp =
           getFastestInSetTo(OBJECT_SET_OPPONENTS, obj, &iCyclesFastestOpp);
