@@ -75,7 +75,7 @@ void KeepawayPlayer::mainLoop( )
   if (!WM->waitForNewInformation()) bContLoop = false;
   if (bContLoop) WM->updateAll();
 
-  if (/*WM->getSide() == SIDE_RIGHT ||*/ SA) { // joint option learner or taker
+  if (WM->getSide() == SIDE_RIGHT || SA) { // joint option learner or taker
     if (!WM->waitForNewInformation()) bContLoop = false;
 
     while (bContLoop)                                 // as long as server alive
@@ -123,14 +123,8 @@ void KeepawayPlayer::mainLoop( )
         bContLoop = false;
     }
   } else { // hierarchical FSM learner
-    fsm::HierarchicalFSM *player = 0;
-    if (WM->getSide() == SIDE_LEFT) {
-      player = new fsm::Keeper(this);
-    } else {
-      player = new fsm::Taker(this);
-    }
-    fsm::Run(player).operator()();
-    delete player;
+    fsm::Keeper *keeper = new fsm::Keeper(this);
+    fsm::Run(keeper).operator()();
   }
 
   // shutdown, print hole and number of players seen statistics
@@ -263,6 +257,8 @@ SoccerCommand KeepawayPlayer::jolKeepers()
   memset(state, 0, sizeof(state));
 
   int numK = WM->getNumKeepers();
+
+
   int features = WM->keeperStateVars(state);
   Assert(features == 0 || features == SA->getNumFeatures());
   if (features != SA->getNumFeatures()) return idle("features != SA->getNumFeatures()"); // do nothing
@@ -275,8 +271,8 @@ SoccerCommand KeepawayPlayer::jolKeepers()
     K[i] = SoccerTypes::getTeammateObjectFromIndex(i);
 
   ObjectT K0 = WM->getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
-  if (!WM->sortClosestTo(K, numK, K0)) return idle("!WM->sortClosestTo(K, numK, K0)");
-  if (K0 != K[0]) return idle("K0 != K[0]");
+  if (!WM->sortClosestTo(K, numK, K0)) return idle("!WM->sortClosestTo(teammate, numK, K0)");
+  if (K0 != K[0]) return idle("K0 != teammate[0]");
 
   int &agentIdx = SA->agentIdx;
   agentIdx = 0;
@@ -324,7 +320,7 @@ SoccerCommand KeepawayPlayer::jolKeepers()
   Log.log(101, "execute option %d:%s [%d]", action,
           jol::JointActionSpace::ins().getJointActionName(action), SA->agentIdx);
 
-  memcpy(savedK, K, sizeof(K)); // save K[]
+  memcpy(savedK, K, sizeof(K)); // save teammate[]
   Log.log(101, "sync save K0:%d K1:%d K2:%d", savedK[0], savedK[1], savedK[2]);
 
   SA->lastActionTime = WM->getCurrentCycle();
@@ -369,14 +365,15 @@ SoccerCommand KeepawayPlayer::taker()
     return soc;
   }
 
-  // If not first, then mark open opponent
+  // If not first (or second) closest, then mark open opponent
   int numT = WM->getNumTakers();
   ObjectT T[ 11 ];
   for ( int i = 0; i < numT; i++ )
     T[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
   WM->sortClosestTo( T, numT, OBJECT_BALL );
+
   if (numT > 1 && T[0] != WM->getAgentObjectType() &&
-      T[1] != WM->getAgentObjectType()) {
+      T[ 1 ] != WM->getAgentObjectType() ) {
     ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS,
                                               OBJECT_BALL );
     Log.log(101, "markMostOpenOpponent( withBall )");
@@ -385,7 +382,7 @@ SoccerCommand KeepawayPlayer::taker()
     return soc;
   }
 
-  // Otherwise try to intercept the ball
+  // If teammate has it, don't mess with it
   double dDist = std::numeric_limits<double>::max();
   ObjectT closest = WM->getClosestInSetTo( OBJECT_SET_PLAYERS,
                                            OBJECT_BALL, &dDist );

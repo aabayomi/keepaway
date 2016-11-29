@@ -27,7 +27,7 @@ public:
 
     if (i < choices.size()) {
       Log.log(101, "ChoicePoint::choose my choice (agent %d): %s",
-              Memory::ins().agentIdx, to_prettystring(choices[i]).c_str());
+              Memory::ins().agentIdx, to_string(choices[i]).c_str());
     } else { // race condition?
       Log.log(101, "ChoicePoint::choose i %d >= choices.size() %d", i,
               choices.size());
@@ -40,7 +40,6 @@ private:
   std::string name;
   std::vector<T> choices;
 };
-
 
 /**
  * Make choice while taking care of call stack
@@ -56,8 +55,8 @@ public:
   T operator()(int current_time) {
     auto c = cp->choose(current_time);
     Log.log(101, "MakeChoice::MakeChoice %s -> %s", cp->getName().c_str(),
-            to_prettystring(c).c_str());
-    Memory::ins().PushStack("[" + to_prettystring(c) + "]");
+            to_string(c).c_str());
+    Memory::ins().PushStack("[" + to_string(c) + "]");
     return c;
   }
 
@@ -69,21 +68,6 @@ public:
 private:
   ChoicePoint<T> *cp;
 };
-
-//template<class T, class U>
-//shared_ptr<MakeChoice<tuple<T, U>>> makeComposedChoice(ChoicePoint<T> *t, ChoicePoint<U> *u) {
-//  vector<tuple<T, U>> parameters;
-//  for (int i = 0; i < t->getChoices().size(); ++i) {
-//    for (int j = 0; j < u->getChoices().size(); ++j) {
-//      parameters.push_back(make_tuple(t->getChoices()[i], u->getChoices()[j]));
-//    }
-//  }
-//
-//  return shared_ptr<MakeChoice<tuple<T, U>>>(
-//      new MakeChoice<tuple<T, U>>(
-//          new ChoicePoint<tuple<T, U>>(
-//              t->getName() + "*" + u->getName().substr(1), parameters), true));
-//};
 
 /**
  * run a child machine while taking care of call stack

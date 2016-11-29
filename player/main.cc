@@ -148,7 +148,8 @@ int main(int argc, char *argv[]) {
           if (strlen(argv[i]) > 2 && argv[i][2] == 'e') {
             printOptions();
             exit(0);
-          } else
+          }
+          else
             strcpy(strHost, argv[i + 1]);
           break;
         case 'i':                                   // info 1 0
@@ -177,7 +178,8 @@ int main(int argc, char *argv[]) {
               iMaxLogLevel = Parse::parseFirstInt(&str);
               if (iMaxLogLevel == 0) iMaxLogLevel = iMinLogLevel;
               Log.addLogRange(iMinLogLevel, iMaxLogLevel);
-            } else
+            }
+            else
               Log.addLogLevel(iMinLogLevel);
             iMinLogLevel = Parse::parseFirstInt(&str);
           }
@@ -280,7 +282,8 @@ int main(int argc, char *argv[]) {
   if (string(strTeamName) == "keepers") {
     numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                      iNumKeepers, iNumTakers);
-  } else {
+  }
+  else {
     numFeatures = wm.takerStateRangesAndResolutions(ranges, minValues, resolutions,
                                                     iNumKeepers, iNumTakers);
   }
@@ -345,10 +348,18 @@ int main(int argc, char *argv[]) {
     }
   } else {
     Assert(sa == 0);
-    fsm::HierarchicalFSM::initialize(
-        numFeatures, iNumKeepers, iNumTakers, bLearn,
-        resolutions, gamma, lambda, initialWeight, qLearning,
-        loadWeightsFile, saveWeightsFile, strTeamName);
+    if (string(strTeamName) == "keepers") {
+      fsm::HierarchicalFSM::initialize(
+          numFeatures, iNumKeepers, iNumTakers, bLearn,
+          resolutions, gamma, lambda, initialWeight, qLearning,
+          loadWeightsFile, saveWeightsFile);
+    }
+    else {
+      fsm::HierarchicalFSM::initialize(
+          numFeatures, iNumTakers, iNumKeepers, bLearn,
+          resolutions, gamma, lambda, initialWeight, qLearning,
+          loadWeightsFile, saveWeightsFile);
+    };
   }
 
   KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,

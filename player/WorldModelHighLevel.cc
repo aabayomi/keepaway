@@ -737,7 +737,6 @@ ObjectT WorldModel::getFastestInSetTo(ObjectSetT set, ObjectT obj,
         cerr << "WorldModel::getFastestInSetTo unknown set: " << set << endl;
         return OBJECT_ILLEGAL;
     }
-
     if (isFeatureRelevant(feature_type)) {
       int i = max(0,
                   ((int) getFeature(feature_type).getInfo() - getCurrentCycle()));
@@ -761,6 +760,7 @@ ObjectT WorldModel::getFastestInSetTo(ObjectSetT set, ObjectT obj,
   int iMinCycles = 100;
   int iIndex;
   VecPosition posObj;
+
 
   while (bSkip == false &&
          iCycles < iMinCycles &&

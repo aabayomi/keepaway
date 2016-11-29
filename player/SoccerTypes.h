@@ -64,9 +64,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #define MAX_RL_STATE_VARS         128
-#define MAX_RL_ACTIONS            512
+#define MAX_RL_ACTIONS            128
 
-#define RL_MEMORY_SIZE (2 << 20)
+#define RL_MEMORY_SIZE (2 << 21)
 #define RL_MAX_NONZERO_TRACES (2 << 15)
 #define RL_MAX_NUM_TILINGS (2 << 12)
 
@@ -105,11 +105,11 @@ inline std::string getexepath() {
 /*****************************************************************************/
 /********************* CONSTANTS *********************************************/
 /*****************************************************************************/
-const double UnknownDoubleValue = -1000.0; /*!< indicates unknown double   */
-const AngDeg UnknownAngleValue = -1000.0; /*!< indicates unknown angle    */
-const int UnknownIntValue = -1000;   /*!< indicates unknown int      */
-const int UnknownTime = -20;     /*!< indicates unknown time     */
-const long UnknownMessageNr = -30;     /*!< indicates unknown messagenr*/
+const double  UnknownDoubleValue  = -1000.0; /*!< indicates unknown double   */
+const AngDeg  UnknownAngleValue   = -1000.0; /*!< indicates unknown angle    */
+const int     UnknownIntValue     = -1000;   /*!< indicates unknown int      */
+const int     UnknownTime         = -20;     /*!< indicates unknown time     */
+const long    UnknownMessageNr    = -30;     /*!< indicates unknown messagenr*/
 
 /*****************************************************************************/
 /********************** ENUMERATIONS *****************************************/
@@ -213,11 +213,12 @@ enum ObjectT { // don't change order
   OBJECT_MAX_OBJECTS       /*!< maximum nr of objects    */ // 90
 };
 
-std::ostream &operator<<(std::ostream &out, const ObjectT value);
+std::ostream& operator<<(std::ostream& out, const ObjectT value);
 
 /*!The ObjectSetT enumerations holds the different object sets, which
    consists of one or multiple ObjectT types. */
-enum ObjectSetT {
+enum ObjectSetT
+{
   OBJECT_SET_TEAMMATES,        /*!< teammates                       */
   OBJECT_SET_OPPONENTS,        /*!< opponents                       */
   OBJECT_SET_PLAYERS,          /*!< players                         */
@@ -225,7 +226,7 @@ enum ObjectSetT {
   OBJECT_SET_FLAGS,            /*!< flags                           */
   OBJECT_SET_LINES,            /*!< lines                           */
   OBJECT_SET_ILLEGAL           /*!< illegal                         */
-};
+} ;
 
 /*!The PlayModeT enumeration contains all playmodes of the soccer playmode.
    The associated string values can be returned using the methods in the
@@ -243,7 +244,7 @@ enum PlayModeT {
   PM_GOAL_LEFT,              /*!< goal_l:            goal scored by team left*/
   PM_GOAL_RIGHT,             /*!< goal_r:            goal scored by team righ*/
   PM_FREE_KICK_FAULT_LEFT,   /*!< free_kick_fault_l: free_kick to yourself   */
-  PM_FREE_KICK_FAULT_RIGHT,   /*!< free_kick_fault_r: free_kick to self   */
+  PM_FREE_KICK_FAULT_RIGHT,	 /*!< free_kick_fault_r: free_kick to self   */
   PM_FREE_KICK_LEFT,         /*!< free_kick_l:       free kick for left team */
   PM_FREE_KICK_RIGHT,        /*!< free_kick_r:       free kick for right team*/
   PM_INDIRECT_FREE_KICK_RIGHT,/*!<indirect_free_kick_r: ind. free kick right */
@@ -263,7 +264,7 @@ enum PlayModeT {
   PM_FROZEN,                 /*!< game play is frozen                        */
   PM_QUIT,                   /*!< quit                                       */
   PM_ILLEGAL                 /*!< unknown playmode                           */
-};
+} ;
 
 /*! The RefereeT enumeration contains all messages that the referee can sent.
     The SoccerTypes class contains different methods to convert these messages
@@ -322,11 +323,11 @@ enum RefereeMessageT {
   REFC_PENALTY_WINNER_RIGHT,   /*!< penalty_winner_r    penalty won by l team*/
   REFC_PENALTY_DRAW,           /*!< penalty_draw        penalty result = draw*/
   REFC_TRAINING_KEEPAWAY       /*!< training Keepaway 1: new eoisode*/
-};
+} ;
 
 /*! The ViewAngleT enumeration contains the different view angles that are
     possible for a player */
-enum ViewAngleT {
+enum ViewAngleT  {
   VA_NARROW,  /*!< view angle narrow  */
   VA_NORMAL,  /*!< view angle normal  */
   VA_WIDE,    /*!< view angle wide    */
@@ -346,7 +347,7 @@ enum SideT {
   SIDE_LEFT,     /*!< left side    */
   SIDE_RIGHT,    /*!< right SIDE   */
   SIDE_ILLEGAL   /*!< illegal SIDE */
-};
+} ;
 
 /*!The CommandT enumeration contains the different types for the SoccerCommand
    that are possible. */
@@ -366,7 +367,7 @@ enum CommandT {
   CMD_TACKLE,       /*!< tackle in current body direction   */
   CMD_POINTTO,      /*!< point arm towards a point on field */
   CMD_MAX_COMMANDS  /*!< maximum number of commands         */
-};
+} ;
 
 /*!The PlayerT enumeration contains the different playertypes that are defined
    in a formation. This should not be confused with the later introducted
@@ -384,7 +385,7 @@ enum PlayerT {
   PT_ATTACKER_WING,       /*!< wing attacker       */
   PT_ATTACKER,            /*!< central attacker    */
   MAX_PLAYER_TYPES
-};
+} ;
 
 /*! The PlayerSetT enumeration contains different sets of playertypes that
     are defined in a formation. Possible sets are all midfielders, etc. */
@@ -393,7 +394,7 @@ enum PlayerSetT {
   PS_MIDFIELDERS,         /*!< all midfielders     */
   PS_ATTACKERS,           /*!< all attackers       */
   PS_ALL                  /*!< all players         */
-};
+} ;
 
 /*!The FormationT enumeration contains the different formation types that
    are defined. */
@@ -406,7 +407,7 @@ enum FormationT {
   FT_OPEN_DEFENSIVE,      /*!< open defensive formation type           */
   FT_343_ATTACKING,       /*!< attacking formation type                */
   MAX_FORMATION_TYPES
-};
+} ;
 
 /*!The BallStatus enumeration contains the status of the ball. This is returned
    when the coach has issued the check_ball message. */
@@ -416,7 +417,7 @@ enum BallStatusT {
   BS_GOAL_LEFT,         /*!< ball is in left goal     */
   BS_GOAL_RIGHT,        /*!< ball is in right goal    */
   BS_OUT_OF_FIELD       /*!< ball is not in the field */
-};
+} ;
 
 /*!The ActionT enumeration contains different (high-level) actions. */
 enum ActionT {
@@ -437,7 +438,7 @@ enum ActionT {
   ACT_TELEPORT_AFTER_CATCH,       /*!< teleport after catch (for goalkeeper) */
   ACT_TACKLE,                     /*!< tackle the ball                       */
   ACT_HOLD_BALL                   /*!< hold the ball                         */
-};
+} ;
 
 /*! The MarkT enumeration contains different marking techniques. */
 enum MarkT {
@@ -445,7 +446,7 @@ enum MarkT {
   MARK_GOAL,       /*!< mark goal (stand on obj-goal line)                  */
   MARK_BISECTOR,   /*!< mark bisector stand between goal,obj and ball,obj   */
   MARK_BALL        /*!< mark ball (stand on obj-ball line)                  */
-};
+} ;
 
 /*! The DribbleT enumeration contains different dribble possibilities. */
 enum DribbleT {
@@ -453,19 +454,14 @@ enum DribbleT {
   DRIBBLE_WITHBALL,/*!< dribble with ball very close                        */
   DRIBBLE_SLOW,    /*!< dribble slowly but kicking ball slightly ahead      */
   DRIBBLE_FAST     /*!< dribble fast by kicking ball up front               */
-};
+} ;
 
 /*! The PassT enumeration contains different passing possibilities. */
 enum PassT {
   PASS_ILLEGAL,    /*!< illegal pass                                        */
   PASS_FAST,       /*!< pass fast to a teammate                             */
-  PASS_NORMAL,      /*!< pass normal to a teammate                           */
-  PASS_SLOW  /*!< pass slow to a teammate                           */
-};
-
-std::ostream &operator<<(std::ostream &out, const PassT value);
-
-std::ostream &operator<<(std::ostream &out, const DribbleT value);
+  PASS_NORMAL      /*!< pass normal to a teammate                           */
+} ;
 
 /*! The ClearBallT enumeration contains different clear ball possibilities. */
 enum ClearBallT {
@@ -474,7 +470,7 @@ enum ClearBallT {
   CLEAR_BALL_DEFENSIVE,  /*!< clear ball to the center line of the field    */
   CLEAR_BALL_OFFENSIVE_SIDE, /*!< clear ball to front and side of the field */
   CLEAR_BALL_GOAL        /*!< clear ball to position in front of the goal   */
-};
+} ;
 
 /*! The TiredNessT enumeration contains different values that indicate how
     tired an agent is. */
@@ -485,7 +481,7 @@ enum TiredNessT {
   TIREDNESS_BAD,         /*!< player starts to get tired                    */
   TIREDNESS_VERY_BAD,    /*!< player is so tired it can hardly move         */
   TIREDNESS_TERRIBLE     /*!< player is so tired it cannot move             */
-};
+} ;
 
 /*! The FeaturesT enumeration contains different features that can be saved.
     In this case, features represent specific information concerning the
@@ -504,7 +500,7 @@ enum FeatureT {
   FEATURE_INTERCEPT_CYCLES_ME,       /*!< nr of cycles for me to intercept   */
   FEATURE_BEST_SCORING_POINT,        /*!< best scoring point in the goal     */
   MAX_FEATURES
-};
+} ;
 
 /*! The DirectionT enumeration contains the different directions */
 enum DirectionT {
@@ -519,15 +515,15 @@ enum DirectionT {
   DIR_SOUTHEAST,               /*!< south east direction                     */
   DIR_SOUTH,                   /*!< south direction                          */
   DIR_MAX                      /*!< number of directions                     */
-};
+} ;
 
 /*! The SucceedT enumeration contains the different succeed rate probabilites*/
-enum SucceedT {
+enum SucceedT  {
   SUCCEED_ILLEGAL,             /*!< illegal message                          */
   SUCCEED_ALWAYS,              /*!< wil always succeed                       */
   SUCCEED_DOUBTFUL,            /*!< in some occassions it may succeed        */
   SUCCEED_NEVER                /*!< this will never succeed                  */
-};
+} ;
 
 
 /*****************************************************************************/
@@ -546,78 +542,50 @@ enum SucceedT {
     Representing the time in this way has the advantage that it allows the
     players to reason about the number of cycles between events in a meaningful
     way. */
-class Time {
+class Time
+{
   int m_iTime;            /*!< Number of cycles, denoting the time */
   int m_iStopped;         /*!< Number of cycles stopped at m_iTime */
 
 public:
-  Time(int iTime = -1, int iStopped = 0);
-
-  bool updateTime(int iTime);
-
-  bool setTimeStopped(int iTime);
-
-  int getTime();
-
-  int getTimeStopped();
-
-  int getTimeDifference(Time t);
-
-  bool isStopped();
-
-  Time getTimeAddedWith(int iCycles);
-
-  bool addToTime(int iCycles);
-
-  void show(ostream &os = cout);
+         Time             ( int     iTime = -1, int iStopped = 0 );
+  bool   updateTime       ( int     iTime                        );
+  bool   setTimeStopped   ( int     iTime                        );
+  int    getTime          (                                      );
+  int    getTimeStopped   (                                      );
+  int    getTimeDifference( Time    t                            );
+  bool   isStopped        (                                      );
+  Time   getTimeAddedWith ( int     iCycles                      );
+  bool   addToTime        ( int     iCycles                      );
+  void   show             ( ostream &os = cout                   );
 
   // overloaded arithmetic operators
-  Time operator+(const int &i);
-
-  Time operator+(Time t);
-
-  Time operator-(const int &i);
-
-  int operator-(Time t);
-
-  void operator=(const int &i);
-
-  void operator+=(Time t);
-
-  void operator+=(const int &i);
-
-  void operator-=(Time t);
-
-  void operator-=(const int &i);
-
-  bool operator!=(Time t);
-
-  bool operator!=(const int &i);
-
-  bool operator==(Time t);
-
-  bool operator==(const int &i);
-
-  bool operator<(Time t);
-
-  bool operator<(const int &i);
-
-  bool operator<=(Time t);
-
-  bool operator<=(const int &i);
-
-  bool operator>(Time t);
-
-  bool operator>(const int &i);
-
-  bool operator>=(Time t);
-
-  bool operator>=(const int &i);
+  Time   operator +       ( const int  &i );
+  Time   operator +       ( Time t );
+  Time   operator -       ( const int  &i );
+  int    operator -       ( Time t );
+  void   operator =       ( const int  &i );
+  void   operator +=      ( Time t );
+  void   operator +=      ( const int  &i );
+  void   operator -=      ( Time t );
+  void   operator -=      ( const int  &i );
+  bool   operator !=      ( Time t );
+  bool   operator !=      ( const int  &i );
+  bool   operator ==      ( Time t );
+  bool   operator ==      ( const int  &i );
+  bool   operator <       ( Time t );
+  bool   operator <       ( const int  &i );
+  bool   operator <=      ( Time t );
+  bool   operator <=      ( const int  &i );
+  bool   operator >       ( Time t );
+  bool   operator >       ( const int  &i );
+  bool   operator >=      ( Time t );
+  bool   operator >=      ( const int  &i );
 
 
   // methods for producing output
-  friend ostream &operator<<(ostream &os, Time t);
-};
+  friend ostream&   operator << ( ostream &os, Time t );
+} ;
 
 
 /*****************************************************************************/
@@ -629,74 +597,60 @@ public:
    the server implementation. A SoccerCommand can be created and before it is
    sent to the server, be converted to the actual string representation
    understood by the server. */
-class SoccerCommand {
+class SoccerCommand
+{
   ServerSettings *SS; /*!< ServerSettings are used to check ranges of command*/
 
   // private methods to generate text string to sent to server
-  bool makeCatchCommand(char *str);
-
-  bool makeChangeViewCommand(char *str);
-
-  bool makeDashCommand(char *str);
-
-  bool makeKickCommand(char *str);
-
-  bool makeMoveCommand(char *str);
-
-  bool makeSayCommand(char *str);
-
-  bool makeSenseBodyCommand(char *str);
-
-  bool makeTurnCommand(char *str);
-
-  bool makeTurnNeckCommand(char *str);
-
-  bool makeChangePlayerCommand(char *str);
-
-  bool makeAttentionToCommand(char *str);
-
-  bool makeTackleCommand(char *str);
-
-  bool makePointToCommand(char *str);
+  bool  makeCatchCommand       ( char *str );
+  bool  makeChangeViewCommand  ( char *str );
+  bool  makeDashCommand        ( char *str );
+  bool  makeKickCommand        ( char *str );
+  bool  makeMoveCommand        ( char *str );
+  bool  makeSayCommand         ( char *str );
+  bool  makeSenseBodyCommand   ( char *str );
+  bool  makeTurnCommand        ( char *str );
+  bool  makeTurnNeckCommand    ( char *str );
+  bool  makeChangePlayerCommand( char *str );
+  bool  makeAttentionToCommand ( char *str );
+  bool  makeTackleCommand      ( char *str );
+  bool  makePointToCommand     ( char *str );
 
 public:
 
   // different variables that are used by the different possible commands
   // only the variables that are related to the current commandType have
   // legal values
-  Time time;        /*!< command time, will be set by worldmodel     */
-  CommandT commandType; /*!< type of this command                        */
-  double dAngle;      /*!< angle of this command (for turn,turn_neck)  */
-  double dPower;      /*!< power of this command (for kick,dash)       */
+  Time         time;        /*!< command time, will be set by worldmodel     */
+  CommandT     commandType; /*!< type of this command                        */
+  double       dAngle;      /*!< angle of this command (for turn,turn_neck)  */
+  double       dPower;      /*!< power of this command (for kick,dash)       */
   ViewQualityT vq;          /*!< view quality (for change_view)              */
-  ViewAngleT va;          /*!< view angle (for change_view)                */
-  double dX;          /*!< x coordinate (for move)                     */
-  double dY;          /*!< y coordinate (for move)                     */
-  char str[MAX_SAY_MSG];/*!< str (for say)                           */
-  int iTimes;      /*!< how many cycles will a command  be sent     */
+  ViewAngleT   va;          /*!< view angle (for change_view)                */
+  double       dX;          /*!< x coordinate (for move)                     */
+  double       dY;          /*!< y coordinate (for move)                     */
+  char         str[MAX_SAY_MSG];/*!< str (for say)                           */
+  int          iTimes;      /*!< how many cycles will a command  be sent     */
 
-  SoccerCommand(CommandT com = CMD_ILLEGAL, double d1 = UnknownDoubleValue,
-                double d2 = UnknownDoubleValue,
-                double d3 = UnknownDoubleValue);
-
-  SoccerCommand(CommandT com, char *msg);
+  SoccerCommand( CommandT com = CMD_ILLEGAL, double d1=UnknownDoubleValue,
+                                             double d2=UnknownDoubleValue,
+                                             double d3=UnknownDoubleValue );
+  SoccerCommand( CommandT com,               char   *msg                  );
 
   // command to set the different values of the SoccerCommand
-  void makeCommand(CommandT com, double d1 = UnknownDoubleValue,
-                   double d2 = UnknownDoubleValue,
-                   double d3 = UnknownDoubleValue);
+  void makeCommand( CommandT com, double     d1 = UnknownDoubleValue,
+                                  double     d2 = UnknownDoubleValue,
+                                  double     d3 = UnknownDoubleValue      );
+  void makeCommand( CommandT com, ViewAngleT v,    ViewQualityT q         );
+  void makeCommand( CommandT com, char       *msg                         );
 
-  void makeCommand(CommandT com, ViewAngleT v, ViewQualityT q);
+  bool isIllegal  (                                                       );
 
-  void makeCommand(CommandT com, char *msg);
-
-  bool isIllegal();
-
-  void show(ostream &os);
+  void show       ( ostream& os                                           );
 
   // used to return the string representation of this SoccerCommand
-  bool getCommandString(char *str, ServerSettings *ss);
-};
+  bool getCommandString( char *str,         ServerSettings *ss           );
+} ;
 
 /*****************************************************************************/
 /********************* CLASS FEATURE *****************************************/
@@ -706,64 +660,49 @@ public:
     teammate to the ball. A feature corresponds to a specific time and is often
     related to a specific object and a specific value. Therefore, these values
     are stored in this class. */
-class Feature {
-  Time m_timeSee;  /*!< see time corresponding to stored information*/
-  Time m_timeSense;/*!< sense time corresponding to stored info     */
-  Time m_timeHear; /*!< hear time corresponding to stored info      */
-  ObjectT m_object;   /*!< object information stored with this feature */
-  double m_dInfo;    /*!< information stored with this feature        */
-  VecPosition m_vec;      /*!< information stored with this feature        */
+class Feature
+{
+  Time          m_timeSee;  /*!< see time corresponding to stored information*/
+  Time          m_timeSense;/*!< sense time corresponding to stored info     */
+  Time          m_timeHear; /*!< hear time corresponding to stored info      */
+  ObjectT       m_object;   /*!< object information stored with this feature */
+  double        m_dInfo;    /*!< information stored with this feature        */
+  VecPosition   m_vec;      /*!< information stored with this feature        */
   SoccerCommand m_soc;      /*!< command stored with this feature            */
 
 public:
   // standard get and set methods
-  Feature();
+  Feature(                                                                   );
+  Feature(                    Time          timeSee,
+                              Time          timeSense,
+                              Time          timeHear,
+                              ObjectT       object,
+                              double        dInfo = UnknownDoubleValue,
+                              SoccerCommand soc   = SoccerCommand(CMD_ILLEGAL),
+                              VecPosition   pos = VecPosition(0,0)           );
+  bool          setFeature  ( Time          timeSee,
+                              Time          timeSense,
+                              Time          timeHear,
+                              ObjectT       object,
+                              double        dInfo = UnknownDoubleValue,
+                              SoccerCommand soc   = SoccerCommand(CMD_ILLEGAL),
+                              VecPosition   pos = VecPosition(0,0)           );
+  bool          setTimeSee  ( Time          time                             );
+  Time          getTimeSee  (                                                );
+  bool          setTimeSense( Time          time                             );
+  Time          getTimeSense(                                                );
+  bool          setTimeHear ( Time          time                             );
+  Time          getTimeHear (                                                );
+  bool          setObject   ( ObjectT       obj                              );
+  ObjectT       getObject   (                                                );
+  bool          setInfo     ( double        d                                );
+  double        getInfo     (                                                );
+  bool          setVec      ( VecPosition   pos                              );
+  VecPosition   getVec      (                                                );
+  bool          setCommand  ( SoccerCommand soc                              );
+  SoccerCommand getCommand  (                                                );
 
-  Feature(Time timeSee,
-          Time timeSense,
-          Time timeHear,
-          ObjectT object,
-          double dInfo = UnknownDoubleValue,
-          SoccerCommand soc = SoccerCommand(CMD_ILLEGAL),
-          VecPosition pos = VecPosition(0, 0));
-
-  bool setFeature(Time timeSee,
-                  Time timeSense,
-                  Time timeHear,
-                  ObjectT object,
-                  double dInfo = UnknownDoubleValue,
-                  SoccerCommand soc = SoccerCommand(CMD_ILLEGAL),
-                  VecPosition pos = VecPosition(0, 0));
-
-  bool setTimeSee(Time time);
-
-  Time getTimeSee();
-
-  bool setTimeSense(Time time);
-
-  Time getTimeSense();
-
-  bool setTimeHear(Time time);
-
-  Time getTimeHear();
-
-  bool setObject(ObjectT obj);
-
-  ObjectT getObject();
-
-  bool setInfo(double d);
-
-  double getInfo();
-
-  bool setVec(VecPosition pos);
-
-  VecPosition getVec();
-
-  bool setCommand(SoccerCommand soc);
-
-  SoccerCommand getCommand();
-
-};
+} ;
 
 /*****************************************************************************/
 /********************** CLASS SOCCERTYPES ************************************/
@@ -775,98 +714,69 @@ public:
     also possible to get more specific information about some of the
     soccertypes. All methods are static so it is possible to call the
     methods without instantiating the class. */
-class SoccerTypes {
-public:
+class SoccerTypes
+{
+ public:
   // methods that deal with the differen objects
-  static char *getObjectStr(char *strBuf,
-                            ObjectT o,
-                            const char *strTe = NULL);
-
-  static ObjectT getObjectFromStr(char **str,
-                                  bool *isGoalie,
-                                  const char *strTeam);
-
-  static bool isInSet(ObjectT o,
-                      ObjectSetT o_s,
-                      ObjectT objectGoalie =
-                      OBJECT_TEAMMATE_1);
-
-  static bool isPlayerTypeInSet(PlayerT p,
-                                PlayerSetT p_s);
-
-  static bool isFlag(ObjectT o);
-
-  static bool isLine(ObjectT o);
-
-  static bool isGoal(ObjectT o);
-
-  static ObjectT getOwnGoal(SideT s);
-
-  static ObjectT getGoalOpponent(SideT s);
-
-  static bool isBall(ObjectT o);
-
-  static bool isTeammate(ObjectT o);
-
-  static bool isOpponent(ObjectT o);
-
-  static bool isGoalie(ObjectT o);
-
-  static bool isPlayer(ObjectT o);
-
-  static bool isKnownPlayer(ObjectT o);
-
-  static int getIndex(ObjectT o);
-
-  static ObjectT getTeammateObjectFromIndex(int iIndex);
-
-  static ObjectT getOpponentObjectFromIndex(int iIndex);
-
-  static VecPosition getGlobalPositionFlag(ObjectT o,
-                                           SideT s,
-                                           double dGoalWidth = 14.02);
-
-  static AngDeg getGlobalAngleLine(ObjectT o,
-                                   SideT s);
+  static char*           getObjectStr              ( char         *strBuf,
+                                                     ObjectT      o,
+                                                     const char   *strTe=NULL);
+  static ObjectT         getObjectFromStr          ( char         **str,
+                                                     bool         *isGoalie,
+                                                     const char   *strTeam   );
+  static bool            isInSet                   ( ObjectT      o,
+                                                     ObjectSetT   o_s,
+                                                     ObjectT      objectGoalie=
+                                                       OBJECT_TEAMMATE_1     );
+  static bool            isPlayerTypeInSet         ( PlayerT      p,
+						     PlayerSetT   p_s        );
+  static bool            isFlag                    ( ObjectT      o          );
+  static bool            isLine                    ( ObjectT      o          );
+  static bool            isGoal                    ( ObjectT      o          );
+  static ObjectT         getOwnGoal                ( SideT        s          );
+  static ObjectT         getGoalOpponent           ( SideT        s          );
+  static bool            isBall                    ( ObjectT      o          );
+  static bool            isTeammate                ( ObjectT      o          );
+  static bool            isOpponent                ( ObjectT      o          );
+  static bool            isGoalie                  ( ObjectT      o          );
+  static bool            isPlayer                  ( ObjectT      o          );
+  static bool            isKnownPlayer             ( ObjectT      o          );
+  static int             getIndex                  ( ObjectT      o          );
+  static ObjectT         getTeammateObjectFromIndex( int          iIndex     );
+  static ObjectT         getOpponentObjectFromIndex( int          iIndex     );
+  static VecPosition     getGlobalPositionFlag     ( ObjectT      o,
+                                                     SideT        s,
+                                                     double dGoalWidth =14.02);
+  static AngDeg          getGlobalAngleLine        ( ObjectT      o,
+                                                     SideT        s          );
 
   // methods that deal with the differen play modes
-  static PlayModeT getPlayModeFromStr(char *str);
-
-  static PlayModeT getPlayModeFromRefereeMessage(RefereeMessageT rm);
-
-  static const char *getPlayModeStr(PlayModeT p);
-
-  static const char *getRefereeMessageStr(RefereeMessageT r);
-
-  static RefereeMessageT getRefereeMessageFromStr(char *str);
+  static PlayModeT       getPlayModeFromStr        ( char         *str       );
+  static PlayModeT       getPlayModeFromRefereeMessage( RefereeMessageT rm   );
+  static const char*           getPlayModeStr            ( PlayModeT    p          );
+  static const char*           getRefereeMessageStr      ( RefereeMessageT r       );
+  static RefereeMessageT getRefereeMessageFromStr  ( char         *str       );
 
   // methods that deal with the frequency of the visual information
-  static const char *getViewAngleStr(ViewAngleT v);
-
-  static ViewAngleT getViewAngleFromStr(char *str);
-
-  static AngDeg getHalfViewAngleValue(ViewAngleT va);
-
-  static const char *getViewQualityStr(ViewQualityT v);
-
-  static ViewQualityT getViewQualityFromStr(char *str);
+  static const char*           getViewAngleStr           ( ViewAngleT   v          );
+  static ViewAngleT      getViewAngleFromStr       ( char         *str       );
+  static AngDeg          getHalfViewAngleValue     ( ViewAngleT   va         );
+  static const char*           getViewQualityStr         ( ViewQualityT v          );
+  static ViewQualityT    getViewQualityFromStr     ( char         *str       );
 
   // methods that deal with the commands
-  static const char *getCommandStr(CommandT com);
-
-  static bool isPrimaryCommand(CommandT com);
+  static const char*           getCommandStr             ( CommandT     com        );
+  static bool            isPrimaryCommand          ( CommandT     com        );
 
   // methods that deal with the side information
-  static const char *getSideStr(SideT s);
-
-  static SideT getSideFromStr(char *str);
+  static const char*           getSideStr                ( SideT        s          );
+  static SideT           getSideFromStr            ( char*        str        );
 
   // methods that deal with the status of the ball.
-  static const char *getBallStatusStr(BallStatusT bs);
+  static const char*           getBallStatusStr          ( BallStatusT  bs         );
+  static BallStatusT     getBallStatusFromStr      ( char         *str       );
 
-  static BallStatusT getBallStatusFromStr(char *str);
-
-  static AngDeg getAngleFromDirection(DirectionT dir);
-};
+  static AngDeg          getAngleFromDirection     ( DirectionT   dir        );
+} ;
 
 #endif

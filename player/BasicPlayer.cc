@@ -1617,8 +1617,6 @@ SoccerCommand BasicPlayer::directPass(VecPosition pos, PassT passType) {
     return kickTo(pos, PS->getPassEndSpeed());
   else if (passType == PASS_FAST)
     return kickTo(pos, PS->getFastPassEndSpeed());
-  else if (passType == PASS_SLOW)
-    return kickTo(pos, PS->getSlowPassEndSpeed());
   else {
     Assert(0);
     return SoccerCommand(CMD_ILLEGAL);
@@ -2679,7 +2677,13 @@ SoccerCommand BasicPlayer::getOpenForPassFromInRectangle(Rect rect,
   VecPosition bestPoint =
       leastCongestedPointForPassInRectangle(rect, posFrom);
 
+#if USE_DRAW_LOG
+  LogDraw.logCircle( "BestPoint", bestPoint, 1, 100, true,
+           COLOR_TEAL );
+#endif
+
   double buffer = 1.5;
+
   if (WM->getAgentGlobalPosition().getDistanceTo(bestPoint) < buffer) {
     return turnBodyToPoint(WM->getGlobalPosition(OBJECT_BALL));
   } else {
@@ -2698,7 +2702,6 @@ SoccerCommand BasicPlayer::markMostOpenOpponent(ObjectT withBall) {
   for (ObjectT o = WM->iterateObjectStart(iIndex, OBJECT_SET_OPPONENTS, dConfThr);
        o != OBJECT_ILLEGAL;
        o = WM->iterateObjectNext(iIndex, OBJECT_SET_OPPONENTS, dConfThr)) {
-    if (o == withBall) continue;
     VecPosition point = WM->getGlobalPosition(o);
     // if player is on sidelines, skip
     if (fabs(point.getY()) == 37)
@@ -2738,6 +2741,9 @@ VecPosition BasicPlayer::leastCongestedPointForPassInRectangle(Rect rect,
   for (int i = 0; i < x_granularity; i++) {
     for (int j = 0; j < y_granularity; j++) {
       tmp = WM->congestion(point = VecPosition(x, y));
+//       LogDraw.logCircle( "congestion", point, 0.3, 1, true,
+//    			 COLOR_WHITE, tmp );
+
       if (tmp < best_congestion &&
           WM->getNrInSetInCone(OBJECT_SET_OPPONENTS,
                                0.3, posFrom, point) == 0) {

@@ -96,8 +96,7 @@ public:
       double gamma, double lambda,
       double weight, bool qLearning,
       string loadWeightsFile,
-      string saveWeightsFile,
-      string teamName);
+      string saveWeightsFile);
 
   void shutDown();
 
@@ -130,7 +129,6 @@ private:
   string saveWeightsFile;
   bool bSaveWeights;
   SharedData *sharedData;
-  string teamName;
 
 private:
   unordered_map<string, Barrier *> barriers;
@@ -197,9 +195,9 @@ private:
   unordered_map<machine_state_t, num_choice_t> numChoicesMap;
   transition_t staticTransitions;
 
-  void saveStaticTransitions(string filename);
+  void saveStaticTransitions(const char *filename);
 
-  void loadStaticTransitions(string filename);
+  void loadStaticTransitions(const char *filename);
 
   double reward(double tau);
 

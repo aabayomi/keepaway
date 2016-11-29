@@ -489,7 +489,6 @@ inline string to_prettystring(const T &o) {
   ss << o;
   return ss.str();
 }
-
 }
 
 #endif  // H_PRETTY_PRINT

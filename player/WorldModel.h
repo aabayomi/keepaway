@@ -1128,7 +1128,7 @@ public:
 
   int takerStateVars(double state[]);
 
-  int getStateVars(double state[], int numTeammates, int numOpponents);
+  int playerStateVars(double state[], int numTeammates, int numOpponents);
 
   int keeperStateRangesAndResolutions(double ranges[],
                                       double minValues[],
@@ -1137,16 +1137,16 @@ public:
                                       int numT);
 
   int takerStateRangesAndResolutions(double ranges[],
-                                     double minValues[],
-                                     double resolutions[],
-                                     int numK,
-                                     int numT);
+                                      double minValues[],
+                                      double resolutions[],
+                                      int numK,
+                                      int numT);
 
-  int getStateRangesAndResolutions(double ranges[],
-                                   double minValues[],
-                                   double resolutions[],
-                                   int numTeammates,
-                                   int numOpponents);
+  int playerStateRangesAndResolutions(double ranges[],
+                                      double minValues[],
+                                      double resolutions[],
+                                      int numTeammates,
+                                      int numOpponents);
 
   /* Yaxin: change to keeperStateRangesAndResolutions to remove the dependency for tile coding
   int           keeperTileWidths           ( double         tileWidths[],
@@ -1215,12 +1215,6 @@ public:
                   Feature feature);
 
   bool isTmControllBall();
-
-  bool isOppControllBall();
-
-  int getBallControllStatus();
-
-  bool isBallFree();
 };
 
 #endif

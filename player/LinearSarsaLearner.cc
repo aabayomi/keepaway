@@ -30,28 +30,28 @@ void SharedData::reset() {
 
 choice_t SharedData::getLastJointChoice() const {
   return choice_t(lastJointChoice,
-                  lastJointChoice + HierarchicalFSM::numTeammates);
+                     lastJointChoice + HierarchicalFSM::num_teammates);
 }
 
 num_choice_t SharedData::getNumChoices() const {
-  num_choice_t ret((unsigned long) HierarchicalFSM::numTeammates);
-  for (int i = 0; i < HierarchicalFSM::numTeammates; ++i) {
+  num_choice_t ret((unsigned long) HierarchicalFSM::num_teammates);
+  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
     ret[i] = numChoices[Memory::ins().teammates[i]];
   }
   return ret;
 }
 
 machine_state_t SharedData::getMachineState() const {
-  machine_state_t ret((unsigned long) HierarchicalFSM::numTeammates);
-  for (int i = 0; i < HierarchicalFSM::numTeammates; ++i) {
+  machine_state_t ret((unsigned long) HierarchicalFSM::num_teammates);
+  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
     ret[i] = machineState[Memory::ins().teammates[i]];
   }
   return ret;
 }
 
 machine_state_t SharedData::getLastMachineState() const {
-  machine_state_t ret((unsigned long) HierarchicalFSM::numTeammates);
-  for (int i = 0; i < HierarchicalFSM::numTeammates; ++i) {
+  machine_state_t ret((unsigned long) HierarchicalFSM::num_teammates);
+  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
     ret[i] = lastMachineState[i];
   }
   return ret;
@@ -80,18 +80,17 @@ LinearSarsaLearner::LinearSarsaLearner() {
 void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
                                     double Lambda, double weight,
                                     bool QLearning, string loadWeightsFile,
-                                    string saveWeightsFile_, string teamName_) {
+                                    string saveWeightsFile_) {
   bLearning = learning;
   bSaveWeights = bLearning && saveWeightsFile_.length() > 0;
   saveWeightsFile = saveWeightsFile_;
   qLearning = QLearning;
-  teamName = teamName_;
 
-  for (int i = 0; i < HierarchicalFSM::numFeatures; i++) {
+  for (int i = 0; i < HierarchicalFSM::num_features; i++) {
     tileWidths[i] = width[i];
   }
 
-  initialWeight = teamName_ == "keepers" ? weight : -weight;
+  initialWeight = weight;
   alpha = 0.125;
   gamma = Gamma;
   lambda = Lambda;
@@ -122,7 +121,6 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
     exepath += to_string(lambda);
     exepath += to_string(initialWeight);
     exepath += to_string(qLearning);
-    exepath += teamName;
     auto h = hash<string>()(exepath); // hashing
     sharedMemory = "/" + to_string(h) + ".shm";
 
@@ -148,11 +146,11 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
     nonzeroTracesInverse = sharedData->nonzeroTracesInverse;
     colTab = &sharedData->colTab;
 
-    barriers["enter1"] = new Barrier(HierarchicalFSM::numTeammates, h, "enter1");
-    barriers["exit1"] = new Barrier(HierarchicalFSM::numTeammates, h, "exit1");
-    barriers["enter2"] = new Barrier(HierarchicalFSM::numTeammates, h, "enter2");
-    barriers["exit2"] = new Barrier(HierarchicalFSM::numTeammates, h, "exit2");
-    barriers["reset"] = new Barrier(HierarchicalFSM::numTeammates, h, "reset");
+    barriers["enter1"] = new Barrier(HierarchicalFSM::num_teammates, h, "enter1");
+    barriers["exit1"] = new Barrier(HierarchicalFSM::num_teammates, h, "exit1");
+    barriers["enter2"] = new Barrier(HierarchicalFSM::num_teammates, h, "enter2");
+    barriers["exit2"] = new Barrier(HierarchicalFSM::num_teammates, h, "exit2");
+    barriers["reset"] = new Barrier(HierarchicalFSM::num_teammates, h, "reset");
 
     sharedData->reset();
     if (loadWeightsFile.empty() || !loadWeights(loadWeightsFile.c_str())) {
@@ -160,7 +158,7 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
       colTab->reset();
     }
 
-    loadStaticTransitions(teamName + "_transitions.xml");
+    loadStaticTransitions("transitions.xml");
   }
 }
 
@@ -171,7 +169,7 @@ void LinearSarsaLearner::shutDown() {
       saveWeights(saveWeightsFile.c_str());
     }
 
-    saveStaticTransitions(teamName + "_transitions.xml");
+    saveStaticTransitions("transitions.xml");
 
 #if DETERMINISTIC_GRAPH
     dot::Graph G;
@@ -194,7 +192,7 @@ void LinearSarsaLearner::shutDown() {
       }
     }
 
-    G.dump(teamName + "_transitions.dot");
+    G.dump("transitions.dot");
 #endif
   }
 
@@ -220,7 +218,7 @@ bool LinearSarsaLearner::loadSharedData() {
   numChoicesMap[machineState] = numChoices;
 
   bool action_state = true; // action state (when all are in action)
-  for (int i = 0; i < HierarchicalFSM::numTeammates; ++i) {
+  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
     if (numChoices[i] > 1) {
       action_state = false;
     }
@@ -257,7 +255,7 @@ void LinearSarsaLearner::saveSharedData() {
   sharedData->lastJointChoiceIdx = lastJointChoiceIdx;
   sharedData->lastJointChoiceTime = lastJointChoiceTime;
 
-  for (int i = 0; i < HierarchicalFSM::numTeammates; ++i) {
+  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
     sharedData->numChoices[Memory::ins().teammates[i]] = numChoices[i];
     strcpy(sharedData->machineState[Memory::ins().teammates[i]],
            machineState[i].c_str());
@@ -268,20 +266,20 @@ void LinearSarsaLearner::saveSharedData() {
 
 const vector<int> &
 LinearSarsaLearner::validChoices(const num_choice_t &num_choices) {
-  Assert(num_choices.size() == HierarchicalFSM::numTeammates);
+  Assert(num_choices.size() == HierarchicalFSM::num_teammates);
   if (!validChoicesMap.count(num_choices) ||
       !jointChoicesMap.count(num_choices)) {
     jointChoicesMap[num_choices] = validChoicesRaw(num_choices);
     for (uint i = 0; i < jointChoicesMap[num_choices].size(); ++i) {
       Assert(jointChoicesMap[num_choices][i].size() ==
-             HierarchicalFSM::numTeammates);
+             HierarchicalFSM::num_teammates);
       validChoicesMap[num_choices].push_back(i);
     }
   }
   return validChoicesMap[num_choices];
 }
 
-void LinearSarsaLearner::saveStaticTransitions(string filename) {
+void LinearSarsaLearner::saveStaticTransitions(const char *filename) {
   std::ofstream ofs(filename);
   Assert(ofs.good());
   boost::archive::xml_oarchive oa(ofs);
@@ -291,7 +289,7 @@ void LinearSarsaLearner::saveStaticTransitions(string filename) {
   oa << BOOST_SERIALIZATION_NVP(staticTransitions);
 }
 
-void LinearSarsaLearner::loadStaticTransitions(string filename) {
+void LinearSarsaLearner::loadStaticTransitions(const char *filename) {
   std::ifstream ifs(filename);
   if (!ifs.good())
     return;
@@ -371,7 +369,7 @@ double LinearSarsaLearner::reward(double tau) {
     ret = (1.0 - pow(gamma, tau)) / (1.0 - gamma);
   }
 
-  return teamName == "keepers" ? ret : -ret;
+  return ret;
 }
 
 int LinearSarsaLearner::step(int current_time) {
@@ -488,7 +486,7 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
       if (numChoices[Memory::ins().agentIdx] <= 1) { // dummy choice
         return step(current_time, num_choices);
       } else {
-        Assert(lastJointChoice.size() == HierarchicalFSM::numTeammates);
+        Assert(lastJointChoice.size() == HierarchicalFSM::num_teammates);
         return lastJointChoice[Memory::ins().agentIdx];
       }
     } else { // race condition?
@@ -541,7 +539,7 @@ int LinearSarsaLearner::loadTiles(double state[],
           validChoices(num_choices).size(), h);
 
   int numTilings = 0;
-  for (int v = 0; v < HierarchicalFSM::numFeatures; v++) {
+  for (int v = 0; v < HierarchicalFSM::num_features; v++) {
     for (auto a : validChoices(num_choices)) {
       GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
                 (float) (state[v] / tileWidths[v]), a, v, h);
@@ -653,8 +651,8 @@ int LinearSarsaLearner::selectChoice(const num_choice_t &num_choices) {
 }
 
 int LinearSarsaLearner::argmaxQ(const num_choice_t &num_choices) {
-  int bestAction = -1;
-  double bestValue = (double) INT_MIN;
+  int bestAction = 0;
+  double bestValue = numeric_limits<double>::min();
   int numTies = 0;
 
   for (auto a : validChoices(num_choices)) {
@@ -671,7 +669,6 @@ int LinearSarsaLearner::argmaxQ(const num_choice_t &num_choices) {
     }
   }
 
-  Assert(bestAction != -1);
   return bestAction;
 }
 

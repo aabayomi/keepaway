@@ -97,15 +97,17 @@ double WorldModel::keeperReward(int lastActionTime) {
   return reward;
 }
 
-int WorldModel::keeperStateVars(double state[]) {
-  return getStateVars(state, getNumKeepers(), getNumTakers());
+int WorldModel::keeperStateVars(double state[])
+{
+  return playerStateVars(state, getNumKeepers(), getNumTakers());
 }
 
-int WorldModel::takerStateVars(double state[]) {
-  return getStateVars(state, getNumTakers(), getNumKeepers());
+int WorldModel::takerStateVars(double state[])
+{
+  return playerStateVars(state, getNumTakers(), getNumKeepers());
 }
 
-int WorldModel::getStateVars(double state[], int numTeammates, int numOpponents) {
+int WorldModel::playerStateVars(double state[], int numTeammates, int numOpponents) {
   ObjectT K0 = getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
   VecPosition C = getKeepawayRect().getPosCenter();
 
@@ -124,16 +126,12 @@ int WorldModel::getStateVars(double state[], int numTeammates, int numOpponents)
     T[i] = SoccerTypes::getOpponentObjectFromIndex(i);
 
   double dist_to_K0_K[numTeammates];
-  if (!sortClosestTo(K, numTeammates, K0, dist_to_K0_K)) {
-    Log.log(101, "WorldModel::getStateVars !sortClosestTo(K, numTeammates, K0, dist_to_K0_K)");
+  if (!sortClosestTo(K, numTeammates, K0, dist_to_K0_K))
     return 0;
-  }
 
   double dist_to_K0_T[numOpponents];
-  if (!sortClosestTo(T, numOpponents, K0, dist_to_K0_T)) {
-    Log.log(101, "WorldModel::getStateVars !sortClosestTo(T, numOpponents, K0, dist_to_K0_T)");
+  if (!sortClosestTo(T, numOpponents, K0, dist_to_K0_T))
     return 0;
-  }
 
   double dist_to_C_K[numTeammates];
   for (int i = 1; i < numTeammates; i++) {
@@ -204,10 +202,12 @@ int WorldModel::getStateVars(double state[], int numTeammates, int numOpponents)
 // I want to keep the LinearSarsa
 // class generic.
 
-int WorldModel::getStateRangesAndResolutions(double ranges[],
-                                             double minValues[],
-                                             double resolutions[],
-                                             int numTeammates, int numOpponents) {
+// Yaxin: changed from keeperTileWidths to keeperResolutions and keeperRanges,
+int WorldModel::playerStateRangesAndResolutions(
+    double ranges[],
+    double minValues[],
+    double resolutions[],
+    int numTeammates, int numOpponents) {
   int j = 0;
 
   double maxRange = hypot(25, 25);
@@ -219,7 +219,7 @@ int WorldModel::getStateRangesAndResolutions(double ranges[],
   for (int i = 1; i < numTeammates; i++) {     // dist_to_K0_Teammate
     ranges[j] = maxRange;
     minValues[j] = 0;
-    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 1);
+    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 2);
   }
 
   for (int i = 0; i < numOpponents; i++) {     // dist_to_K0_Opponent
@@ -231,7 +231,7 @@ int WorldModel::getStateRangesAndResolutions(double ranges[],
   for (int i = 1; i < numTeammates; i++) {     // dist_to_center_Teammate
     ranges[j] = maxRange / 2.0;
     minValues[j] = 0;
-    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 1);
+    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 2);
   }
 
   for (int i = 0; i < numOpponents; i++) {     // dist_to_center_Opponent
@@ -263,7 +263,6 @@ int WorldModel::getStateRangesAndResolutions(double ranges[],
   return j;
 }
 
-// Yaxin: changed from keeperTileWidths to keeperResolutions and keeperRanges,
 int WorldModel::keeperStateRangesAndResolutions(
     double ranges[],
     double minValues[],
@@ -281,7 +280,7 @@ int WorldModel::keeperStateRangesAndResolutions(
     return 0;
   }
 
-  return getStateRangesAndResolutions(ranges, minValues, resolutions, numK, numT);
+  return playerStateRangesAndResolutions(ranges, minValues, resolutions, numK, numT);
 }
 
 int WorldModel::takerStateRangesAndResolutions(
@@ -301,7 +300,7 @@ int WorldModel::takerStateRangesAndResolutions(
     return 0;
   }
 
-  return getStateRangesAndResolutions(ranges, minValues, resolutions, numT, numK);
+  return playerStateRangesAndResolutions(ranges, minValues, resolutions, numT, numK);
 }
 
 void WorldModel::setMoveSpeed(double speed) {

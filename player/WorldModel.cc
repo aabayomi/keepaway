@@ -53,15 +53,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include<stdio.h>    // needed for printf
 #include<errno.h>    // needed for ETIMEDOUT
-
 #ifdef WIN32
-#include<windows.h>
+  #include<windows.h>
 #else
 
 #include<pthread.h>  // needed for pthread_mutex_init
-
 #endif
-
 #include<string.h>   // needed for strcpy
 #include<math.h>     // needed for erf
 #include<map>        // needed for map
@@ -76,71 +73,75 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     \param ss reference to class in which all server parameters are stored
     \param ps reference to class in which all client parameters are stored
     \param fs reference to class in which all formation information is stored*/
-WorldModel::WorldModel(ServerSettings *ss, PlayerSettings *ps,
-                       Formations *fs) : agentObject() {
-  dTotalVarVel = 0.0;
-  dTotalVarPos = 0.0;
-  SS = ss;
-  PS = ps;
-  formations = fs;
-  bNewInfo = false;
+WorldModel::WorldModel( ServerSettings *ss, PlayerSettings *ps,
+                        Formations *fs):agentObject(  )
+{
+  dTotalVarVel   = 0.0;
+  dTotalVarPos   = 0.0;
+  SS             = ss;
+  PS             = ps;
+  formations     = fs;
+  bNewInfo       = false;
 
-  setSide(SIDE_ILLEGAL); // is set by init message
+  setSide         ( SIDE_ILLEGAL ); // is set by init message
   strTeamName[0] = '\0';
-  setPlayMode(PM_BEFORE_KICK_OFF);
-  iGoalDiff = 0;
+  setPlayMode     ( PM_BEFORE_KICK_OFF );
+  iGoalDiff      = 0;
   iPlayerNumber = 0;
   m_sidePenalty = SIDE_ILLEGAL;
   setCommunicationString("");
 
   int i;
-  for (i = 0; i < MAX_TEAMMATES; i++)
-    Teammates[i].setType(SoccerTypes::getTeammateObjectFromIndex(i));
-  for (i = 0; i < MAX_OPPONENTS; i++)
-    Opponents[i].setType(SoccerTypes::getOpponentObjectFromIndex(i));
-  for (i = 0; i < MAX_OPPONENTS + MAX_TEAMMATES; i++)
-    UnknownPlayers[i].setType(OBJECT_ILLEGAL);
-  for (i = 0; i < MAX_FLAGS; i++)
-    Flags[i].setType(OBJECT_ILLEGAL);
-  for (i = 0; i < MAX_LINES; i++)
-    Lines[i].setType(OBJECT_ILLEGAL);
+  for( i = 0; i < MAX_TEAMMATES ; i ++ )
+    Teammates[i].setType( SoccerTypes::getTeammateObjectFromIndex( i ) );
+  for( i = 0; i < MAX_OPPONENTS ; i ++ )
+    Opponents[i].setType( SoccerTypes::getOpponentObjectFromIndex( i ) );
+  for( i = 0; i < MAX_OPPONENTS + MAX_TEAMMATES ; i ++ )
+    UnknownPlayers[i].setType( OBJECT_ILLEGAL );
+  for( i = 0; i < MAX_FLAGS; i ++ )
+    Flags[i].setType( OBJECT_ILLEGAL );
+  for( i = 0; i < MAX_LINES; i ++ )
+    Lines[i].setType( OBJECT_ILLEGAL );
 
-  iNrUnknownPlayers = 0;
+  iNrUnknownPlayers     = 0;
 
-  Ball.setType(OBJECT_BALL);
-  agentObject.setType(OBJECT_ILLEGAL);
-  agentObject.setStamina(Stamina(SS->getStaminaMax(), 1.0, 1.0));
+  Ball.setType             ( OBJECT_BALL    );
+  agentObject.setType      ( OBJECT_ILLEGAL );
+  agentObject.setStamina   ( Stamina(SS->getStaminaMax(),1.0,1.0) );
 
-  for (i = 0; i < CMD_MAX_COMMANDS; i++) {
-    queuedCommands[i].commandType = (CommandT) i;
-    performedCommands[i] = false;
-    iCommandCounters[i] = 0;
+  for( i = 0 ; i < CMD_MAX_COMMANDS ; i ++ )
+  {
+    queuedCommands[i].commandType = (CommandT)i;
+    performedCommands[i]          = false;
+    iCommandCounters[i]           = 0;
   }
 
-  iNrHoles = 0;
-  iNrOpponentsSeen = 0;
-  iNrTeammatesSeen = 0;
-  bsCheckBall = BS_ILLEGAL;
+  iNrHoles              = 0;
+  iNrOpponentsSeen      = 0;
+  iNrTeammatesSeen      = 0;
+  bsCheckBall           = BS_ILLEGAL;
 
   // initialize the mutex for bNewInfo
 #ifdef WIN32
   InitializeCriticalSection( &mutex_newInfo );
   event_newInfo = CreateEvent( NULL, TRUE, FALSE, NULL );
 #else
-  pthread_mutex_init(&mutex_newInfo, NULL);
-  pthread_cond_init(&cond_newInfo, NULL);
+  pthread_mutex_init( &mutex_newInfo, NULL );
+  pthread_cond_init ( &cond_newInfo,  NULL );
 #endif
-  m_bRecvThink = false;
-  timeLastSenseMessage = Time(0, 1);
+  m_bRecvThink          = false;
+  timeLastSenseMessage  = Time( 0, 1 );
 
-  for (i = 0; i < MAX_FEATURES; i++) {
-    m_features[i].setTimeSee(Time(UnknownTime, 0));
-    m_features[i].setTimeSense(Time(UnknownTime, 0));
+  for( i = 0 ; i < MAX_FEATURES ; i ++ )
+  {
+    m_features[i].setTimeSee( Time( UnknownTime, 0 ) );
+    m_features[i].setTimeSense( Time( UnknownTime, 0 ) );
   }
 }
 
 /*! Destructor */
-WorldModel::~WorldModel() {
+WorldModel::~WorldModel()
+{
 #ifdef WIN32
   DeleteCriticalSection( &mutex_newInfo );
 #endif
@@ -150,29 +151,32 @@ WorldModel::~WorldModel() {
     type that is passed as the first argument.
     \param o ObjectType of which information should be returned
     \return pointer to object information of supplied ObjectT argument */
-Object *WorldModel::getObjectPtrFromType(ObjectT o) {
+Object* WorldModel::getObjectPtrFromType( ObjectT o )
+{
   Object *object = NULL;
-  if (o == OBJECT_ILLEGAL)
+  if( o == OBJECT_ILLEGAL )
     return NULL;
 
-  if (SoccerTypes::isKnownPlayer(o)) {
-    if (o == agentObject.getType())
+  if( SoccerTypes::isKnownPlayer( o ) )
+  {
+    if( o == agentObject.getType() )
       object = &agentObject;
-    else if (SoccerTypes::isTeammate(o))
+    else if( SoccerTypes::isTeammate( o ) )
       object = &Teammates[SoccerTypes::getIndex(o)];
     else
       object = &Opponents[SoccerTypes::getIndex(o)];
-  } else if (SoccerTypes::isFlag(o))
+  }
+  else if( SoccerTypes::isFlag( o ) )
     object = &Flags[SoccerTypes::getIndex(o)];
-  else if (SoccerTypes::isLine(o))
+  else if( SoccerTypes::isLine( o ) )
     object = &Lines[SoccerTypes::getIndex(o)];
-  else if (SoccerTypes::isBall(o))
+  else if( SoccerTypes::isBall( o ) )
     object = &Ball;
-  else if (o == OBJECT_OPPONENT_GOALIE)
-    return getObjectPtrFromType(getOppGoalieType());
-  else if (o == OBJECT_TEAMMATE_GOALIE)
-    return getObjectPtrFromType(getOwnGoalieType());
-  return object;
+  else if( o == OBJECT_OPPONENT_GOALIE )
+    return getObjectPtrFromType( getOppGoalieType() );
+  else if( o == OBJECT_TEAMMATE_GOALIE )
+    return getObjectPtrFromType( getOwnGoalieType() );
+ return object;
 }
 
 /*! This method sets the time of the last catch cycle. This information is
@@ -180,14 +184,16 @@ Object *WorldModel::getObjectPtrFromType(ObjectT o) {
     After a catch, the goalie is not allowed to catch the ball for
     catch_ban_cycles (defined in ServerSettings).
     \param iTime time the ball was catched. */
-void WorldModel::setTimeLastCatch(Time time) {
+void WorldModel::setTimeLastCatch( Time time )
+{
   timeLastCatch = time;
 }
 
 /*! This method returns the number of cycles since the last catch.
     \return cycles since last catch. */
-int WorldModel::getTimeSinceLastCatch() {
-  if (timeLastCatch.getTime() == -1)
+int WorldModel::getTimeSinceLastCatch()
+{
+  if( timeLastCatch.getTime() == -1 )
     return 1000;
   return timeLastSenseMessage - timeLastCatch;
 }
@@ -195,14 +201,16 @@ int WorldModel::getTimeSinceLastCatch() {
 /*! This method sets the time of the last received referee message. This
     information is received by the SenseHandler.
     \param iTime time the referee sent the last message. */
-bool WorldModel::setTimeLastRefereeMessage(Time time) {
+bool WorldModel::setTimeLastRefereeMessage( Time time )
+{
   timeLastRefMessage = time;
   return true;
 }
 
 /*! This method returns the time of the last received referee message.
     \return time of last received referee message. */
-Time WorldModel::getTimeLastRefereeMessage() {
+Time WorldModel::getTimeLastRefereeMessage( )
+{
   return timeLastRefMessage;
 }
 
@@ -210,8 +218,9 @@ Time WorldModel::getTimeLastRefereeMessage() {
     time of the last sense message, in case of the coach this is the time of
     the last see_global message.
     \return actual time */
-Time WorldModel::getCurrentTime() {
-  if (getPlayerNumber() == 0)
+Time WorldModel::getCurrentTime()
+{
+  if( getPlayerNumber() == 0 )
     return getTimeLastSeeGlobalMessage();
   else
     return getTimeLastRecvSenseMessage();
@@ -221,7 +230,8 @@ Time WorldModel::getCurrentTime() {
     the cycle of the last sense message, in case of the coach this is the cycle
     of the last see_global message.
     \return actual time */
-int WorldModel::getCurrentCycle() {
+int WorldModel::getCurrentCycle()
+{
   return getCurrentTime().getTime();
 }
 
@@ -231,34 +241,39 @@ int WorldModel::getCurrentCycle() {
     etc.).
 
     \return bool indicating whether time of the server stands still. */
-bool WorldModel::isTimeStopped() {
+bool WorldModel::isTimeStopped()
+{
   return getCurrentTime().isStopped();
 }
 
 /*! This method returns whether the last received message was a see or not.
     \return bool indicating whether the last received message was a see.*/
-bool WorldModel::isLastMessageSee() const {
-  return getTimeLastSeeMessage() == getTimeLastSenseMessage();
+bool WorldModel::isLastMessageSee() const
+{
+  return getTimeLastSeeMessage() == getTimeLastSenseMessage() ;
 }
 
 /*! This method returns the time of the last see global message.
     This message can only be received by the coach.
     \return time of last see_global message */
-Time WorldModel::getTimeLastSeeGlobalMessage() const {
+Time WorldModel::getTimeLastSeeGlobalMessage( ) const
+{
   return getTimeLastRecvSeeMessage();
 }
 
 /*! This method sets the time of the last see_global message.
     \param time see message has arrived
     \return true when update was succesful */
-bool WorldModel::setTimeLastSeeGlobalMessage(Time time) {
-  updateRelativeFromGlobal();
-  return setTimeLastSeeMessage(time); // set see message
+bool WorldModel::setTimeLastSeeGlobalMessage( Time time )
+{
+  updateRelativeFromGlobal( );
+  return setTimeLastSeeMessage( time ); // set see message
 }
 
 /*! This method returns the time of the last see message
     \return time of last see message */
-Time WorldModel::getTimeLastSeeMessage() const {
+Time WorldModel::getTimeLastSeeMessage( ) const
+{
   return timeLastSeeMessage;
 }
 
@@ -267,10 +282,10 @@ Time WorldModel::getTimeLastSeeMessage() const {
     the last see message that has been updated in the world model. In most
     cases these are equal.
     \return time of last received sense message */
-Time WorldModel::getTimeLastRecvSeeMessage() const {
-  return timeLastRecvSeeMessage;
+Time WorldModel::getTimeLastRecvSeeMessage( ) const
+{
+  return timeLastRecvSeeMessage ;
 }
-
 /*! This method sets the time of the last see message. It also sends a
     condition signal to indicate that variable bNewInfo has
     changed. When main thread is stopped in waitForNewInformation, it
@@ -278,20 +293,22 @@ Time WorldModel::getTimeLastRecvSeeMessage() const {
 
     \param time see message has arrived
     \return true when update was succesful */
-bool WorldModel::setTimeLastSeeMessage(Time time) {
-  timeLastRecvSeeMessage = time;
-  if (SS->getSynchMode() == false) {
+bool WorldModel::setTimeLastSeeMessage( Time time )
+{
+  timeLastRecvSeeMessage  = time;
+  if( SS->getSynchMode() == false )
+  {
 #ifdef WIN32
     //EnterCriticalSection( &mutex_newInfo );
     bNewInfo            = true;
     SetEvent            (  event_newInfo );
     //LeaveCriticalSection( &mutex_newInfo );
 #else
-    pthread_mutex_lock(&mutex_newInfo);
-    bNewInfo = true;
+    pthread_mutex_lock  ( &mutex_newInfo );
+    bNewInfo            = true;
     //Log.log( 101, "WorldModel::setTimeLastSeeMessage" );
-    pthread_cond_signal(&cond_newInfo);
-    pthread_mutex_unlock(&mutex_newInfo);
+    pthread_cond_signal ( &cond_newInfo );
+    pthread_mutex_unlock( &mutex_newInfo );
 #endif
   }
 
@@ -300,8 +317,9 @@ bool WorldModel::setTimeLastSeeMessage(Time time) {
 
 /*! This method returns the time of the last sense message
     \return time of last sense message */
-Time WorldModel::getTimeLastSenseMessage() const {
-  return timeLastSenseMessage;
+Time WorldModel::getTimeLastSenseMessage( ) const
+{
+  return timeLastSenseMessage ;
 }
 
 /*! This method returns the time of the last received sense message.
@@ -309,8 +327,9 @@ Time WorldModel::getTimeLastSenseMessage() const {
     the last sense message that has been updated in the world model. In most
     cases these are equal.
     \return time of last received sense message */
-Time WorldModel::getTimeLastRecvSenseMessage() const {
-  return timeLastRecvSenseMessage;
+Time WorldModel::getTimeLastRecvSenseMessage( ) const
+{
+  return timeLastRecvSenseMessage ;
 }
 
 
@@ -320,21 +339,23 @@ Time WorldModel::getTimeLastRecvSenseMessage() const {
     unblocked.
     \param time sense message has arrived
     \return true when update was succesful */
-bool WorldModel::setTimeLastSenseMessage(Time time) {
+bool WorldModel::setTimeLastSenseMessage( Time time )
+{
   //Log.log( 101, "WorldModel::setTimeLastSenseMessage" );
 
   timeLastRecvSenseMessage = time;
-  if (SS->getSynchMode() == false) {
+  if( SS->getSynchMode() == false )
+  {
 #ifdef WIN32
     //EnterCriticalSection( &mutex_newInfo );
     bNewInfo = true;
     SetEvent            (  event_newInfo );
   //LeaveCriticalSection( &mutex_newInfo );
 #else
-    pthread_mutex_lock(&mutex_newInfo);
+    pthread_mutex_lock  ( &mutex_newInfo );
     bNewInfo = true;
-    pthread_cond_signal(&cond_newInfo);
-    pthread_mutex_unlock(&mutex_newInfo);
+    pthread_cond_signal ( &cond_newInfo );
+    pthread_mutex_unlock( &mutex_newInfo );
 #endif
   }
 
@@ -343,14 +364,16 @@ bool WorldModel::setTimeLastSenseMessage(Time time) {
 
 /*! This method returns the time of the last hear message
     \return time of last hear message */
-Time WorldModel::getTimeLastHearMessage() const {
-  return timeLastHearMessage;
+Time WorldModel::getTimeLastHearMessage( ) const
+{
+  return timeLastHearMessage ;
 }
 
 /*! This method sets the time of the last hear message.
     \param time hear message has arrived
     \return true when update was succesful */
-bool WorldModel::setTimeLastHearMessage(Time time) {
+bool WorldModel::setTimeLastHearMessage( Time time )
+{
   timeLastHearMessage = time;
   return true;
 }
@@ -358,7 +381,8 @@ bool WorldModel::setTimeLastHearMessage(Time time) {
 /*! This method returns the player number of the agent. The player number is
     the fixed number which is given by the server after initialization.
     \return player number of this player. */
-int WorldModel::getPlayerNumber() const {
+int WorldModel::getPlayerNumber( ) const
+{
   return iPlayerNumber;
 }
 
@@ -366,7 +390,8 @@ int WorldModel::getPlayerNumber() const {
     the conformation message sent by the soccerserver after the initialization.
     \param i new player number of the agent.
     \return bool indicating whether player number was set. */
-bool WorldModel::setPlayerNumber(int i) {
+bool WorldModel::setPlayerNumber( int i )
+{
   iPlayerNumber = i;
   return true;
 }
@@ -374,37 +399,41 @@ bool WorldModel::setPlayerNumber(int i) {
 /*! This method returns the side of the agent. Note that
     the side of the agent does not change after half time.
     \return side (SIDE_LEFT or SIDE_RIGHT) for agent */
-SideT WorldModel::getSide() const {
+SideT WorldModel::getSide( ) const
+{
   return sideSide;
 }
 
 /*! This method sets the side of the agent
     \param s (SIDE_LEFT or SIDE_RIGHT) for agent
     \return bool indicating whether update was succesful.*/
-bool WorldModel::setSide(SideT s) {
+bool WorldModel::setSide( SideT s )
+{
   sideSide = s;
 
 #if USE_DRAW_LOG
   LogDraw.setSide( s );
 #endif
 
-  m_iMultX = (getSide() == SIDE_LEFT) ? 1 : -1;    // set the draw info
-  m_iMultY = (getSide() == SIDE_LEFT) ? -1 : 1;    // from Logger.C
+  m_iMultX = (getSide() == SIDE_LEFT ) ?  1 : -1 ;    // set the draw info
+  m_iMultY = (getSide() == SIDE_LEFT ) ? -1 :  1 ;    // from Logger.C
   return true;
 }
 
 /*! This method returns the teamname of the agent in this worldmodel
     \return teamname for the agent in this worldmodel */
-const char *WorldModel::getTeamName() const {
-  return strTeamName;
+const char* WorldModel::getTeamName( ) const
+{
+  return strTeamName ;
 }
 
 /*! This method sets the teamname of the agent. The maximum team name is
     MAX_TEAM_NAME_LENGTH as defined in Soccertypes.h.
     \param str teamname for the agent in this worldmodel
     \return bool indicating whether update was succesful.*/
-bool WorldModel::setTeamName(char *str) {
-  strcpy(strTeamName, str);
+bool WorldModel::setTeamName( char * str )
+{
+  strcpy( strTeamName, str );
   return true;
 }
 
@@ -412,18 +441,20 @@ bool WorldModel::setTeamName(char *str) {
     through by the referee.
 
     \return current playmode (see SoccerTypes for possibilities) */
-PlayModeT WorldModel::getPlayMode() const {
-  return playMode;
+PlayModeT WorldModel::getPlayMode( ) const
+{
+  return playMode ;
 }
 
 /*! This method sets the play mode of the agent in this worldmodel
     \param pm for the agent in this worldmodel
     \return bool indicating whether update was succesful.*/
-bool WorldModel::setPlayMode(PlayModeT pm) {
+bool WorldModel::setPlayMode( PlayModeT pm )
+{
   playMode = pm;
-  if ((pm == PM_GOAL_KICK_LEFT && getSide() == SIDE_LEFT) ||
-      (pm == PM_GOAL_KICK_RIGHT && getSide() == SIDE_RIGHT))
-    setTimeLastCatch(getTimeLastSenseMessage());
+  if( ( pm == PM_GOAL_KICK_LEFT  && getSide() == SIDE_LEFT  ) ||
+      ( pm == PM_GOAL_KICK_RIGHT && getSide() == SIDE_RIGHT )    )
+    setTimeLastCatch( getTimeLastSenseMessage() );
   return true;
 }
 
@@ -431,21 +462,24 @@ bool WorldModel::setPlayMode(PlayModeT pm) {
     the team of agent is behind, 0 means that the score is currently the same
     for both teams and a value higher than zero means that you're winning!.
     \return goal difference */
-int WorldModel::getGoalDiff() const {
+int WorldModel::getGoalDiff( ) const
+{
   return iGoalDiff;
 }
 
 /*!This method adds one goal to the goal difference. Call this method when your
    team has scored a goal
    \return new goal difference */
-int WorldModel::addOneToGoalDiff() {
+int WorldModel::addOneToGoalDiff( )
+{
   return ++iGoalDiff;
 }
 
 /*!This method subtracts one from the goal difference. Call this method when
    you're team has conceided a goal
    \return new goal difference */
-int WorldModel::subtractOneFromGoalDiff() {
+int WorldModel::subtractOneFromGoalDiff()
+{
   return --iGoalDiff;
 }
 
@@ -453,8 +487,9 @@ int WorldModel::subtractOneFromGoalDiff() {
     This is supplied in the sense_body message.
     \param c CommandT of which number of commands should be returned.
     \return amount of commands c performed by the soccerserver. */
-int WorldModel::getNrOfCommands(CommandT c) const {
-  return iCommandCounters[(int) c];
+int WorldModel::getNrOfCommands( CommandT c ) const
+{
+  return iCommandCounters[ (int) c ];
 }
 
 /*! This method sets the number of commands c that were performed by the agent.
@@ -466,19 +501,21 @@ int WorldModel::getNrOfCommands(CommandT c) const {
     \param c CommandT of which the number of commands should be set.
     \param i number of commands that are performed of this command
     \return bool indicating whether update was performed. */
-bool WorldModel::setNrOfCommands(CommandT c, int i) {
+bool WorldModel::setNrOfCommands( CommandT c, int i )
+{
   int iIndex = (int) c;
 
   // if counter is the same as before, no command is performed, otherwise it is
-  performedCommands[iIndex] = (iCommandCounters[iIndex] == i) ? false : true;
-  iCommandCounters[iIndex] = i;
+  performedCommands[iIndex] = ( iCommandCounters[iIndex] == i ) ? false : true;
+  iCommandCounters [iIndex] = i;
   return true;
 }
 
 /*! This method returns the time the status of the ball was last checked
     (coach only).
     \return server cycle the status of the ball was last checked. */
-Time WorldModel::getTimeCheckBall() const {
+Time WorldModel::getTimeCheckBall( ) const
+{
   return timeCheckBall;
 }
 
@@ -486,7 +523,8 @@ Time WorldModel::getTimeCheckBall() const {
     only).
     \param time server time ball was checked.
     \return bool indicating whether update was succesfull. */
-bool WorldModel::setTimeCheckBall(Time time) {
+bool WorldModel::setTimeCheckBall( Time time )
+{
   timeCheckBall = time;
   return true;
 }
@@ -495,7 +533,8 @@ bool WorldModel::setTimeCheckBall(Time time) {
     the check_ball command that can only be used by the coach. The status of
     the ball corresponds to the server time returned by getTimeCheckBall.
     \return BallStatus status of the ball. */
-BallStatusT WorldModel::getCheckBallStatus() const {
+BallStatusT WorldModel::getCheckBallStatus( ) const
+{
   return bsCheckBall;
 }
 
@@ -503,14 +542,16 @@ BallStatusT WorldModel::getCheckBallStatus() const {
     corresponds to the server time returned by getTimeCheckBall.  This method
     is only useful for the coach, since only he can sent a check_ball message.
     \return BallStatus status of the ball.  */
-bool WorldModel::setCheckBallStatus(BallStatusT bs) {
+bool WorldModel::setCheckBallStatus( BallStatusT bs )
+{
   bsCheckBall = bs;
   return true;
 }
 
 /*! This method returns a boolean indicating whether the synchronization method
     indicated we are ready. */
-bool WorldModel::getRecvThink() {
+bool WorldModel::getRecvThink( )
+{
   return m_bRecvThink;
 }
 
@@ -518,7 +559,8 @@ bool WorldModel::getRecvThink() {
     during the creation of the action. When the ActHandler sends its actions,
     it sends this string to the server.
     \return communication string. */
-char *WorldModel::getCommunicationString() {
+char* WorldModel::getCommunicationString( )
+{
   return m_strCommunicate;
 }
 
@@ -526,7 +568,8 @@ char *WorldModel::getCommunicationString() {
 /*! This methods returns the object type of the object that is currently
     listened to. This information is gathered from a sense message.
     When this agent says a message, we will definitely hear it. */
-ObjectT WorldModel::getObjectFocus() {
+ObjectT WorldModel::getObjectFocus( )
+{
   return m_objFocus;
 }
 
@@ -534,7 +577,8 @@ ObjectT WorldModel::getObjectFocus() {
 /*! This methods sets the object type of the object that is currently listened
     to. This information is gathered from a sense message. When this agent says
     a message, we will definitely hear it. */
-bool WorldModel::setObjectFocus(ObjectT obj) {
+bool WorldModel::setObjectFocus( ObjectT obj )
+{
   m_objFocus = obj;
   return true;
 }
@@ -544,13 +588,14 @@ bool WorldModel::setObjectFocus(ObjectT obj) {
     during the creation of the action. When the ActHandler sends its actions,
     it sends this string to the server.
     \return communication string. */
-bool WorldModel::setCommunicationString(const char *str) {
-  strncpy(m_strCommunicate, str, MAX_SAY_MSG);
+bool WorldModel::setCommunicationString( const char *str )
+{
+  strncpy( m_strCommunicate, str, MAX_SAY_MSG );
   m_strCommunicate[MAX_SAY_MSG] = '\0';
 
 #if USE_DRAW_LOG
   LogDraw.logText( "comm string", VecPosition( -40, 20 ),
-       str, 40, COLOR_SADDLE_BROWN );
+		   str, 40, COLOR_SADDLE_BROWN );
 #endif
   return true;
 }
@@ -564,10 +609,11 @@ bool WorldModel::setCommunicationString(const char *str) {
    \param g ObjectSetT of which the ObjecT should be returned.
    \param dConf minimum confidence needed for ObjectT to be returned.
    \return ObjectT that is first in the set g. */
-ObjectT WorldModel::iterateObjectStart(int &iIndex, ObjectSetT g, double dConf,
-                                       bool bForward) {
+ObjectT WorldModel::iterateObjectStart(int& iIndex,ObjectSetT g,double dConf,
+				       bool bForward)
+{
   iIndex = -1;
-  return iterateObjectNext(iIndex, g, dConf, bForward);
+  return iterateObjectNext( iIndex, g, dConf, bForward );
 }
 
 /*!This method gets the next object in the iteration over an object set g.
@@ -578,50 +624,56 @@ ObjectT WorldModel::iterateObjectStart(int &iIndex, ObjectSetT g, double dConf,
    \param g ObjectSetT of which the ObjecT should be returned.
    \param dConf minimum confidence needed for ObjectT to be returned.
    \return ObjectT that is next in the set g. */
-ObjectT WorldModel::iterateObjectNext(int &iIndex, ObjectSetT g, double dConf,
-                                      bool bForward) {
+ObjectT WorldModel::iterateObjectNext(int& iIndex,ObjectSetT g, double dConf,
+				      bool bForward)
+{
   ObjectT o, objGoalie = OBJECT_TEAMMATE_1;
   bool bContinue = true;
 
-  if (g == OBJECT_SET_TEAMMATES_NO_GOALIE)
+  if( g == OBJECT_SET_TEAMMATES_NO_GOALIE )
     objGoalie = getOwnGoalieType();
 
-  if (iIndex < 0)
-    iIndex = (bForward == false) ? OBJECT_MAX_OBJECTS : -1;
+  if( iIndex < 0 )
+    iIndex = (bForward==false) ? OBJECT_MAX_OBJECTS : -1 ;
 
   // when dConf is not specified it has the default value of -1.0, in this
   // case set it to the confidence threshold defined in PlayerSetting, but
   // only do this for dynamic objexts, not for flags, lines, etc. since all
   // should be returend.
-  if (dConf == -1.0 && (g == OBJECT_SET_OPPONENTS || g == OBJECT_SET_PLAYERS ||
-                        g == OBJECT_SET_TEAMMATES))
+  if( dConf == -1.0 && (g==OBJECT_SET_OPPONENTS || g==OBJECT_SET_PLAYERS ||
+                        g==OBJECT_SET_TEAMMATES) )
     dConf = PS->getPlayerConfThr();
 
   int i = 0;
-  if (bForward == true)
+  if( bForward == true )
     i = iIndex + 1;
   else
     i = iIndex - 1;
-  bContinue = (bForward == false) ? (i >= 0) : (i < OBJECT_MAX_OBJECTS);
+  bContinue = ( bForward == false ) ? ( i >= 0 ) : ( i < OBJECT_MAX_OBJECTS );
 
-  while (bContinue) {
+  while( bContinue )
+  {
     o = (ObjectT) i;
-    if (SoccerTypes::isInSet(o, g, objGoalie)) {
-      if (getConfidence(o) >= dConf) {
+    if( SoccerTypes::isInSet( o, g, objGoalie ) )
+    {
+      if( getConfidence( o ) >= dConf )
+      {
         iIndex = i;
         return o;
-      } else if (dConf == 1.0 && getTimeLastSeeMessage() == getTimeLastSeen(o)) {
+      }
+      else if( dConf == 1.0 && getTimeLastSeeMessage() == getTimeLastSeen( o ))
+      {
         iIndex = i; // confidence of 1.0 can only be in same cycle as see
         return o;   // message. Therefore first test should succeed normally;
       }             // in cases where this method is called after see message,
-      // but new sense has already arrived, confidence is lowered
+                    // but new sense has already arrived, confidence is lowered
     }               // but we want to return object that was seen in last see
-    // message; this compensates for those cases.
-    if (bForward == true)
+                    // message; this compensates for those cases.
+    if( bForward == true )
       i++;
     else
       i--;
-    bContinue = (bForward == false) ? (i >= 0) : (i < OBJECT_MAX_OBJECTS);
+    bContinue = ( bForward == false ) ? ( i >= 0 ) :( i < OBJECT_MAX_OBJECTS);
   }
 
   return OBJECT_ILLEGAL;
@@ -631,90 +683,104 @@ ObjectT WorldModel::iterateObjectNext(int &iIndex, ObjectSetT g, double dConf,
    iterateObjectNext has returned OBJECT_ILLEGAL indicating no more objects are
    available that satisfy the constraints.
    \param iIndex index of iteration */
-void WorldModel::iterateObjectDone(int &iIndex) {
+void WorldModel::iterateObjectDone( int &iIndex )
+{
   iIndex = -1;
 }
 
 /*! This method returns the ObjectType of the agent. This
     is an ObjectT between OBJECT_TEAMMATE_1 and OBJECT_TEAMMATE_11
     \return ObjectT that represent the type of the agent  */
-ObjectT WorldModel::getAgentObjectType() const {
+ObjectT WorldModel::getAgentObjectType( ) const
+{
   return agentObject.getType();
 }
 
-int WorldModel::getAgentIndex() const {
-  return SoccerTypes::getIndex(getAgentObjectType());
+int WorldModel::getAgentIndex( ) const
+{
+  return SoccerTypes::getIndex( getAgentObjectType() );
 }
 
 /*! This method sets the ObjectType of the agent. This
     is an objectT between OBJECT_TEAMMATE_1 and OBJECT_TEAMMATE_11
     \param ObjectT that represent the type of the agent
     \return bool indicating whether the update was succesful */
-bool WorldModel::setAgentObjectType(ObjectT o) {
-  agentObject.setType(o);
+bool WorldModel::setAgentObjectType( ObjectT o )
+{
+  agentObject.setType( o );
   return true;
 }
 
 /*! This method returns the body angle relative to the neck of the agent.
     \return AngDeg representing the body angle relative to the neck */
-AngDeg WorldModel::getAgentBodyAngleRelToNeck() const {
+AngDeg WorldModel::getAgentBodyAngleRelToNeck( ) const
+{
   return agentObject.getBodyAngleRelToNeck();
 }
 
 /*! This method returns the global neck angle of the agent in the world.
     \return global neck angle agent */
-AngDeg WorldModel::getAgentGlobalNeckAngle() const {
-  return agentObject.getGlobalNeckAngle();
+AngDeg WorldModel::getAgentGlobalNeckAngle(  ) const
+{
+  return agentObject.getGlobalNeckAngle(  );
 }
 
 /*! This method returns the global body angle of the agent in the world.
     \return global body angle agent */
-AngDeg WorldModel::getAgentGlobalBodyAngle() {
-  return agentObject.getGlobalBodyAngle();
+AngDeg WorldModel::getAgentGlobalBodyAngle(  )
+{
+  return agentObject.getGlobalBodyAngle(  );
 }
 
 /*! This method returns the stamina information of the agent
     \return Stamina stamina of the agent */
-Stamina WorldModel::getAgentStamina() const {
+Stamina WorldModel::getAgentStamina( ) const
+{
   return agentObject.getStamina();
 }
 
 /*! This method returns a TiredNessT value that indicates how tired the agent
    is.
 	 \return TiredNessT value that indicates how tired the agent is. */
-TiredNessT WorldModel::getAgentTiredNess() const {
+TiredNessT WorldModel::getAgentTiredNess( ) const
+{
   return getAgentStamina().getTiredNess(
-      SS->getRecoverDecThr(), SS->getStaminaMax());
+	                  SS->getRecoverDecThr(), SS->getStaminaMax() );
 }
 
 /*! This method returns the effort information of the agent
     \return double effort of the agent */
-double WorldModel::getAgentEffort() const {
+double WorldModel::getAgentEffort( ) const
+{
   return agentObject.getStamina().getEffort();
 }
 
 /*! This method returns the global velocity information of the agent
     \return global velocity of the agent */
-VecPosition WorldModel::getAgentGlobalVelocity() const {
+VecPosition WorldModel::getAgentGlobalVelocity( ) const
+{
   return agentObject.getGlobalVelocity();
 }
 
 /*! This method returns the speed of the agent
     \return speed of the agent */
-double WorldModel::getAgentSpeed() const {
+double WorldModel::getAgentSpeed( ) const
+{
   return agentObject.getSpeed();
 }
 
 /*! This method returns the global position of the agent
     \return global position of the agent */
-VecPosition WorldModel::getAgentGlobalPosition() const {
+VecPosition WorldModel::getAgentGlobalPosition( ) const
+{
   return agentObject.getGlobalPosition();
 }
 
 /*! This method sets the view angle of the agent.
     \return bool indicating whether update was successful.  */
-bool WorldModel::setAgentViewAngle(ViewAngleT va) {
-  agentObject.setViewAngle(va);
+bool WorldModel::setAgentViewAngle( ViewAngleT va )
+{
+  agentObject.setViewAngle( va );
   return true;
 }
 
@@ -723,20 +789,22 @@ bool WorldModel::setAgentViewAngle(ViewAngleT va) {
 
     \return ViewAngleT view angle of the agent (VA_NARROW, VA_NORMAL,
     VA_WIDE)*/
-ViewAngleT WorldModel::getAgentViewAngle() const {
+ViewAngleT WorldModel::getAgentViewAngle( ) const
+{
   return agentObject.getViewAngle();
 }
 
 /*! This method sets the view quality of the agent.
     \return bool indicating whether update was successful.  */
-bool WorldModel::setAgentViewQuality(ViewQualityT vq) {
-  agentObject.setViewQuality(vq);
+bool WorldModel::setAgentViewQuality( ViewQualityT vq )
+{
+  agentObject.setViewQuality( vq );
   return true;
 }
-
 /*! This method returns the view quality of the agent
     \return ViewQualityT of the agent (VA_LOW, VA_HIGH). */
-ViewQualityT WorldModel::getAgentViewQuality() const {
+ViewQualityT WorldModel::getAgentViewQuality( ) const
+{
   return agentObject.getViewQuality();
 }
 
@@ -744,61 +812,53 @@ ViewQualityT WorldModel::getAgentViewQuality() const {
     relative to the time of the sense_body interval. So 0.5 means a see
     message arrives twice in every simulation cycle.
     \return double representing the view frequency */
-double WorldModel::getAgentViewFrequency(ViewAngleT va, ViewQualityT vq) {
-  double dViewQualityFactor;
-  double dViewWidthFactor;
+double WorldModel::getAgentViewFrequency( ViewAngleT va, ViewQualityT vq )
+{
+  double dViewQualityFactor ;
+  double dViewWidthFactor   ;
 
-  if (va == VA_ILLEGAL)
+  if( va == VA_ILLEGAL )
     va = getAgentViewAngle();
-  if (vq == VQ_ILLEGAL)
+  if( vq == VQ_ILLEGAL )
     vq = getAgentViewQuality();
 
-  switch (va) {
-    case VA_NARROW:
-      dViewWidthFactor = 0.5;
-      break;
-    case VA_NORMAL:
-      dViewWidthFactor = 1.0;
-      break;
-    case VA_WIDE:
-      dViewWidthFactor = 2.0;
-      break;
+  switch( va )
+  {
+    case VA_NARROW:  dViewWidthFactor   = 0.5; break;
+    case VA_NORMAL:  dViewWidthFactor   = 1.0; break;
+    case VA_WIDE:    dViewWidthFactor   = 2.0; break;
     case VA_ILLEGAL:
-    default:
-      dViewWidthFactor = 0.0;
-      break;
+    default:         dViewWidthFactor   = 0.0; break;
   }
 
-  switch (vq) {
-    case VQ_LOW:
-      dViewQualityFactor = 0.5;
-      break;
-    case VQ_HIGH:
-      dViewQualityFactor = 1.0;
-      break;
+  switch( vq )
+  {
+    case VQ_LOW:     dViewQualityFactor = 0.5; break;
+    case VQ_HIGH:    dViewQualityFactor = 1.0; break;
     case VQ_ILLEGAL:
-    default:
-      dViewQualityFactor = 0.0;
-      break;
+    default:         dViewQualityFactor = 0.0; break;
   }
 
-  return dViewQualityFactor * dViewWidthFactor;
+  return dViewQualityFactor*dViewWidthFactor;
 }
 
 /*! This method returns whether the arm of the agent can be moved. */
-bool WorldModel::getAgentArmMovable() {
+bool WorldModel::getAgentArmMovable( )
+{
   return agentObject.getArmMovable();
 }
 
 /*! This method returns the current position the arm of the agent is
     pointing towards. */
-VecPosition WorldModel::getAgentArmPosition() {
+VecPosition WorldModel::getAgentArmPosition( )
+{
   return agentObject.getGlobalArmPosition();
 }
 
 /*! This method returns how many cycles it will last before the arm
     of the agent stops pointing. */
-int WorldModel::getAgentArmExpires() {
+int WorldModel::getAgentArmExpires( )
+{
   return agentObject.getArmExpires();
 }
 
@@ -806,19 +866,22 @@ int WorldModel::getAgentArmExpires() {
     getConfidence with as argument OBJECT_BALL should be called to check the
     confidence of this global position.
     \return global position bal. */
-VecPosition WorldModel::getBallPos() {
-  return getGlobalPosition(OBJECT_BALL);
+VecPosition  WorldModel::getBallPos()
+{
+  return getGlobalPosition( OBJECT_BALL );
 }
 
 /*! This method returns the current estimate of the speed of the ball.
     \return speed of the ball (magnitude of the global velocity vector). */
-double WorldModel::getBallSpeed() {
+double WorldModel::getBallSpeed()
+{
   return Ball.getGlobalVelocity().getMagnitude();
 }
 
 /*! This method returns the global direction of the ball velocity.
     \return global direction of the ball velocity */
-AngDeg WorldModel::getBallDirection() {
+AngDeg WorldModel::getBallDirection()
+{
   return Ball.getGlobalVelocity().getDirection();
 }
 
@@ -826,9 +889,10 @@ AngDeg WorldModel::getBallDirection() {
     of the specified object.
     \param ObjectT that represent the type of the object to check
     \return time corresponding to the global position of 'o' */
-Time WorldModel::getTimeGlobalPosition(ObjectT o) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object != NULL)
+Time WorldModel::getTimeGlobalPosition( ObjectT o )
+{
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( o );
+  if( object != NULL )
     return object->getTimeGlobalPosition();
   return UnknownTime;
 }
@@ -842,25 +906,28 @@ Time WorldModel::getTimeGlobalPosition(ObjectT o) {
 
     \param ObjectT that represent the type of the object to check
     \return VecPosition containing the global position. */
-VecPosition WorldModel::getGlobalPosition(ObjectT o) {
-  Object *object = getObjectPtrFromType(o);
-  if (object != NULL) {
-    if (SoccerTypes::isFlag(o) || SoccerTypes::isGoal(o))
-      return SoccerTypes::getGlobalPositionFlag(o, getSide(),
-                                                SS->getGoalWidth());
+VecPosition WorldModel::getGlobalPosition( ObjectT o )
+{
+  Object *object = getObjectPtrFromType( o );
+  if( object != NULL )
+  {
+    if( SoccerTypes::isFlag( o ) || SoccerTypes::isGoal( o ) )
+      return SoccerTypes::getGlobalPositionFlag( o, getSide(),
+                                                 SS->getGoalWidth() );
     else
       return object->getGlobalPosition();
   }
-  return VecPosition(UnknownDoubleValue, UnknownDoubleValue);
+  return VecPosition( UnknownDoubleValue, UnknownDoubleValue);
 }
 
 /*! This method returns the time of the global velocity
     of the specified object.
     \param ObjectT that represent the type of the object to check
     \return time corresponding to the global velocity of 'o' */
-Time WorldModel::getTimeGlobalVelocity(ObjectT o) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object != NULL)
+Time WorldModel::getTimeGlobalVelocity( ObjectT o )
+{
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( o );
+  if( object != NULL )
     return object->getTimeGlobalVelocity();
   return UnknownTime;
 }
@@ -871,11 +938,12 @@ Time WorldModel::getTimeGlobalVelocity(ObjectT o) {
     both the x and y coordinate set to 'UnknownDoubleValue'.
     \param ObjectT that represent the type of the object to check
     \return VecPosition containing the global position. */
-VecPosition WorldModel::getGlobalVelocity(ObjectT o) {
-  DynamicObject *object = (DynamicObject *) getObjectPtrFromType(o);
-  if (object != NULL)
-    return object->getGlobalVelocity();
-  return VecPosition(UnknownDoubleValue, UnknownDoubleValue);
+VecPosition WorldModel::getGlobalVelocity( ObjectT o )
+{
+  DynamicObject *object = (DynamicObject*)getObjectPtrFromType( o );
+  if( object != NULL )
+    return object->getGlobalVelocity(  );
+  return VecPosition( UnknownDoubleValue, UnknownDoubleValue );
 
 }
 
@@ -884,9 +952,10 @@ VecPosition WorldModel::getGlobalVelocity(ObjectT o) {
     is up to date (use isVisible or getConfidence for that).
     \param ObjectT that represent the type of the object to check
     \return relative distance to this object */
-double WorldModel::getRelativeDistance(ObjectT o) {
-  Object *object = getObjectPtrFromType(o);
-  if (object != NULL)
+double WorldModel::getRelativeDistance( ObjectT o )
+{
+  Object *object = getObjectPtrFromType( o );
+  if( object != NULL )
     return object->getRelativeDistance();
   return UnknownDoubleValue;
 }
@@ -896,9 +965,10 @@ double WorldModel::getRelativeDistance(ObjectT o) {
     getConfidence for that).
     \param ObjectT that represent the type of the object to check
     \return relative position to this object */
-VecPosition WorldModel::getRelativePosition(ObjectT o) {
-  Object *object = getObjectPtrFromType(o);
-  if (object != NULL)
+VecPosition  WorldModel::getRelativePosition( ObjectT o )
+{
+  Object *object = getObjectPtrFromType( o );
+  if( object != NULL )
     return object->getRelativePosition();
   return VecPosition(UnknownDoubleValue, UnknownDoubleValue);
 }
@@ -913,14 +983,16 @@ VecPosition WorldModel::getRelativePosition(ObjectT o) {
     \param bWithBody when true angle is relative to body, otherwise to neck
            (default false)
     \return relative angle to this object */
-AngDeg WorldModel::getRelativeAngle(ObjectT o, bool bWithBody) {
-  Object *object = getObjectPtrFromType(o);
-  double dBody = 0.0;
+AngDeg WorldModel::getRelativeAngle( ObjectT o, bool bWithBody )
+{
+  Object *object = getObjectPtrFromType( o );
+  double dBody   = 0.0;
 
-  if (object != NULL) {
-    if (bWithBody == true)
+  if( object != NULL )
+  {
+    if( bWithBody == true )
       dBody = getAgentBodyAngleRelToNeck();
-    return VecPosition::normalizeAngle(object->getRelativeAngle() - dBody);
+    return VecPosition::normalizeAngle( object->getRelativeAngle() - dBody );
   }
   return UnknownDoubleValue;
 }
@@ -930,11 +1002,12 @@ AngDeg WorldModel::getRelativeAngle(ObjectT o, bool bWithBody) {
 
     \param ObjectT that represent the type of the object to check
     \return time corresponding to both the stored body and neck angle */
-Time WorldModel::getTimeGlobalAngles(ObjectT o) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object != NULL)
+Time WorldModel::getTimeGlobalAngles( ObjectT o )
+{
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( o );
+  if( object != NULL )
     return object->getTimeGlobalAngles();
-  return Time(-1, 0);
+  return Time( -1, 0);
 }
 
 /*! This method returns the global body angle of the specified object.
@@ -942,9 +1015,10 @@ Time WorldModel::getTimeGlobalAngles(ObjectT o) {
     getTimeGlobalAngles).
     \param ObjectT that represent the type of the object to check
     \return last known global body angle of this object */
-AngDeg WorldModel::getGlobalBodyAngle(ObjectT o) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object != NULL)
+AngDeg WorldModel::getGlobalBodyAngle( ObjectT o )
+{
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( o );
+  if( object != NULL )
     return object->getGlobalBodyAngle();
   return UnknownAngleValue;
 }
@@ -954,9 +1028,10 @@ AngDeg WorldModel::getGlobalBodyAngle(ObjectT o) {
     getTimeGlobalAngles).
     \param ObjectT that represent the type of the object to check
     \return last known global neck angle of this object */
-AngDeg WorldModel::getGlobalNeckAngle(ObjectT o) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object != NULL)
+AngDeg WorldModel::getGlobalNeckAngle( ObjectT o )
+{
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( o );
+  if( object != NULL )
     return object->getGlobalNeckAngle();
   return UnknownAngleValue;
 }
@@ -965,9 +1040,10 @@ AngDeg WorldModel::getGlobalNeckAngle(ObjectT o) {
     is normally a line).
     \param ObjectT that represent the type of the object to check
     \return global angle of this object in the field */
-AngDeg WorldModel::getGlobalAngle(ObjectT o) {
-  if (SoccerTypes::isLine(o))
-    return SoccerTypes::getGlobalAngleLine(o, getSide());
+AngDeg WorldModel::getGlobalAngle( ObjectT o )
+{
+  if( SoccerTypes::isLine( o ) )
+    return SoccerTypes::getGlobalAngleLine( o, getSide() );
   return UnknownAngleValue;
 }
 
@@ -977,10 +1053,11 @@ AngDeg WorldModel::getGlobalAngle(ObjectT o) {
     current server cycle and the time the object was last seen.
     \param ObjectT that represent the type of the object to check
     \return confidence value [0.0, 1.0] that indicates the confidence value */
-double WorldModel::getConfidence(ObjectT o) {
-  Object *object = getObjectPtrFromType(o);
-  if (object != NULL)
-    return object->getConfidence(getCurrentTime());
+double WorldModel::getConfidence( ObjectT o)
+{
+  Object *object = getObjectPtrFromType( o );
+  if( object != NULL )
+    return object->getConfidence( getCurrentTime() );
 
   return 0.0;
 }
@@ -992,9 +1069,10 @@ double WorldModel::getConfidence(ObjectT o) {
     player list and the status of known player is set to false.
     \param o object type of player that should be checked
     \return bool indicating whether we are certain of number of player 'o'. */
-bool WorldModel::isKnownPlayer(ObjectT o) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object != NULL)
+bool WorldModel::isKnownPlayer( ObjectT o )
+{
+  PlayerObject *object = (PlayerObject *)getObjectPtrFromType( o );
+  if( object != NULL  )
     return object->getIsKnownPlayer();
   return false;
 
@@ -1010,28 +1088,32 @@ bool WorldModel::isKnownPlayer(ObjectT o) {
 
     \return ObjectT that represents the opponent goalkeeper, OBJECT_ILLEGAL if
     it cannot be determined which object type is the opponent goalkeeper. */
-ObjectT WorldModel::getOppGoalieType() {
+ObjectT WorldModel::getOppGoalieType()
+{
   static ObjectT objGoalieType = OBJECT_ILLEGAL;
 
-  if (objGoalieType != OBJECT_ILLEGAL &&
-      isConfidenceGood(objGoalieType) &&
-      isKnownPlayer(objGoalieType))
+  if( objGoalieType != OBJECT_ILLEGAL &&
+      isConfidenceGood( objGoalieType ) &&
+      isKnownPlayer( objGoalieType ) )
     return objGoalieType;
 
   ObjectT objOppMaxX = OBJECT_ILLEGAL;
-  double x = -100.0, y = UnknownDoubleValue;
+  double  x = -100.0, y = UnknownDoubleValue;
 
-  for (int i = 0; i < MAX_OPPONENTS; i++) {
-    if (isConfidenceGood(Opponents[i].getType())) {
-      if (Opponents[i].getIsGoalie() == true) // &&
+  for( int i = 0; i < MAX_OPPONENTS; i++ )
+  {
+    if( isConfidenceGood( Opponents[i].getType( ) ) )
+    {
+      if( Opponents[i].getIsGoalie() == true ) // &&
 //           Opponents[i].getGlobalPosition().getX() > PENALTY_X - 2.0 )
       {
         objGoalieType = Opponents[i].getType();
         return Opponents[i].getType();
       }
-      if (Opponents[i].getGlobalPosition().getX() > x) {
-        x = Opponents[i].getGlobalPosition().getX();
-        y = Opponents[i].getGlobalPosition().getY();
+      if( Opponents[i].getGlobalPosition().getX() > x )
+      {
+        x          = Opponents[i].getGlobalPosition().getX();
+        y          = Opponents[i].getGlobalPosition().getY();
         objOppMaxX = Opponents[i].getType();
       }
     }
@@ -1039,9 +1121,9 @@ ObjectT WorldModel::getOppGoalieType() {
 
   // if opponent with highest x is nr 1, assume it is goalkeeper when standing
   // in own penalty area, otherwise assume goalkeeper closest player to goal.
-  if ((objOppMaxX == OBJECT_OPPONENT_1 && x > PENALTY_X + 4.0) ||
-      (objOppMaxX != OBJECT_ILLEGAL && x > PITCH_LENGTH / 2.0 - 6.0 &&
-       fabs(y) < SS->getGoalWidth() / 2.0))
+  if( (objOppMaxX == OBJECT_OPPONENT_1 && x > PENALTY_X + 4.0 ) ||
+      (objOppMaxX != OBJECT_ILLEGAL    && x > PITCH_LENGTH/2.0 - 6.0 &&
+       fabs( y ) < SS->getGoalWidth()/2.0 ))
     return objOppMaxX;
   return OBJECT_ILLEGAL;
 }
@@ -1055,23 +1137,27 @@ ObjectT WorldModel::getOppGoalieType() {
     x coordinate, but only if this player stands close in front of the goal.
     \return ObjectT that represents the own goalkeeper, OBJECT_ILLEGAL if
     it cannot be determined which object type is the own goalkeeper. */
-ObjectT WorldModel::getOwnGoalieType() {
+ObjectT WorldModel::getOwnGoalieType()
+{
   ObjectT objOwnMinX = OBJECT_ILLEGAL;
   double x = 100.0, y = UnknownDoubleValue;
-  for (int i = 0; i < MAX_TEAMMATES; i++) {
-    if (isConfidenceGood(Teammates[i].getType())) {
-      if (Teammates[i].getIsGoalie() == true)
+  for( int i = 0; i < MAX_TEAMMATES; i++ )
+  {
+    if( isConfidenceGood( Teammates[i].getType( ) ) )
+    {
+      if( Teammates[i].getIsGoalie() == true )
         return Teammates[i].getType();
-      if (Teammates[i].getGlobalPosition().getX() < x) {
-        x = Teammates[i].getGlobalPosition().getX();
-        y = Teammates[i].getGlobalPosition().getY();
+      if( Teammates[i].getGlobalPosition().getX() < x )
+      {
+        x          = Teammates[i].getGlobalPosition().getX();
+        y          = Teammates[i].getGlobalPosition().getY();
         objOwnMinX = Teammates[i].getType();
       }
     }
   }
-  if ((objOwnMinX == OBJECT_TEAMMATE_1 && x < -(PENALTY_X + 4.0)) ||
-      (objOwnMinX != OBJECT_ILLEGAL && x < -PITCH_LENGTH / 2.0 + 6.0 &&
-       fabs(y) < SS->getGoalWidth() / 2.0))
+  if( ( objOwnMinX == OBJECT_TEAMMATE_1 && x < - ( PENALTY_X + 4.0 ) ) ||
+      (objOwnMinX != OBJECT_ILLEGAL    && x < -  PITCH_LENGTH/2.0 + 6.0  &&
+       fabs( y ) < SS->getGoalWidth()/2.0 ))
     return objOwnMinX;
   return OBJECT_ILLEGAL;
 }
@@ -1081,11 +1167,12 @@ ObjectT WorldModel::getOwnGoalieType() {
     seen.
     \param object type of object that should be checked
     \return server time this object was last seen (in a see message). */
-Time WorldModel::getTimeLastSeen(ObjectT o) {
-  Object *object = getObjectPtrFromType(o);
-  if (object != NULL)
-    return object->getTimeLastSeen();
-  return Time(-1, 0);
+Time WorldModel::getTimeLastSeen( ObjectT o )
+{
+  Object *object = getObjectPtrFromType( o );
+  if( object != NULL )
+    return object->getTimeLastSeen(  );
+  return Time( -1, 0);
 
 }
 
@@ -1094,11 +1181,12 @@ Time WorldModel::getTimeLastSeen(ObjectT o) {
     \param object type of object that should be checked
     \return server time relative distance change of this object was last
            seen (in a see message). */
-Time WorldModel::getTimeChangeInformation(ObjectT o) {
-  DynamicObject *object = (DynamicObject *) getObjectPtrFromType(o);
-  if (object != NULL)
-    return object->getTimeChangeInformation();
-  return Time(-1, 0);
+Time WorldModel::getTimeChangeInformation( ObjectT o )
+{
+  DynamicObject *object = (DynamicObject*)getObjectPtrFromType( o );
+  if( object != NULL )
+    return object->getTimeChangeInformation(  );
+  return Time( -1, 0);
 
 }
 
@@ -1106,11 +1194,12 @@ Time WorldModel::getTimeChangeInformation(ObjectT o) {
     The time corresponds to the method 'getTimeGlobalPositionLastSee'.
     \param object type of object that should be checked
     \return global position related to the last see message. */
-VecPosition WorldModel::getGlobalPositionLastSee(ObjectT o) {
-  DynamicObject *object = (DynamicObject *) getObjectPtrFromType(o);
-  if (object != NULL)
-    return object->getGlobalPositionLastSee();
-  return VecPosition(UnknownDoubleValue, UnknownDoubleValue);
+VecPosition WorldModel::getGlobalPositionLastSee( ObjectT o )
+{
+  DynamicObject *object = (DynamicObject*)getObjectPtrFromType( o );
+  if( object != NULL )
+    return object->getGlobalPositionLastSee(  );
+  return VecPosition( UnknownDoubleValue, UnknownDoubleValue);
 }
 
 /*! This method returns the last server cycle the global position
@@ -1118,10 +1207,11 @@ VecPosition WorldModel::getGlobalPositionLastSee(ObjectT o) {
     \param object type of object that should be checked
     \return server time global position of this object was last
            derived (from a see message). */
-Time WorldModel::getTimeGlobalPositionLastSee(ObjectT o) {
-  DynamicObject *object = (DynamicObject *) getObjectPtrFromType(o);
-  if (object != NULL)
-    return object->getTimeGlobalPosDerivedFromSee();
+Time WorldModel::getTimeGlobalPositionLastSee( ObjectT o )
+{
+  DynamicObject *object = (DynamicObject*)getObjectPtrFromType( o );
+  if( object != NULL )
+    return object->getTimeGlobalPosDerivedFromSee(  );
   return UnknownTime;
 }
 
@@ -1129,45 +1219,49 @@ Time WorldModel::getTimeGlobalPositionLastSee(ObjectT o) {
     The time corresponds to the method 'getTimeChangeInformation'.
     \param object type of object that should be checked
     \return global velocity related to the last see message. */
-VecPosition WorldModel::getGlobalVelocityLastSee(ObjectT o) {
-  DynamicObject *object = (DynamicObject *) getObjectPtrFromType(o);
-  if (object != NULL)
-    return object->getGlobalVelocityLastSee();
-  return VecPosition(UnknownDoubleValue, UnknownDoubleValue);
+VecPosition WorldModel::getGlobalVelocityLastSee( ObjectT o )
+{
+  DynamicObject *object = (DynamicObject*)getObjectPtrFromType( o );
+  if( object != NULL )
+    return object->getGlobalVelocityLastSee(  );
+  return VecPosition( UnknownDoubleValue, UnknownDoubleValue);
 }
 
 /*! This method returns the last global body angle derived from a see message.
     The time corresponds to the method 'getTimeChangeInformation'.
     \param object type of object that should be checked
     \return global body angle related to the last see message. */
-AngDeg WorldModel::getGlobalBodyAngleLastSee(ObjectT o) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object != NULL)
-    return object->getGlobalBodyAngleLastSee();
+AngDeg WorldModel::getGlobalBodyAngleLastSee( ObjectT o )
+{
+  PlayerObject *object = (PlayerObject*)getObjectPtrFromType( o );
+  if( object != NULL )
+    return object->getGlobalBodyAngleLastSee(  );
   return UnknownAngleValue;
 }
 
 /*! This method returns the number of cycles it will take the tackle to expire.
     In case of the argument OBJECT_ILLEGAL, the number of cycles for the
     agentObject is returned. */
-int WorldModel::getTackleExpires(ObjectT o) {
-  if (o == OBJECT_ILLEGAL || o == getAgentObjectType())
+int WorldModel::getTackleExpires( ObjectT o )
+{
+  if( o == OBJECT_ILLEGAL || o == getAgentObjectType() )
     return agentObject.getTackleExpires();
 
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object == NULL)
+  PlayerObject *object = (PlayerObject*)getObjectPtrFromType( o );
+  if( object == NULL )
     return 0;
-  return max(0, object->getTimeTackle() -
-                getCurrentTime() +
+  return max(0, object->getTimeTackle( ) -
+                getCurrentTime()         +
                 SS->getTackleCycles());
 }
 
 /*! This method returns the arm direction of object 'o'. It does not keep track
     of how relevant this information is. When the pointing agent stops pointing
     the angle is set to UnknownAngleValue. */
-AngDeg WorldModel::getGlobalArmDirection(ObjectT o) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object == NULL)
+AngDeg WorldModel::getGlobalArmDirection( ObjectT o )
+{
+  PlayerObject *object = (PlayerObject*)getObjectPtrFromType( o );
+  if( object == NULL )
     return UnknownAngleValue;
 
   return object->getGlobalArm();
@@ -1176,10 +1270,11 @@ AngDeg WorldModel::getGlobalArmDirection(ObjectT o) {
 /*! This method returns the time related to the global arm direction of object
     'o'. When the pointing agent stops pointing the angle is set to
     UnknownAngleValue and the returned time is not relevant. */
-Time WorldModel::getTimeGlobalArmDirection(ObjectT o) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (object == NULL)
-    return Time(-1, 0);
+Time  WorldModel::getTimeGlobalArmDirection( ObjectT o )
+{
+  PlayerObject *object = (PlayerObject*)getObjectPtrFromType( o );
+  if( object == NULL )
+    return Time(-1,0);
 
   return object->getTimeGlobalArm();
 }
@@ -1189,47 +1284,51 @@ Time WorldModel::getTimeGlobalArmDirection(ObjectT o) {
     ball in both the x and y direction and various server parameters. In the
     case that o equals OBJECT_ILLEGAL, the returned probability corresponds
     to that of the agent object. */
-double WorldModel::getProbTackleSucceeds(ObjectT o, int iExtraCycles,
-                                         VecPosition *pos) {
-  if (o == OBJECT_ILLEGAL)
+double WorldModel::getProbTackleSucceeds( ObjectT o, int iExtraCycles,
+                                          VecPosition *pos)
+{
+  if( o == OBJECT_ILLEGAL )
     o = getAgentObjectType();
 
-  VecPosition posObject = getGlobalPosition(o);
-  VecPosition posBall = (pos == NULL) ? getBallPos() : *pos;
-  AngDeg angBody = getGlobalBodyAngle(o);
-  int iExtra = 0;
-  double dTackleDist, dDist = 0;
+  VecPosition posObject   = getGlobalPosition( o );
+  VecPosition posBall     = (pos == NULL ) ? getBallPos() : *pos ;
+  AngDeg      angBody     = getGlobalBodyAngle( o );
+  int         iExtra      = 0;
+  double      dTackleDist, dDist=0;
 
   // if opponent goalie is within 3 metres he can probably catch in next cycle
   // RC2003 HACK
-  if (o == getOppGoalieType() &&
-      posBall.getDistanceTo(o) < 3.0)
+  if( o == getOppGoalieType() &&
+      posBall.getDistanceTo( o ) < 3.0  )
     return 1.0;
 
-  if (o != getAgentObjectType()) {
+  if( o != getAgentObjectType() )
+  {
     // get the number of cycles object was not seen and assume he moves 0.6
     // in every cycle. Only in case of bad body direction subtract one.
     // then move object position closer to the ball
-    dDist = posBall.getDistanceTo(posObject);
-    iExtra = getCurrentTime() - getTimeLastSeen(o) + iExtraCycles;
-    AngDeg ang = (posBall - posObject).getDirection();
+    dDist  = posBall.getDistanceTo( posObject );
+    iExtra = getCurrentTime() - getTimeLastSeen( o ) + iExtraCycles;
+    AngDeg ang    = (posBall - posObject).getDirection();
 
     // if body angle ok,
-    if (getCurrentTime() - getTimeGlobalAngles(o) < 2) {
-      if (fabs(VecPosition::normalizeAngle(ang - angBody)) > 35)
-        iExtra--;
-      if (getGlobalVelocity(o).getMagnitude() < 0.2)
-        iExtra--;
+    if( getCurrentTime() - getTimeGlobalAngles( o ) < 2 )
+    {
+      if( fabs( VecPosition::normalizeAngle( ang - angBody ) ) > 35 )
+	iExtra --;
+      if( getGlobalVelocity( o ).getMagnitude() < 0.2 )
+	iExtra --;
     }
 
-    double dExtra = 0.7 * max(0, iExtra);
+    double dExtra = 0.7*max( 0, iExtra );
 
     // if object was not seen in last see message, he stood further away
     // then the visible_distance.
-    if (getTimeLastSeen(o) != getTimeLastSeeMessage() &&
+    if( getTimeLastSeen( o ) != getTimeLastSeeMessage() &&
         getCurrentTime() == getTimeLastSeeMessage() &&
-        dDist - dExtra < SS->getVisibleDistance()) {
-      Log.log(560, "prob tackle succeeds: opp not seen raise dExtra");
+        dDist - dExtra < SS->getVisibleDistance() )
+    {
+      Log.log( 560, "prob tackle succeeds: opp not seen raise dExtra" );
       dExtra = dDist - SS->getVisibleDistance();
     }
 
@@ -1237,55 +1336,58 @@ double WorldModel::getProbTackleSucceeds(ObjectT o, int iExtraCycles,
     //    dExtra = max( 0, dExtra + iExtraCycles );
 
     // do not move object more than 4.0 metres.
-    posObject += VecPosition(min(4.0, min(dDist - 0.2, dExtra)), ang, POLAR);
+    posObject += VecPosition( min(4.0,min(dDist - 0.2, dExtra )), ang, POLAR );
 
     // object is directed towards ball
     angBody = ang;
   }
 
-  VecPosition posBallRel = posBall - posObject;
-  posBallRel.rotate(-angBody);
-  if (posBallRel.getX() > 0.0)      // ball in front -> tackle_dist parameter
+  VecPosition posBallRel  = posBall - posObject;
+  posBallRel.rotate( - angBody );
+  if ( posBallRel.getX() > 0.0 )      // ball in front -> tackle_dist parameter
     dTackleDist = SS->getTackleDist();
   else
     dTackleDist = SS->getTackleBackDist();
 
   double dProb =
-      pow(fabs(posBallRel.getX()) / dTackleDist, SS->getTackleExponent()) +
-      pow(fabs(posBallRel.getY()) / SS->getTackleWidth(), SS->getTackleExponent());
+     pow(fabs(posBallRel.getX())/dTackleDist         ,SS->getTackleExponent())+
+     pow(fabs(posBallRel.getY())/SS->getTackleWidth(),SS->getTackleExponent());
 
-  Log.log(556,
-          "tackle relpos o %d: (%f,%f) dist %f body %f extra %d %d: prob %f",
-          o, posBallRel.getX(), posBallRel.getY(), dDist, angBody, iExtra,
-          iExtraCycles, max(0, 1 - dProb));
+  Log.log( 556,
+           "tackle relpos o %d: (%f,%f) dist %f body %f extra %d %d: prob %f",
+           o, posBallRel.getX(),posBallRel.getY(), dDist, angBody, iExtra,
+           iExtraCycles, max(0,1-dProb) );
 
-  return max(0, 1 - dProb);
+  return max( 0, 1 - dProb );
 }
 
 /*! This method returns a list with all the opponents that are location within
   distance of 'dDist' of position 'pos'. */
-list <ObjectT> WorldModel::getListCloseOpponents(VecPosition pos, double dDist) {
+list<ObjectT> WorldModel::getListCloseOpponents( VecPosition pos,double dDist )
+{
   int iIndex;
-  list <ObjectT> listOpp;
+  list<ObjectT> listOpp;
 
-  for (ObjectT o = iterateObjectStart(iIndex, OBJECT_SET_OPPONENTS);
+  for( ObjectT o = iterateObjectStart( iIndex, OBJECT_SET_OPPONENTS );
        o != OBJECT_ILLEGAL;
-       o = iterateObjectNext(iIndex, OBJECT_SET_OPPONENTS)) {
-    if (getGlobalPosition(o).getDistanceTo(pos) < dDist)
-      listOpp.push_back(o);
+       o = iterateObjectNext ( iIndex, OBJECT_SET_OPPONENTS  ) )
+  {
+    if( getGlobalPosition( o ).getDistanceTo( pos ) < dDist )
+      listOpp.push_back( o );
   }
-  iterateObjectDone(iIndex);
+  iterateObjectDone( iIndex );
   return listOpp;
 }
 
 /*! This method returns the tackle probability of the closest opponent to the
     ball. */
-double WorldModel::getProbTackleClosestOpp(int iExtraCycles) {
-  ObjectT obj = getClosestInSetTo(OBJECT_SET_OPPONENTS, OBJECT_BALL);
-  if (obj == OBJECT_ILLEGAL)
+double WorldModel::getProbTackleClosestOpp( int iExtraCycles )
+{
+  ObjectT obj = getClosestInSetTo( OBJECT_SET_OPPONENTS, OBJECT_BALL );
+  if( obj == OBJECT_ILLEGAL )
     return -1.0;
 
-  return getProbTackleSucceeds(obj, iExtraCycles);
+  return getProbTackleSucceeds( obj, iExtraCycles );
 }
 
 /*! This method sets the value of the specified object to a known
@@ -1298,89 +1400,98 @@ double WorldModel::getProbTackleClosestOpp(int iExtraCycles) {
     \param o object type of which known player information should be set
     \param isKnownPlayer new known player value
     \return boolean indicating whether update was successful */
-bool WorldModel::setIsKnownPlayer(ObjectT o, bool isKnownPlayer) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  return object->setIsKnownPlayer(isKnownPlayer);
+bool WorldModel::setIsKnownPlayer( ObjectT o, bool isKnownPlayer )
+{
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( o );
+  return object->setIsKnownPlayer( isKnownPlayer );
 }
 
 /*! This method sets the time the object 'o' has last been seen.
     \param o object of which the time should be changed
     \param time new time for this object
     \return bool indicating whether update was successful. */
-bool WorldModel::setTimeLastSeen(ObjectT o, Time time) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  return object->setTimeLastSeen(time);
+bool WorldModel::setTimeLastSeen( ObjectT o, Time time )
+{
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( o );
+  return object->setTimeLastSeen( time );
 }
 
 /*! This method sets the heterogeneous player type of the object that is
     passed as the first argument.
     \param o object type of which the heterogeneous player type should be set
     \param iPlayer new heterogeneous player type of this object. */
-bool WorldModel::setHeteroPlayerType(ObjectT o, int iPlayerType) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(o);
-  if (o == getAgentObjectType())
-    updateSSToHeteroPlayerType(iPlayerType);
+bool WorldModel::setHeteroPlayerType( ObjectT  o, int iPlayerType )
+{
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( o );
+  if( o == getAgentObjectType() )
+    updateSSToHeteroPlayerType( iPlayerType );
 
-  return object->setHeteroPlayerType(iPlayerType);
+  return object->setHeteroPlayerType( iPlayerType );
 }
 
 /*! This method returns the player type of the object 'o' in the
   current formation. */
-PlayerT WorldModel::getPlayerType(ObjectT o) {
-  if (o == OBJECT_ILLEGAL)
+PlayerT WorldModel::getPlayerType ( ObjectT o )
+{
+  if( o == OBJECT_ILLEGAL )
     o = getAgentObjectType();
-  return formations->getPlayerType(SoccerTypes::getIndex(o));
+  return formations->getPlayerType( SoccerTypes::getIndex( o ) );
 }
 
 /*! This method returns whether the object 'o' is located in the set of
     player types 'ps'. */
-bool WorldModel::isInPlayerSet(ObjectT o, PlayerSetT ps) {
-  return SoccerTypes::isPlayerTypeInSet(getPlayerType(o), ps);
+bool WorldModel::isInPlayerSet( ObjectT o, PlayerSetT ps )
+{
+  return SoccerTypes::isPlayerTypeInSet( getPlayerType( o ), ps );
 }
 
 
 /*! This methods returns the heterogeneous player type of object 'obj'.
     Initially, the player types of all players are set to the type of the agent
     itself. After new information from the coach, they are set correctly. */
-int WorldModel::getHeteroPlayerType(ObjectT obj) {
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(obj);
+int WorldModel::getHeteroPlayerType( ObjectT obj )
+{
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( obj );
 
-  return object->getHeteroPlayerType();
+  return object->getHeteroPlayerType( );
 
 }
 
 
 /*! This method returns the global position of the opponent goal.
     \return VecPosition containing the position of the opponent goal. */
-VecPosition WorldModel::getPosOpponentGoal() {
-  ObjectT objGoal = SoccerTypes::getGoalOpponent(getSide());
-  if (isPenaltyUs() || isPenaltyThem())
-    objGoal = (getSidePenalty() == SIDE_LEFT) ? OBJECT_GOAL_L : OBJECT_GOAL_R;
+VecPosition WorldModel::getPosOpponentGoal( )
+{
+  ObjectT objGoal = SoccerTypes::getGoalOpponent( getSide() );
+  if( isPenaltyUs() || isPenaltyThem() )
+    objGoal = ( getSidePenalty() == SIDE_LEFT ) ?OBJECT_GOAL_L:OBJECT_GOAL_R ;
   return SoccerTypes::getGlobalPositionFlag(
-      objGoal,
-      getSide(),
-      SS->getGoalWidth());
+                        objGoal,
+                        getSide( ),
+                        SS->getGoalWidth() );
 }
 
 /*! This method returns the global position of the own goal.
     \return VecPosition containing the position of the own goal. */
-VecPosition WorldModel::getPosOwnGoal() {
+VecPosition WorldModel::getPosOwnGoal( )
+{
   SideT sideGoal = getSide();
-  ObjectT objGoal = SoccerTypes::getOwnGoal(sideGoal);
-  if (isPenaltyUs() || isPenaltyThem())
-    objGoal = (getSidePenalty() == SIDE_LEFT) ? OBJECT_GOAL_L : OBJECT_GOAL_R;
+  ObjectT objGoal = SoccerTypes::getOwnGoal( sideGoal );
+  if( isPenaltyUs() || isPenaltyThem() )
+    objGoal = (getSidePenalty() == SIDE_LEFT ) ? OBJECT_GOAL_L : OBJECT_GOAL_R;
 
   return SoccerTypes::getGlobalPositionFlag(
-      objGoal,
-      getSide(),
-      SS->getGoalWidth());
+                        objGoal,
+                        getSide( ),
+                        SS->getGoalWidth() );
 }
 
 /*! This method returns the relative distance to the opponent goal
     \return relative distance from the agent to the opponent goal. */
-double WorldModel::getRelDistanceOpponentGoal() {
+double  WorldModel::getRelDistanceOpponentGoal()
+{
   VecPosition posGoal = getPosOpponentGoal();
-  return getAgentGlobalPosition().getDistanceTo(posGoal);
+  return getAgentGlobalPosition().getDistanceTo( posGoal );
 
 }
 
@@ -1390,112 +1501,127 @@ double WorldModel::getRelDistanceOpponentGoal() {
     agent are NOT taken into account.
 
     \return relative angle between goal and agent position. */
-double WorldModel::getRelAngleOpponentGoal() {
+double  WorldModel::getRelAngleOpponentGoal()
+{
   VecPosition posGoal;
-  if (sideSide == SIDE_LEFT)
-    posGoal = SoccerTypes::getGlobalPositionFlag(OBJECT_GOAL_R, sideSide);
+  if( sideSide == SIDE_LEFT )
+    posGoal = SoccerTypes::getGlobalPositionFlag( OBJECT_GOAL_R, sideSide );
   else
-    posGoal = SoccerTypes::getGlobalPositionFlag(OBJECT_GOAL_L, sideSide);
+    posGoal = SoccerTypes::getGlobalPositionFlag( OBJECT_GOAL_L, sideSide );
 
-  return (posGoal - getAgentGlobalPosition()).getDirection();
+  return ( posGoal - getAgentGlobalPosition()).getDirection() ;
 
 }
 
 /*! This method returns information about the heterogeneous player at index
     'iIndex'. This information consists of a subset of the ServerSettings
     values that fully specify the information of the heterogeneous player. */
-HeteroPlayerSettings WorldModel::getInfoHeteroPlayer(int iIndex) {
+HeteroPlayerSettings WorldModel::getInfoHeteroPlayer( int iIndex )
+{
   return pt[iIndex];
 }
 
 /*! This method returns the heterogeneous player information of the object
     'obj'. This information consists of a subset of the ServerSettings
     values that fully specify the information of the heterogeneous player. */
-HeteroPlayerSettings WorldModel::getHeteroInfoPlayer(ObjectT obj) {
+HeteroPlayerSettings WorldModel::getHeteroInfoPlayer( ObjectT obj )
+{
 //  if( obj == getAgentObjectType() || SoccerTypes::isOpponent( obj ) )
 //    return getInfoHeteroPlayer( agentObject.getHeteroPlayerType() );
-  if (!SoccerTypes::isKnownPlayer(obj))
+  if( ! SoccerTypes::isKnownPlayer( obj ) )
     obj = getAgentObjectType();
 
-  PlayerObject *object = (PlayerObject *) getObjectPtrFromType(obj);
-  int iType = object->getHeteroPlayerType();
+  PlayerObject *object = (PlayerObject*) getObjectPtrFromType( obj );
+  int          iType   = object->getHeteroPlayerType();
   // default iType in Object = 0
-  return getInfoHeteroPlayer(iType);
+  return getInfoHeteroPlayer( iType );
 }
 
 
 /*! This method inserts a substituted opponent player in the set of substituted
     opponent players. This can then be detected by the coach, who then can
     figure out to which new type this opponent player is changed. */
-bool WorldModel::setSubstitutedOpp(ObjectT obj) {
-  m_setSubstitutedOpp.insert(obj);
+bool WorldModel::setSubstitutedOpp( ObjectT obj )
+{
+  m_setSubstitutedOpp.insert( obj );
   return true;
 }
 
 /*! This method returns the first substituted opponent player in the set of
     substituted opponent players and then erases this opponent from the set. */
-ObjectT WorldModel::getSubstitutedOpp() {
-  if (m_setSubstitutedOpp.empty() == true)
+ObjectT WorldModel::getSubstitutedOpp( )
+{
+  if( m_setSubstitutedOpp.empty() == true )
     return OBJECT_ILLEGAL;
 
   ObjectT obj = *m_setSubstitutedOpp.begin();
-  m_setSubstitutedOpp.erase(obj);
+  m_setSubstitutedOpp.erase( obj );
   return obj;
 }
 
 
 /*! This method returns the dash power rate of the object 'obj'. */
-double WorldModel::getDashPowerRate(ObjectT obj) {
-  return getHeteroInfoPlayer(obj).dDashPowerRate;
+double WorldModel::getDashPowerRate( ObjectT obj )
+{
+  return getHeteroInfoPlayer( obj ).dDashPowerRate ;
 }
 
 /*! This method returns the maximum speed of the object 'obj'. */
-double WorldModel::getPlayerSpeedMax(ObjectT obj) {
-  return getHeteroInfoPlayer(obj).dPlayerSpeedMax;
+double WorldModel::getPlayerSpeedMax( ObjectT obj )
+{
+  return getHeteroInfoPlayer( obj ).dPlayerSpeedMax ;
 }
 
 /*! This method returns the decay of the object 'obj'. */
-double WorldModel::getPlayerDecay(ObjectT obj) {
-  return getHeteroInfoPlayer(obj).dPlayerDecay;
+double WorldModel::getPlayerDecay( ObjectT obj )
+{
+  return getHeteroInfoPlayer( obj ).dPlayerDecay ;
 }
 
 /*! This method returns the maximal kick distance of the object 'obj'. */
-double WorldModel::getMaximalKickDist(ObjectT obj) {
-  return getHeteroInfoPlayer(obj).dMaximalKickDist;
+double WorldModel::getMaximalKickDist( ObjectT obj )
+{
+  return getHeteroInfoPlayer( obj ).dMaximalKickDist ;
 }
 
 /*! This method returns the stamina increase of the object 'obj'. */
-double WorldModel::getStaminaIncMax(ObjectT obj) {
-  return getHeteroInfoPlayer(obj).dStaminaIncMax;
+double WorldModel::getStaminaIncMax( ObjectT obj )
+{
+  return getHeteroInfoPlayer( obj ).dStaminaIncMax ;
 }
 
 /*! This method returns the size of the object 'obj'. */
-double WorldModel::getPlayerSize(ObjectT obj) {
-  return getHeteroInfoPlayer(obj).dPlayerSize;
+double WorldModel::getPlayerSize( ObjectT obj )
+{
+  return getHeteroInfoPlayer( obj ).dPlayerSize ;
 }
 
 /*! This method returns the inertia moment of the object 'obj'. */
-double WorldModel::getInertiaMoment(ObjectT obj) {
-  return getHeteroInfoPlayer(obj).dInertiaMoment;
+double WorldModel::getInertiaMoment( ObjectT obj )
+{
+  return getHeteroInfoPlayer( obj ).dInertiaMoment;
 }
 
 /*! This method returns the maximum effort of the object 'obj'. */
-double WorldModel::getEffortMax(ObjectT obj) {
-  return getHeteroInfoPlayer(obj).dEffortMax;
+double WorldModel::getEffortMax( ObjectT obj )
+{
+  return getHeteroInfoPlayer( obj ).dEffortMax;
 }
 
 /*! This method returns the effective max speed of the object 'obj'. */
-double WorldModel::getEffectiveMaxSpeed(ObjectT obj, bool bWithNoise) {
+double WorldModel::getEffectiveMaxSpeed( ObjectT obj, bool bWithNoise )
+{
   double dSpeed = 0.0;
-  HeteroPlayerSettings pt = getHeteroInfoPlayer(obj);
+  HeteroPlayerSettings pt = getHeteroInfoPlayer( obj );
 
-  for (int j = 0; j < 15; j++) {
+  for( int j = 0; j < 15 ; j ++ )
+  {
     dSpeed *= pt.dPlayerDecay;
-    dSpeed += SS->getMaxPower() * pt.dEffortMax * pt.dDashPowerRate;
-    if (dSpeed > pt.dPlayerSpeedMax)
+    dSpeed += SS->getMaxPower()*pt.dEffortMax*pt.dDashPowerRate;
+    if( dSpeed > pt.dPlayerSpeedMax )
       dSpeed = pt.dPlayerSpeedMax;
-    if (bWithNoise)
-      dSpeed += sqrt(2 * (pow(dSpeed * SS->getPlayerRand(), 2)));
+    if( bWithNoise )
+      dSpeed += sqrt(2*(pow(dSpeed * SS->getPlayerRand(), 2)));
   }
   return dSpeed;
 }
@@ -1508,12 +1634,13 @@ double WorldModel::getEffectiveMaxSpeed(ObjectT obj, bool bWithNoise) {
     is actually performed by the server. When there is an action that is sent
     to the server and not performed, this method returns false, true otherwise.
     \return true when all commands sent to the server are performed. */
-bool WorldModel::isQueuedActionPerformed() {
+bool WorldModel::isQueuedActionPerformed()
+{
   // for all possible commands check if it is sent in previous cycle,
   // but not performed
-  for (int i = 0; i < CMD_MAX_COMMANDS; i++)
-    if (queuedCommands[i].time == getTimeLastSenseMessage() - 1 &&
-        performedCommands[i] == false)
+  for( int i = 0 ; i < CMD_MAX_COMMANDS ; i++ )
+    if( queuedCommands[i].time   == getTimeLastSenseMessage() - 1 &&
+        performedCommands[i]     == false )
       return false;
 
   return true;
@@ -1525,15 +1652,16 @@ bool WorldModel::isQueuedActionPerformed() {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we have a free kick. */
-bool WorldModel::isFreeKickUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isFreeKickUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  bool bLeftKick = (pm == PM_FREE_KICK_LEFT || pm == PM_INDIRECT_FREE_KICK_LEFT);
-  bool bRightKick = (pm == PM_FREE_KICK_RIGHT || pm == PM_INDIRECT_FREE_KICK_RIGHT);
+  bool bLeftKick = (pm==PM_FREE_KICK_LEFT  || pm==PM_INDIRECT_FREE_KICK_LEFT );
+  bool bRightKick= (pm==PM_FREE_KICK_RIGHT || pm==PM_INDIRECT_FREE_KICK_RIGHT);
 
-  return (bLeftKick && getSide() == SIDE_LEFT) ||
-         (bRightKick && getSide() == SIDE_RIGHT);
+  return ( bLeftKick   && getSide() == SIDE_LEFT  ) ||
+         ( bRightKick  && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the play mode indicates that the other
@@ -1542,15 +1670,16 @@ bool WorldModel::isFreeKickUs(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether the other team has a free kick. */
-bool WorldModel::isFreeKickThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isFreeKickThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  bool bLeftKick = (pm == PM_FREE_KICK_LEFT || pm == PM_INDIRECT_FREE_KICK_LEFT);
-  bool bRightKick = (pm == PM_FREE_KICK_RIGHT || pm == PM_INDIRECT_FREE_KICK_RIGHT);
+  bool bLeftKick = (pm==PM_FREE_KICK_LEFT  || pm==PM_INDIRECT_FREE_KICK_LEFT );
+  bool bRightKick= (pm==PM_FREE_KICK_RIGHT || pm==PM_INDIRECT_FREE_KICK_RIGHT);
 
-  return (bRightKick && getSide() == SIDE_LEFT) ||
-         (bLeftKick && getSide() == SIDE_RIGHT);
+  return ( bRightKick  && getSide() == SIDE_LEFT  ) ||
+         ( bLeftKick   && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the play mode indicates that there is (or
@@ -1562,12 +1691,13 @@ bool WorldModel::isFreeKickThem(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether there is a before kick off situation. */
-bool WorldModel::isBeforeKickOff(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isBeforeKickOff( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return pm == PM_BEFORE_KICK_OFF || pm == PM_GOAL_LEFT ||
-         pm == PM_GOAL_RIGHT || isKickOffUs(pm) || isKickOffThem(pm);
+  return pm == PM_BEFORE_KICK_OFF  || pm == PM_GOAL_LEFT  ||
+         pm == PM_GOAL_RIGHT || isKickOffUs( pm ) || isKickOffThem( pm );
 }
 
 /*! This method checks whether the play mode indicates that there is
@@ -1578,13 +1708,14 @@ bool WorldModel::isBeforeKickOff(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we have a dead ball situation. */
-bool WorldModel::isDeadBallUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isDeadBallUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return isKickInUs(pm) || isFreeKickUs(pm) || isCornerKickUs(pm)
-         || isKickOffUs(pm) || isOffsideThem(pm) || isFreeKickFaultThem(pm)
-         || isGoalKickUs(pm) || isBackPassThem(pm);
+  return isKickInUs  ( pm ) || isFreeKickUs  ( pm ) || isCornerKickUs     ( pm)
+      || isKickOffUs ( pm ) || isOffsideThem ( pm ) || isFreeKickFaultThem( pm)
+      || isGoalKickUs( pm ) || isBackPassThem( pm ) ;
 }
 
 
@@ -1596,31 +1727,36 @@ bool WorldModel::isDeadBallUs(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether they have a dead ball situation. */
-bool WorldModel::isDeadBallThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isDeadBallThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return isFreeKickThem(pm) || isKickInThem(pm) || isCornerKickThem(pm)
-         || isKickOffThem(pm) || isGoalKickThem(pm) || isFreeKickFaultUs(pm)
-         || isOffsideUs(pm) || isBackPassUs(pm);
+  return isFreeKickThem( pm ) || isKickInThem  ( pm ) || isCornerKickThem ( pm)
+     ||  isKickOffThem ( pm ) || isGoalKickThem( pm ) || isFreeKickFaultUs( pm)
+     || isOffsideUs    ( pm ) || isBackPassUs  ( pm ) ;
 }
 
-bool WorldModel::setChangeViewCommand(SoccerCommand soc) {
+bool WorldModel::setChangeViewCommand( SoccerCommand soc )
+{
   m_changeViewCommand = soc;
   return true;
 }
 
-SoccerCommand WorldModel::getChangeViewCommand() {
+SoccerCommand WorldModel::getChangeViewCommand( )
+{
   return m_changeViewCommand;
 }
 
 /*! This method returns the side the penalty kick is taken. */
-SideT WorldModel::getSidePenalty() {
+SideT WorldModel::getSidePenalty( )
+{
   return m_sidePenalty;
 }
 
 /*! This method sets the side the penalty kick is taken. */
-bool WorldModel::setSidePenalty(SideT side) {
+bool WorldModel::setSidePenalty( SideT side )
+{
   m_sidePenalty = side;
   return true;
 }
@@ -1632,12 +1768,13 @@ bool WorldModel::setSidePenalty(SideT side) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we have a corner kick. */
-bool WorldModel::isCornerKickUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isCornerKickUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_CORNER_KICK_LEFT && getSide() == SIDE_LEFT) ||
-         (pm == PM_CORNER_KICK_RIGHT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_CORNER_KICK_LEFT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_CORNER_KICK_RIGHT && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that the other
@@ -1646,12 +1783,13 @@ bool WorldModel::isCornerKickUs(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether the other team has a corner kick. */
-bool WorldModel::isCornerKickThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isCornerKickThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_CORNER_KICK_RIGHT && getSide() == SIDE_LEFT) ||
-         (pm == PM_CORNER_KICK_LEFT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_CORNER_KICK_RIGHT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_CORNER_KICK_LEFT   && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that we stood
@@ -1660,12 +1798,13 @@ bool WorldModel::isCornerKickThem(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we stood offside. */
-bool WorldModel::isOffsideUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isOffsideUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_OFFSIDE_RIGHT && getSide() == SIDE_RIGHT) ||
-         (pm == PM_OFFSIDE_LEFT && getSide() == SIDE_LEFT);
+  return ( pm == PM_OFFSIDE_RIGHT  && getSide() == SIDE_RIGHT ) ||
+         ( pm == PM_OFFSIDE_LEFT   && getSide() == SIDE_LEFT );
 }
 
 /*! This method checks whether the current play mode indicates that the other
@@ -1674,12 +1813,13 @@ bool WorldModel::isOffsideUs(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether the other team stood offside. */
-bool WorldModel::isOffsideThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isOffsideThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_OFFSIDE_LEFT && getSide() == SIDE_RIGHT) ||
-         (pm == PM_OFFSIDE_RIGHT && getSide() == SIDE_LEFT);
+  return ( pm == PM_OFFSIDE_LEFT  && getSide() == SIDE_RIGHT ) ||
+         ( pm == PM_OFFSIDE_RIGHT && getSide() == SIDE_LEFT );
 }
 
 /*! This method checks whether the current play mode indicates that we have
@@ -1688,12 +1828,13 @@ bool WorldModel::isOffsideThem(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we have a kick in. */
-bool WorldModel::isKickInUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isKickInUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_KICK_IN_LEFT && getSide() == SIDE_LEFT) ||
-         (pm == PM_KICK_IN_RIGHT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_KICK_IN_LEFT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_KICK_IN_RIGHT && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that the other
@@ -1702,12 +1843,13 @@ bool WorldModel::isKickInUs(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether the other team has a kick in. */
-bool WorldModel::isKickInThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isKickInThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_KICK_IN_RIGHT && getSide() == SIDE_LEFT) ||
-         (pm == PM_KICK_IN_LEFT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_KICK_IN_RIGHT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_KICK_IN_LEFT   && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that we have
@@ -1718,12 +1860,13 @@ bool WorldModel::isKickInThem(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we have made a free kick fault. */
-bool WorldModel::isFreeKickFaultUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isFreeKickFaultUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_FREE_KICK_FAULT_LEFT && getSide() == SIDE_LEFT) ||
-         (pm == PM_FREE_KICK_FAULT_RIGHT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_FREE_KICK_FAULT_LEFT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_FREE_KICK_FAULT_RIGHT && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that the other
@@ -1736,12 +1879,13 @@ bool WorldModel::isFreeKickFaultUs(PlayModeT pm) {
 
     \return bool indicating whether the other team has made a free
     kick fault.*/
-bool WorldModel::isFreeKickFaultThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isFreeKickFaultThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_FREE_KICK_FAULT_RIGHT && getSide() == SIDE_LEFT) ||
-         (pm == PM_FREE_KICK_FAULT_LEFT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_FREE_KICK_FAULT_RIGHT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_FREE_KICK_FAULT_LEFT   && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that we have
@@ -1750,12 +1894,13 @@ bool WorldModel::isFreeKickFaultThem(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we have a kick off. */
-bool WorldModel::isKickOffUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isKickOffUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_KICK_OFF_LEFT && getSide() == SIDE_LEFT) ||
-         (pm == PM_KICK_OFF_RIGHT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_KICK_OFF_LEFT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_KICK_OFF_RIGHT && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that the other
@@ -1765,12 +1910,13 @@ bool WorldModel::isKickOffUs(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether the other team has a kick off. */
-bool WorldModel::isKickOffThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isKickOffThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_KICK_OFF_RIGHT && getSide() == SIDE_LEFT) ||
-         (pm == PM_KICK_OFF_LEFT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_KICK_OFF_RIGHT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_KICK_OFF_LEFT   && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that we have
@@ -1781,12 +1927,13 @@ bool WorldModel::isKickOffThem(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we have made a back pass. */
-bool WorldModel::isBackPassUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isBackPassUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_BACK_PASS_LEFT && getSide() == SIDE_LEFT) ||
-         (pm == PM_BACK_PASS_RIGHT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_BACK_PASS_LEFT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_BACK_PASS_RIGHT && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that
@@ -1798,12 +1945,13 @@ bool WorldModel::isBackPassUs(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether the other team has made a back pass. */
-bool WorldModel::isBackPassThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isBackPassThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_BACK_PASS_RIGHT && getSide() == SIDE_LEFT) ||
-         (pm == PM_BACK_PASS_LEFT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_BACK_PASS_RIGHT && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_BACK_PASS_LEFT  && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that we have
@@ -1812,12 +1960,13 @@ bool WorldModel::isBackPassThem(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we have a goal kick. */
-bool WorldModel::isGoalKickUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isGoalKickUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_GOAL_KICK_LEFT && getSide() == SIDE_LEFT) ||
-         (pm == PM_GOAL_KICK_RIGHT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_GOAL_KICK_LEFT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_GOAL_KICK_RIGHT && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that the other
@@ -1826,12 +1975,13 @@ bool WorldModel::isGoalKickUs(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether the other team has a kick off. */
-bool WorldModel::isGoalKickThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isGoalKickThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return (pm == PM_GOAL_KICK_RIGHT && getSide() == SIDE_LEFT) ||
-         (pm == PM_GOAL_KICK_LEFT && getSide() == SIDE_RIGHT);
+  return ( pm == PM_GOAL_KICK_RIGHT  && getSide() == SIDE_LEFT  ) ||
+         ( pm == PM_GOAL_KICK_LEFT   && getSide() == SIDE_RIGHT ) ;
 }
 
 /*! This method checks whether the current play mode indicates that we have
@@ -1840,18 +1990,19 @@ bool WorldModel::isGoalKickThem(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether we have a penalty. */
-bool WorldModel::isPenaltyUs(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isPenaltyUs( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return ((
-              (pm == PM_PENALTY_SETUP_LEFT ||
+  return ( (
+             ( pm == PM_PENALTY_SETUP_LEFT ||
                pm == PM_PENALTY_READY_LEFT ||
-               pm == PM_PENALTY_TAKEN_LEFT) && getSide() == SIDE_LEFT) ||
-          (
-              (pm == PM_PENALTY_SETUP_RIGHT ||
+               pm == PM_PENALTY_TAKEN_LEFT ) && getSide() == SIDE_LEFT  )   ||
+           (
+             ( pm == PM_PENALTY_SETUP_RIGHT ||
                pm == PM_PENALTY_READY_RIGHT ||
-               pm == PM_PENALTY_TAKEN_RIGHT) && getSide() == SIDE_RIGHT));
+               pm == PM_PENALTY_TAKEN_RIGHT ) && getSide() == SIDE_RIGHT  ) );
 }
 
 
@@ -1861,27 +2012,29 @@ bool WorldModel::isPenaltyUs(PlayModeT pm) {
     \param pm play mode to check. In default case (PM_ILLEGAL) the current play
            mode is used.
     \return bool indicating whether the other team has a penalty. */
-bool WorldModel::isPenaltyThem(PlayModeT pm) {
-  if (pm == PM_ILLEGAL)
+bool WorldModel::isPenaltyThem( PlayModeT pm )
+{
+  if( pm == PM_ILLEGAL )
     pm = getPlayMode();
 
-  return ((
-              (pm == PM_PENALTY_SETUP_LEFT ||
+  return ( (
+             ( pm == PM_PENALTY_SETUP_LEFT ||
                pm == PM_PENALTY_READY_LEFT ||
-               pm == PM_PENALTY_TAKEN_LEFT) && getSide() == SIDE_RIGHT) ||
-          (
-              (pm == PM_PENALTY_SETUP_RIGHT ||
+               pm == PM_PENALTY_TAKEN_LEFT ) && getSide() == SIDE_RIGHT  )   ||
+           (
+             ( pm == PM_PENALTY_SETUP_RIGHT ||
                pm == PM_PENALTY_READY_RIGHT ||
-               pm == PM_PENALTY_TAKEN_RIGHT) && getSide() == SIDE_LEFT));
+               pm == PM_PENALTY_TAKEN_RIGHT ) && getSide() == SIDE_LEFT  ) );
 }
 
-bool WorldModel::isFullStateOn(SideT s) {
-  if (s == SIDE_ILLEGAL)
+bool WorldModel::isFullStateOn( SideT s )
+{
+  if( s == SIDE_ILLEGAL )
     s = getSide();
 
-  if (s == SIDE_LEFT)
+  if( s == SIDE_LEFT )
     return SS->getFullStateLeft();
-  else if (s == SIDE_RIGHT)
+  else if( s == SIDE_RIGHT )
     return SS->getFullStateRight();
   else
     return false;
@@ -1891,73 +2044,80 @@ bool WorldModel::isFullStateOn(SideT s) {
     specified outputstream. Only the information of the objects that are seen
     recently are printed.
     \param os output stream to which output is written (default cout). */
-void WorldModel::show(ostream &os) {
+void WorldModel::show( ostream & os )
+{
   int i;
   os << "Worldmodel (" << getCurrentTime() << ")\n" <<
-     "========================\n";
+        "========================\n";
   os << "Teamname: " << getTeamName() << "\n";
-  if (Ball.getTimeLastSeen().getTime() != -1)
+  if( Ball.getTimeLastSeen( ).getTime() != -1 )
     Ball.show();
   os << "Teammates: " << "\n";
-  for (i = 0; i < MAX_TEAMMATES; i++)
-    if (isConfidenceGood(Teammates[i].getType()))
-      Teammates[i].show(getTeamName());
+  for( i = 0; i < MAX_TEAMMATES ; i++ )
+    if( isConfidenceGood( Teammates[i].getType() ) )
+      Teammates[i].show( getTeamName() );
   os << "Opponents: " << "\n";
-  for (i = 0; i < MAX_OPPONENTS; i++)
-    if (isConfidenceGood(Opponents[i].getType()))
-      Opponents[i].show(DEFAULT_OPPONENT_NAME);
+  for( i = 0; i < MAX_OPPONENTS ; i++ )
+    if( isConfidenceGood( Opponents[i].getType() ) )
+      Opponents[i].show( DEFAULT_OPPONENT_NAME );
   os << "Agent: " << "\n";
-  agentObject.show(getTeamName());
+  agentObject.show( getTeamName() );
 
   os << "General Info: " << "\n" <<
-     "side: " << SoccerTypes::getSideStr(getSide()) << "\n" <<
-     "kicks: " << getNrOfCommands(CMD_KICK) << "\n" <<
-     "turns: " << getNrOfCommands(CMD_TURN) << "\n" <<
-     "dashes: " << getNrOfCommands(CMD_DASH) << "\n" <<
-     "turnnecks: " << getNrOfCommands(CMD_TURNNECK) << "\n" <<
-     "says: " << getNrOfCommands(CMD_SAY) << "\n" <<
-     "playmode: " << SoccerTypes::getPlayModeStr(playMode) << "\n" <<
-     "====================================" << "\n";
+          "side: "      << SoccerTypes::getSideStr( getSide() )    << "\n" <<
+          "kicks: "     << getNrOfCommands( CMD_KICK )             << "\n" <<
+          "turns: "     << getNrOfCommands( CMD_TURN )             << "\n" <<
+          "dashes: "    << getNrOfCommands( CMD_DASH )             << "\n" <<
+          "turnnecks: " << getNrOfCommands( CMD_TURNNECK )         << "\n" <<
+          "says: "      << getNrOfCommands( CMD_SAY )              << "\n" <<
+          "playmode: "  << SoccerTypes::getPlayModeStr( playMode ) << "\n" <<
+          "===================================="                   << "\n";
 
 }
 
 /*! This method prints all the objects and information contained in the object
     set 'set' to specified outputstream.
     \param os output stream to which output is written (default cout). */
-void WorldModel::show(ObjectSetT set, ostream &os) {
+void WorldModel::show( ObjectSetT set, ostream & os )
+{
   int iIndex;
-  for (ObjectT o = iterateObjectStart(iIndex, set);
+  for( ObjectT o = iterateObjectStart( iIndex, set );
        o != OBJECT_ILLEGAL;
-       o = iterateObjectNext(iIndex, set))
-    show(o, os);
+       o = iterateObjectNext( iIndex, set ) )
+    show( o, os );
   os << "\n";
 }
 
 /*! This method prints the queued commands - commands that are sent by the
     ActHandler to the server - to the specified output stream.
     \param os output stream to which information is printed (default cout)*/
-void WorldModel::showQueuedCommands(ostream &os) {
-  os << "Commands in queue:\n";
-  for (int i = 0; i < CMD_MAX_COMMANDS; i++)
-    if (queuedCommands[i].commandType != CMD_ILLEGAL)
-      queuedCommands[i].show(os);
+void WorldModel::showQueuedCommands( ostream & os )
+{
+  os << "Commands in queue:\n" ;
+  for( int i = 0; i < CMD_MAX_COMMANDS; i++ )
+    if( queuedCommands[i].commandType != CMD_ILLEGAL )
+      queuedCommands[i].show( os );
 }
 
 /*! This method prints the information about the Object o to the output stream
     os.
     \param o object of which information should be printed
     \param os output stream to which information is printed. */
-void WorldModel::show(ObjectT o, ostream &os) {
-  Object *object = getObjectPtrFromType(o);
-  if (object != NULL) {
-    if (SoccerTypes::isPlayer(o)) {
-      PlayerObject *pobj = (PlayerObject *) object;
-      if (SoccerTypes::isTeammate(o))
-        pobj->show(getTeamName(), os);
+void WorldModel::show( ObjectT o, ostream &os )
+{
+  Object *object = getObjectPtrFromType( o );
+  if( object != NULL )
+  {
+    if( SoccerTypes::isPlayer( o ) )
+    {
+      PlayerObject *pobj = (PlayerObject*) object ;
+      if( SoccerTypes::isTeammate( o ) )
+        pobj->show( getTeamName(), os );
       else
-        pobj->show("Opponent", os);
-    } else
-      object->show(os);
+        pobj->show( "Opponent", os );
+    }
+    else
+      object->show( os );
   }
 }
 
@@ -1966,11 +2126,12 @@ void WorldModel::show(ObjectT o, ostream &os) {
     from the server for longer than 3 seconds, server is assumed dead and
     false is returned.
     \return true when new info has arrived, false if server is dead */
-bool WorldModel::waitForNewInformation() {
+bool WorldModel::waitForNewInformation( )
+{
   //Log.log( 101, "WorldModel::waitForNewInformation" );
 
   bool bReturn = true;
-  if (bNewInfo == false) // there hasn't arrived any information yet
+  if( bNewInfo == false ) // there hasn't arrived any information yet
   {
 #ifdef WIN32
     DWORD waittime = PS->getServerTimeOut() * 1000;
@@ -1990,21 +2151,21 @@ bool WorldModel::waitForNewInformation() {
     struct timespec timeout;
     gettimeofday(&now, NULL);
     timeout.tv_sec = now.tv_sec + PS->getServerTimeOut();
-    timeout.tv_nsec = now.tv_usec * 1000;
+    timeout.tv_nsec = now.tv_usec*1000;
 
     // lock mutex and wait till it is unlocked by Sense thread
     // this happens in setTimeLastSeeMessage, setTimeLastSenseMessage
     // or setTimeLastSeeGlobalMessage
-    pthread_mutex_lock(&mutex_newInfo);
+    pthread_mutex_lock( &mutex_newInfo );
     int ret;
-    Log.logWithTime(2, "go into conditional wait");
-    while ((ret = pthread_cond_timedwait(&cond_newInfo,
-                                         &mutex_newInfo, &timeout)) == EINTR)
-      printf("(WorldModel::waitForNewInformation) failure in loop!!\n"); // wait for sense msg
-    Log.logWithTime(2, "go out of conditional wait");
-    if (ret == ETIMEDOUT) // if no info was received but timer timed out
+    Log.logWithTime( 2, "go into conditional wait" );
+    while( (ret = pthread_cond_timedwait( &cond_newInfo,
+                    &mutex_newInfo, &timeout) ) == EINTR )
+     printf("(WorldModel::waitForNewInformation) failure in loop!!\n"); // wait for sense msg
+    Log.logWithTime( 2, "go out of conditional wait" );
+    if( ret == ETIMEDOUT ) // if no info was received but timer timed out
       bReturn = false;
-    pthread_mutex_unlock(&mutex_newInfo);
+    pthread_mutex_unlock( &mutex_newInfo );
 
     if (bReturn) {
       gettimeofday(&now, NULL);
@@ -2029,8 +2190,9 @@ bool WorldModel::waitForNewInformation() {
       pthread_mutex_unlock(&mutex_newInfo);
     }
 #endif
-  } else
-    Log.logWithTime(2, "already new info waiting");
+  }
+  else
+    Log.logWithTime( 2, "already new info waiting" );
 
   // update the time of the see and the sense messages not yet with the time
   // from the last received messages. This is done to circumvent that a time
@@ -2060,74 +2222,80 @@ bool WorldModel::waitForNewInformation() {
     \param iLogLevel loglevel for which information should be printed
     \param obj object of which information should be printed at start line
                of this object also the body and neck angle are printed. */
-void WorldModel::logObjectInformation(int iLogLevel, ObjectT obj) {
+void WorldModel::logObjectInformation( int iLogLevel, ObjectT obj )
+{
 
-  static char str[2048];
-  double dConf = PS->getPlayerConfThr();
-  sprintf(str, "(%4d,%3d) ", getCurrentTime().getTime(),
-          getCurrentTime().getTimeStopped());
-  if (obj != OBJECT_ILLEGAL)
-    sprintf(str, "%12.6f %12.6f %12.6f %12.6f %12.6f %12.6f",
-            getGlobalPosition(obj).getX(),
-            getGlobalPosition(obj).getY(),
-            getGlobalVelocity(obj).getX(),
-            getGlobalVelocity(obj).getY(),
-            getGlobalBodyAngle(obj),
-            getGlobalNeckAngle(obj));
+  static char   str[2048];
+  double dConf     = PS->getPlayerConfThr();
+  sprintf( str, "(%4d,%3d) ", getCurrentTime().getTime(),
+	                            getCurrentTime().getTimeStopped() );
+  if( obj != OBJECT_ILLEGAL )
+    sprintf( str, "%12.6f %12.6f %12.6f %12.6f %12.6f %12.6f",
+                                  getGlobalPosition(obj).getX(),
+                                  getGlobalPosition(obj).getY(),
+                                  getGlobalVelocity(obj).getX(),
+                                  getGlobalVelocity(obj).getY(),
+                                  getGlobalBodyAngle(obj),
+                                  getGlobalNeckAngle(obj) );
 
-  if (getConfidence(OBJECT_BALL) > dConf &&
-      getRelativeDistance(OBJECT_BALL) < 20.0)
-    sprintf(&str[strlen(str)], " %12.6f %12.6f",
-            getGlobalPosition(OBJECT_BALL).getX(),
-            getGlobalPosition(OBJECT_BALL).getY());
+  if( getConfidence      ( OBJECT_BALL ) > dConf &&
+      getRelativeDistance( OBJECT_BALL ) < 20.0 )
+    sprintf( &str[strlen(str)], " %12.6f %12.6f",
+                                  getGlobalPosition(OBJECT_BALL).getX(),
+                                  getGlobalPosition(OBJECT_BALL).getY() );
   else
-    sprintf(&str[strlen(str)], " %12.6f %12.6f", -10.0, -10.0);
+    sprintf( &str[strlen(str)], " %12.6f %12.6f", -10.0, -10.0 );
 
-  if (getTimeGlobalVelocity(OBJECT_BALL) > getTimeFromConfidence(dConf) &&
-      getRelativeDistance(OBJECT_BALL) < 20.0)
-    sprintf(&str[strlen(str)], " %12.6f %12.6f",
-            getGlobalVelocity(OBJECT_BALL).getX(),
-            getGlobalVelocity(OBJECT_BALL).getY());
+  if( getTimeGlobalVelocity( OBJECT_BALL ) > getTimeFromConfidence( dConf ) &&
+      getRelativeDistance  ( OBJECT_BALL ) < 20.0 )
+    sprintf( &str[strlen(str)], " %12.6f %12.6f",
+                                  getGlobalVelocity(OBJECT_BALL).getX(),
+                                  getGlobalVelocity(OBJECT_BALL).getY() );
   else
-    sprintf(&str[strlen(str)], " %12.6f %12.6f", -10.0, -10.0);
-  sprintf(&str[strlen(str)], " %12.6f", getConfidence(OBJECT_BALL));
+    sprintf( &str[strlen(str)], " %12.6f %12.6f", -10.0, -10.0 );
+  sprintf( &str[strlen(str)], " %12.6f", getConfidence(OBJECT_BALL) );
 
-  int iIndex = -1;
-  int iIndexPlayer;
-  for (ObjectT o = iterateObjectStart(iIndex, OBJECT_SET_PLAYERS, 0.0);
+  int    iIndex=-1;
+  int    iIndexPlayer;
+  for( ObjectT o = iterateObjectStart( iIndex, OBJECT_SET_PLAYERS, 0.0 );
        o != OBJECT_ILLEGAL;
-       o = iterateObjectNext(iIndex, OBJECT_SET_PLAYERS, 0.0)) {
-    bool bPrint = false;
+       o = iterateObjectNext( iIndex, OBJECT_SET_PLAYERS, 0.0 ) )
+  {
+	  bool bPrint = false;
 
     iIndexPlayer = (SoccerTypes::isTeammate(o))
-                   ? SoccerTypes::getIndex(o) + 1
-                   : SoccerTypes::getIndex(o) + 12;
-    sprintf(&str[strlen(str)], " %d", iIndexPlayer);
-    if (getConfidence(o) > dConf && isKnownPlayer(o) &&
-        getRelativeDistance(o) < 20.0) {
-      sprintf(&str[strlen(str)], " %12.6f %12.6f",
-              getGlobalPosition(o).getX(),
-              getGlobalPosition(o).getY());
+                     ? SoccerTypes::getIndex(o) + 1
+                     : SoccerTypes::getIndex(o) + 12;
+    sprintf( &str[strlen(str)], " %d", iIndexPlayer );
+    if( getConfidence      ( o ) > dConf && isKnownPlayer(o) &&
+        getRelativeDistance( o ) < 20.0 )
+		{
+      sprintf( &str[strlen(str)], " %12.6f %12.6f",
+                                    getGlobalPosition(o).getX(),
+                                    getGlobalPosition(o).getY() );
       bPrint = true;
-    } else
-      sprintf(&str[strlen(str)], " %12.6f %12.6f", -10.0, -10.0);
-
-    if (getTimeGlobalVelocity(o) > getTimeFromConfidence(dConf) &&
-        getRelativeDistance(o) < 20.0 && isKnownPlayer(o)) {
-      sprintf(&str[strlen(str)], " %12.6f %12.6f",
-              getGlobalVelocity(o).getX(),
-              getGlobalVelocity(o).getY());
-      bPrint = true;
-    } else
-      sprintf(&str[strlen(str)], " %12.6f %12.6f", -10.0, -10.0);
-
-    if (bPrint)
-      sprintf(&str[strlen(str)], " %12.6f", getConfidence(o));
+		}
     else
-      sprintf(&str[strlen(str)], " %12.6f", -10.0);
+       sprintf( &str[strlen(str)], " %12.6f %12.6f", -10.0, -10.0 );
+
+    if( getTimeGlobalVelocity( o ) > getTimeFromConfidence( dConf ) &&
+        getRelativeDistance  ( o ) < 20.0 && isKnownPlayer(o)  )
+		{
+      sprintf( &str[strlen(str)], " %12.6f %12.6f",
+                                    getGlobalVelocity(o).getX(),
+                                    getGlobalVelocity(o).getY() );
+      bPrint = true;
+		}
+    else
+      sprintf( &str[strlen(str)], " %12.6f %12.6f", -10.0, -10.0 );
+
+    if( bPrint )
+      sprintf( &str[strlen(str)], " %12.6f", getConfidence(o) );
+    else
+      sprintf( &str[strlen(str)], " %12.6f", -10.0 );
   }
-  if (getCurrentCycle() != 3000)
-    Log.log(iLogLevel, str);
+  if( getCurrentCycle() != 3000  )
+      Log.log( iLogLevel, str );
 }
 
 
@@ -2136,10 +2304,11 @@ void WorldModel::logObjectInformation(int iLogLevel, ObjectT obj) {
     is equal, the feature is assumed relevant, otherwise irrelevant.
     \param type feature that should be checked on relevance
     \return bool indicating whether the feature is relevant. */
-bool WorldModel::isFeatureRelevant(FeatureT type) {
-  int iIndex = (int) type;
+bool WorldModel::isFeatureRelevant( FeatureT type )
+{
+  int  iIndex  = (int)type;
   bool bReturn = true;
-  static Time timeKickedUsed = -1;
+  static Time  timeKickedUsed = -1;
 
 #if 0
   Log.log( 460, "check feature (%d,%d,%d) relevance now (%d,%d,%d)",
@@ -2152,18 +2321,19 @@ bool WorldModel::isFeatureRelevant(FeatureT type) {
 #endif
   // feature is relevant when see and hear time is larger or equal than the
   // current time
-  bReturn = m_features[iIndex].getTimeSee() >= getTimeLastSeeMessage() &&
-            m_features[iIndex].getTimeHear() >= getTimeLastHearMessage();
+  bReturn  = m_features[iIndex].getTimeSee()  >= getTimeLastSeeMessage() &&
+             m_features[iIndex].getTimeHear() >= getTimeLastHearMessage();
 
   // if ball kicked, also recheck
-  if (timeKickedUsed != getTimeLastSenseMessage()) {
-    bReturn &= (m_bPerformedKick == false);
+  if( timeKickedUsed != getTimeLastSenseMessage() )
+  {
+    bReturn &= ( m_bPerformedKick == false );
     timeKickedUsed = getTimeLastSenseMessage();
   }
 
   // in case of interception, also recheck after sense message
-  if (type == FEATURE_INTERCEPTION_POINT_BALL ||
-      type == FEATURE_INTERCEPT_CLOSE)
+  if( type ==  FEATURE_INTERCEPTION_POINT_BALL ||
+      type ==  FEATURE_INTERCEPT_CLOSE        )
     bReturn &= m_features[iIndex].getTimeSense() >= getTimeLastSenseMessage();
   return bReturn;
 }
@@ -2171,8 +2341,9 @@ bool WorldModel::isFeatureRelevant(FeatureT type) {
 /*! This method return the feature corresponding to the type 'type'.
     \param type type of this feature, e.g., FEATURE_FASTEST_PLAYER_TO_BALL.
     \return corresponding feature.*/
-Feature WorldModel::getFeature(FeatureT type) {
-  return m_features[(int) type];
+Feature WorldModel::getFeature( FeatureT type )
+{
+  return m_features[(int)type];
 }
 
 /*! This method updates the feature 'type' with the information stored in
@@ -2180,30 +2351,16 @@ Feature WorldModel::getFeature(FeatureT type) {
     \param type type of this feature, e.g., FEATURE_FASTEST_PLAYER_TO_BALL.
     \param feature information regarding this feature
     \return boolean indicating whether the update was successful.*/
-bool WorldModel::setFeature(FeatureT type, Feature feature) {
-  m_features[(int) type] = feature;
+bool WorldModel::setFeature( FeatureT type, Feature feature )
+{
+  m_features[(int)type] = feature;
   return true;
 }
 
 bool WorldModel::isTmControllBall() {
-  if (isBallKickable()) return true;
   ObjectT K0 = getClosestInSetTo(OBJECT_SET_TEAMMATES, OBJECT_BALL);
   VecPosition B = getBallPos();
   double WK0_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
-  return WK0_dist_to_B < getMaximalKickDist(K0);
-}
-
-bool WorldModel::isOppControllBall() {
-  ObjectT K0 = getClosestInSetTo(OBJECT_SET_OPPONENTS, OBJECT_BALL);
-  VecPosition B = getBallPos();
-  double WK0_dist_to_B = getGlobalPosition(K0).getDistanceTo(B);
-  return WK0_dist_to_B < getMaximalKickDist(K0);
-}
-
-int WorldModel::getBallControllStatus() {
-  return (isTmControllBall() << 1) | isOppControllBall();
-}
-
-bool WorldModel::isBallFree() {
-  return getBallControllStatus() == 0;
+  bool tmControllBall = WK0_dist_to_B < getMaximalKickDist(K0);
+  return tmControllBall || isBallKickable();
 }

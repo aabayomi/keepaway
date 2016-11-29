@@ -10,10 +10,15 @@
 #include <vector>
 #include "BasicPlayer.h"
 #include "LinearSarsaLearner.h"
-#include "prettyprint.h"
 
 namespace fsm {
 class HierarchicalFSM;
+}
+
+namespace std {
+
+const string &to_string(fsm::HierarchicalFSM *m);
+
 }
 
 namespace fsm {
@@ -88,10 +93,6 @@ protected:
 
   bool running();
 
-  bool isFastestToBall();
-
-  VecPosition refineTarget(VecPosition target, VecPosition backup);
-
   static std::string getStackStr();
 
 protected:
@@ -102,8 +103,8 @@ public:
   const std::string &getName() const;
 
   static void initialize(int numFeatures,
-                         int numKeepers,
-                         int numTakers,
+                         int numTeammates,
+                         int numOpponents,
                          bool bLearn,
                          double widths[],
                          double gamma,
@@ -111,8 +112,7 @@ public:
                          double initialWeight,
                          bool qLearning,
                          string loadWeightsFile,
-                         string saveWeightsFile,
-                         string teamName);
+                         string saveWeightsFile);
 
 protected:
   ActHandler *ACT; /*!< ActHandler to which commands can be sent        */
@@ -122,9 +122,9 @@ protected:
   ChoicePoint<int> *dummyChoice;
 
 public:
-  static int numFeatures;
-  static int numTeammates;
-  static int numOpponents;
+  static int num_features;
+  static int num_teammates;
+  static int num_opponents;
 };
 
 class Keeper : public HierarchicalFSM {
@@ -136,31 +136,11 @@ public:
   virtual void run();
 
 private:
-  ChoicePoint<HierarchicalFSM *> *choice_ball;
-  ChoicePoint<HierarchicalFSM *> *choice_free;
-
+  ChoicePoint<HierarchicalFSM *> *choices[2];
   HierarchicalFSM *pass;
-  HierarchicalFSM *dribble;
   HierarchicalFSM *hold;
   HierarchicalFSM *move;
   HierarchicalFSM *stay;
-  HierarchicalFSM *intercept;
-  HierarchicalFSM *getopen;
-};
-
-class Taker : public HierarchicalFSM {
-public:
-  Taker(BasicPlayer *p);
-
-  ~Taker();
-
-  virtual void run();
-
-private:
-  ChoicePoint<HierarchicalFSM*> *choice_taker;
-
-  HierarchicalFSM *hold;
-  HierarchicalFSM *mark;
   HierarchicalFSM *intercept;
 };
 
@@ -174,6 +154,7 @@ public:
 
 private:
   ChoicePoint<int> *moveToChoice;
+//  ChoicePoint<double> *moveSpeedChoice;
 };
 
 class Stay : public HierarchicalFSM {
@@ -181,25 +162,6 @@ public:
   Stay(BasicPlayer *p);
 
   virtual void run();
-};
-
-class GetOpen : public HierarchicalFSM {
-public:
-  GetOpen(BasicPlayer *p);
-
-  virtual void run();
-};
-
-class Mark : public HierarchicalFSM {
-public:
-  Mark(BasicPlayer *p);
-
-  ~Mark();
-
-  virtual void run();
-
-private:
-  ChoicePoint<int> *markToChoice;
 };
 
 class Intercept : public HierarchicalFSM {
@@ -222,19 +184,6 @@ private:
   ChoicePoint<PassT> *passSpeedChoice;
 };
 
-class Dribble : public HierarchicalFSM {
-public:
-  Dribble(BasicPlayer *p);
-
-  virtual ~Dribble();
-
-  virtual void run();
-
-private:
-  ChoicePoint<double> *dribbleToChoice;
-  ChoicePoint<DribbleT> *dribbleSpeedChoice;
-};
-
 class Hold : public HierarchicalFSM {
 public:
   Hold(BasicPlayer *p);
@@ -244,31 +193,7 @@ public:
   virtual void run();
 };
 
-class Tackle : public HierarchicalFSM {
-public:
-  Tackle(BasicPlayer *p);
-
-  ~Tackle();
-
-  virtual void run();
-};
-
 }
 
-namespace std {
-template<>
-inline string to_prettystring(fsm::HierarchicalFSM *&o) {
-  stringstream ss;
-  ss << o->getName();
-  return ss.str();
-}
-
-template<>
-inline string to_prettystring(const fsm::HierarchicalFSM *&o) {
-  stringstream ss;
-  ss << o->getName();
-  return ss.str();
-}
-}
 
 #endif //KEEPAWAY_PLAYER_HIERARCHICALFSM_H
