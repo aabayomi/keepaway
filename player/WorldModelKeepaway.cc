@@ -219,7 +219,7 @@ int WorldModel::playerStateRangesAndResolutions(
   for (int i = 1; i < numTeammates; i++) {     // dist_to_K0_Teammate
     ranges[j] = maxRange;
     minValues[j] = 0;
-    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 2);
+    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 1);
   }
 
   for (int i = 0; i < numOpponents; i++) {     // dist_to_K0_Opponent
@@ -231,7 +231,7 @@ int WorldModel::playerStateRangesAndResolutions(
   for (int i = 1; i < numTeammates; i++) {     // dist_to_center_Teammate
     ranges[j] = maxRange / 2.0;
     minValues[j] = 0;
-    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 2);
+    resolutions[j++] = 2.0 + (i - 1) / (numTeammates - 1);
   }
 
   for (int i = 0; i < numOpponents; i++) {     // dist_to_center_Opponent

@@ -87,6 +87,10 @@ protected:
    */
   void action(bool sync = true);
 
+  bool isFastestToBall();
+
+  VecPosition refineTarget(VecPosition target, VecPosition backup);
+
   std::string getState();
 
   void idle(const std::string error);
@@ -112,7 +116,8 @@ public:
                          double initialWeight,
                          bool qLearning,
                          string loadWeightsFile,
-                         string saveWeightsFile);
+                         string saveWeightsFile,
+                         string teamName);
 
 protected:
   ActHandler *ACT; /*!< ActHandler to which commands can be sent        */
@@ -141,6 +146,24 @@ private:
   HierarchicalFSM *hold;
   HierarchicalFSM *move;
   HierarchicalFSM *stay;
+  HierarchicalFSM *intercept;
+  HierarchicalFSM *getopen;
+};
+
+class Taker : public HierarchicalFSM {
+public:
+  Taker(BasicPlayer *p);
+
+  ~Taker();
+
+  virtual void run();
+
+private:
+  ChoicePoint<HierarchicalFSM *> *choice_taker;
+
+  HierarchicalFSM *hold;
+  HierarchicalFSM *stay;
+  HierarchicalFSM *move;
   HierarchicalFSM *intercept;
 };
 
@@ -189,6 +212,13 @@ public:
   Hold(BasicPlayer *p);
 
   ~Hold();
+
+  virtual void run();
+};
+
+class GetOpen : public HierarchicalFSM {
+public:
+  GetOpen(BasicPlayer *p);
 
   virtual void run();
 };

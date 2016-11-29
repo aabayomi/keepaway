@@ -80,17 +80,18 @@ LinearSarsaLearner::LinearSarsaLearner() {
 void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
                                     double Lambda, double weight,
                                     bool QLearning, string loadWeightsFile,
-                                    string saveWeightsFile_) {
+                                    string saveWeightsFile_, string teamName_) {
   bLearning = learning;
   bSaveWeights = bLearning && saveWeightsFile_.length() > 0;
   saveWeightsFile = saveWeightsFile_;
   qLearning = QLearning;
+  teamName = teamName_;
 
   for (int i = 0; i < HierarchicalFSM::num_features; i++) {
     tileWidths[i] = width[i];
   }
 
-  initialWeight = weight;
+  initialWeight = teamName_ == "keepers" ? weight : -weight;
   alpha = 0.125;
   gamma = Gamma;
   lambda = Lambda;
@@ -121,6 +122,7 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
     exepath += to_string(lambda);
     exepath += to_string(initialWeight);
     exepath += to_string(qLearning);
+    exepath += teamName;
     auto h = hash<string>()(exepath); // hashing
     sharedMemory = "/" + to_string(h) + ".shm";
 
@@ -158,7 +160,7 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
       colTab->reset();
     }
 
-    loadStaticTransitions("transitions.xml");
+    loadStaticTransitions(teamName + "_transitions.xml");
   }
 }
 
@@ -169,7 +171,7 @@ void LinearSarsaLearner::shutDown() {
       saveWeights(saveWeightsFile.c_str());
     }
 
-    saveStaticTransitions("transitions.xml");
+    saveStaticTransitions(teamName + "_transitions.xml");
 
 #if DETERMINISTIC_GRAPH
     dot::Graph G;
@@ -192,7 +194,7 @@ void LinearSarsaLearner::shutDown() {
       }
     }
 
-    G.dump("transitions.dot");
+    G.dump(teamName + "_transitions.dot");
 #endif
   }
 
@@ -279,7 +281,7 @@ LinearSarsaLearner::validChoices(const num_choice_t &num_choices) {
   return validChoicesMap[num_choices];
 }
 
-void LinearSarsaLearner::saveStaticTransitions(const char *filename) {
+void LinearSarsaLearner::saveStaticTransitions(string filename) {
   std::ofstream ofs(filename);
   Assert(ofs.good());
   boost::archive::xml_oarchive oa(ofs);
@@ -289,7 +291,7 @@ void LinearSarsaLearner::saveStaticTransitions(const char *filename) {
   oa << BOOST_SERIALIZATION_NVP(staticTransitions);
 }
 
-void LinearSarsaLearner::loadStaticTransitions(const char *filename) {
+void LinearSarsaLearner::loadStaticTransitions(string filename) {
   std::ifstream ifs(filename);
   if (!ifs.good())
     return;
@@ -369,7 +371,7 @@ double LinearSarsaLearner::reward(double tau) {
     ret = (1.0 - pow(gamma, tau)) / (1.0 - gamma);
   }
 
-  return ret;
+  return teamName == "keepers" ? ret : -ret;
 }
 
 int LinearSarsaLearner::step(int current_time) {
@@ -651,8 +653,8 @@ int LinearSarsaLearner::selectChoice(const num_choice_t &num_choices) {
 }
 
 int LinearSarsaLearner::argmaxQ(const num_choice_t &num_choices) {
-  int bestAction = 0;
-  double bestValue = numeric_limits<double>::min();
+  int bestAction = -1;
+  double bestValue = (double) INT_MIN;
   int numTies = 0;
 
   for (auto a : validChoices(num_choices)) {
@@ -669,6 +671,7 @@ int LinearSarsaLearner::argmaxQ(const num_choice_t &num_choices) {
     }
   }
 
+  Assert(bestAction != -1);
   return bestAction;
 }
 

@@ -64,6 +64,34 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Parse.h"
 #include "Logger.h"
 
+ostream &operator<<(ostream &out, const DribbleT value) {
+  static unordered_map<int, string> strings;
+
+  if (strings.size() == 0) {
+#define INSERT_ELEMENT(p) strings[p] = #p
+    INSERT_ELEMENT(DRIBBLE_ILLEGAL);
+    INSERT_ELEMENT(DRIBBLE_WITHBALL);
+    INSERT_ELEMENT(DRIBBLE_SLOW);
+    INSERT_ELEMENT(DRIBBLE_FAST);
+#undef INSERT_ELEMENT
+  }
+
+  return out << strings[value];
+}
+
+ostream &operator<<(ostream &out, const PassT value) {
+  static unordered_map<int, string> strings;
+
+  if (strings.size() == 0) {
+#define INSERT_ELEMENT(p) strings[p] = #p
+    INSERT_ELEMENT(PASS_ILLEGAL);
+    INSERT_ELEMENT(PASS_FAST);
+    INSERT_ELEMENT(PASS_NORMAL);
+#undef INSERT_ELEMENT
+  }
+
+  return out << strings[value];
+}
 
 ostream& operator<<(ostream& out, const ObjectT value) {
   static unordered_map<int, string> strings;

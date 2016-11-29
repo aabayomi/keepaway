@@ -75,7 +75,7 @@ void KeepawayPlayer::mainLoop( )
   if (!WM->waitForNewInformation()) bContLoop = false;
   if (bContLoop) WM->updateAll();
 
-  if (WM->getSide() == SIDE_RIGHT || SA) { // joint option learner or taker
+  if (/*WM->getSide() == SIDE_RIGHT ||*/ SA) { // joint option learner or taker
     if (!WM->waitForNewInformation()) bContLoop = false;
 
     while (bContLoop)                                 // as long as server alive
@@ -123,8 +123,14 @@ void KeepawayPlayer::mainLoop( )
         bContLoop = false;
     }
   } else { // hierarchical FSM learner
-    fsm::Keeper *keeper = new fsm::Keeper(this);
-    fsm::Run(keeper).operator()();
+    fsm::HierarchicalFSM *player = 0;
+    if (WM->getSide() == SIDE_LEFT) {
+      player = new fsm::Keeper(this);
+    } else {
+      player = new fsm::Taker(this);
+    }
+    fsm::Run(player).operator()();
+    delete player;
   }
 
   // shutdown, print hole and number of players seen statistics

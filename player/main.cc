@@ -352,13 +352,13 @@ int main(int argc, char *argv[]) {
       fsm::HierarchicalFSM::initialize(
           numFeatures, iNumKeepers, iNumTakers, bLearn,
           resolutions, gamma, lambda, initialWeight, qLearning,
-          loadWeightsFile, saveWeightsFile);
+          loadWeightsFile, saveWeightsFile, strTeamName);
     }
     else {
       fsm::HierarchicalFSM::initialize(
           numFeatures, iNumTakers, iNumKeepers, bLearn,
           resolutions, gamma, lambda, initialWeight, qLearning,
-          loadWeightsFile, saveWeightsFile);
+          loadWeightsFile, saveWeightsFile, strTeamName);
     };
   }
 
