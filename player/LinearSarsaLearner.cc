@@ -30,7 +30,7 @@ void SharedData::reset() {
 
 choice_t SharedData::getLastJointChoice() const {
   return choice_t(lastJointChoice,
-                     lastJointChoice + HierarchicalFSM::num_teammates);
+                  lastJointChoice + HierarchicalFSM::num_teammates);
 }
 
 num_choice_t SharedData::getNumChoices() const {
@@ -79,12 +79,14 @@ LinearSarsaLearner::LinearSarsaLearner() {
 
 void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
                                     double Lambda, double weight,
-                                    bool QLearning, string loadWeightsFile,
+                                    bool QLearning, bool UseStaticTransition,
+                                    string loadWeightsFile,
                                     string saveWeightsFile_, string teamName_) {
   bLearning = learning;
   bSaveWeights = bLearning && saveWeightsFile_.length() > 0;
   saveWeightsFile = saveWeightsFile_;
   qLearning = QLearning;
+  useStaticTransition = UseStaticTransition;
   teamName = teamName_;
 
   for (int i = 0; i < HierarchicalFSM::num_features; i++) {
@@ -122,6 +124,7 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
     exepath += to_string(lambda);
     exepath += to_string(initialWeight);
     exepath += to_string(qLearning);
+    exepath += to_string(useStaticTransition);
     exepath += teamName;
     auto h = hash<string>()(exepath); // hashing
     sharedMemory = "/" + to_string(h) + ".shm";
@@ -160,7 +163,8 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
       colTab->reset();
     }
 
-    loadStaticTransitions(teamName + "_transitions.xml");
+    if (useStaticTransition)
+      loadStaticTransitions(teamName + "_transitions.xml");
   }
 }
 
@@ -171,31 +175,33 @@ void LinearSarsaLearner::shutDown() {
       saveWeights(saveWeightsFile.c_str());
     }
 
-    saveStaticTransitions(teamName + "_transitions.xml");
+    if (useStaticTransition) {
+      saveStaticTransitions(teamName + "_transitions.xml");
 
 #if DETERMINISTIC_GRAPH
-    dot::Graph G;
-    for (auto &e : staticTransitions) {
-      auto s = to_prettystring(e.first);
-      boost::replace_all(s, ", {", ",\n{");
-      G.addNode(s, "red");
-      for (auto &o : e.second) {
-        auto a = to_string(o.first);
-        auto sa = s + ";  " + a;
-        G.addNode(sa, "gray");
-        G.addEdge(s, sa, "blue", a);
-        for (auto &x : o.second) {
-          auto s_ = to_prettystring(x.first);
-          boost::replace_all(s_, ", {", ",\n{");
-          auto n = to_string(x.second);
-          G.addNode(s_, "orange");
-          G.addEdge(sa, s_, "green", n);
+      dot::Graph G;
+      for (auto &e : staticTransitions) {
+        auto s = to_prettystring(e.first);
+        boost::replace_all(s, ", {", ",\n{");
+        G.addNode(s, "red");
+        for (auto &o : e.second) {
+          auto a = to_string(o.first);
+          auto sa = s + ";  " + a;
+          G.addNode(sa, "gray");
+          G.addEdge(s, sa, "blue", a);
+          for (auto &x : o.second) {
+            auto s_ = to_prettystring(x.first);
+            boost::replace_all(s_, ", {", ",\n{");
+            auto n = to_string(x.second);
+            G.addNode(s_, "orange");
+            G.addEdge(sa, s_, "green", n);
+          }
         }
       }
-    }
 
-    G.dump(teamName + "_transitions.dot");
+      G.dump(teamName + "_transitions.dot");
 #endif
+    }
   }
 
   if (sharedData)
@@ -398,8 +404,11 @@ int LinearSarsaLearner::step(int current_time) {
       delta += pow(gamma, tau) * Q[choice];
     }
 
-    updateWeights(delta, numTilings);
-    Q[choice] = QValue(state, machineState, choice, tiles_, numTilings);
+    if (!isStaticTransition(lastMachineState, lastJointChoiceIdx)) {
+      updateWeights(delta, numTilings);
+      Q[choice] = QValue(state, machineState, choice, tiles_, numTilings);
+    }
+
     decayTraces(gamma * lambda);
     for (auto a : validChoices(numChoices)) {
       if (a != choice) {
@@ -449,7 +458,8 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
     return 0; // action state
   } else {
     if (Memory::ins().agentIdx == 0) {
-      if (current_time == lastJointChoiceTime && lastMachineState.size() &&
+      if (useStaticTransition &&
+          current_time == lastJointChoiceTime && lastMachineState.size() &&
           machineState.size() && lastMachineState != machineState) {
         Log.log(101, "LinearSarsaLearner::step: save static transition (%s) + "
                     "(%d) -> (%s)",
@@ -510,7 +520,9 @@ void LinearSarsaLearner::endEpisode(int current_time) {
       Assert(lastJointChoiceTime <= current_time);
       double tau = current_time - lastJointChoiceTime;
       double delta = reward(tau) - Q[lastJointChoiceIdx];
-      updateWeights(delta, numTilings);
+      if (!isStaticTransition(lastMachineState, lastJointChoiceIdx)) {
+        updateWeights(delta, numTilings);
+      }
     }
 
     lastJointChoiceIdx = -1;

@@ -40,6 +40,7 @@ def launch_player(player_type, index, options):
         I = float(options.initial_weight),
         z = int(options.hierarchical_fsm),
         Q = int(options.qlearning),
+        T = int(options.usestatictransition),
         l = options.log_level, # log level
         o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index + 1),
         e = int(getattr(options, player_type + '_learn')),
@@ -327,6 +328,9 @@ def parse_options(args = None, **defaults):
     parser.add_option(
         '--qlearning', action='store_true', default=False,
         help = "Use QLearning (instead of SARSA).")
+    parser.add_option(
+        '--usestatictransition', action='store_true', default=False,
+        help = "Take advantage of static transitions when learning.")
     parser.add_option(
         '--gamma', type = 'float', default = 1.0,
         help="Gamma.")

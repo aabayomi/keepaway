@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
   double lambda = 0.0;
   double initialWeight = 0.0;
   bool qLearning = false;
+  bool UseStaticTransition = false;
 
 #ifdef _Compress
   ogzstream os;
@@ -226,6 +227,10 @@ int main(int argc, char *argv[]) {
         case 't':                                   // teamname name
           strcpy(strTeamName, argv[i + 1]);
           break;
+        case 'T': // use static transition 0/1
+          str = &argv[i + 1][0];
+          UseStaticTransition = Parse::parseFirstInt(&str) == 1;
+          break;
         case 'v':                                   // version version
           str = &argv[i + 1][0];
           dVersion = Parse::parseFirstDouble(&str);
@@ -256,6 +261,7 @@ int main(int argc, char *argv[]) {
          "lambda : " << lambda << endl <<
          "initialWeight: " << initialWeight << endl <<
          "qlearning: " << qLearning << endl <<
+         "UseStaticTransition: " << UseStaticTransition << endl <<
          "be learning : " << bLearn << endl;
   }
 
@@ -352,13 +358,13 @@ int main(int argc, char *argv[]) {
       fsm::HierarchicalFSM::initialize(
           numFeatures, iNumKeepers, iNumTakers, bLearn,
           resolutions, gamma, lambda, initialWeight, qLearning,
-          loadWeightsFile, saveWeightsFile, strTeamName);
+          UseStaticTransition, loadWeightsFile, saveWeightsFile, strTeamName);
     }
     else {
       fsm::HierarchicalFSM::initialize(
           numFeatures, iNumTakers, iNumKeepers, bLearn,
           resolutions, gamma, lambda, initialWeight, qLearning,
-          loadWeightsFile, saveWeightsFile, strTeamName);
+          UseStaticTransition, loadWeightsFile, saveWeightsFile, strTeamName);
     };
   }
 

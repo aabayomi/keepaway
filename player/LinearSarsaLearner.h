@@ -95,6 +95,7 @@ public:
       bool learning, double width[],
       double gamma, double lambda,
       double weight, bool qLearning,
+      bool UseStaticTransition,
       string loadWeightsFile,
       string saveWeightsFile,
       string teamName);
@@ -127,6 +128,7 @@ public:
 private:
   bool bLearning;
   bool qLearning;
+  bool useStaticTransition;
   string saveWeightsFile;
   bool bSaveWeights;
   SharedData *sharedData;

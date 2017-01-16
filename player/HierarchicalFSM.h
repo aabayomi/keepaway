@@ -115,6 +115,7 @@ public:
                          double lambda,
                          double initialWeight,
                          bool qLearning,
+                         bool UseStaticTransition,
                          string loadWeightsFile,
                          string saveWeightsFile,
                          string teamName);
