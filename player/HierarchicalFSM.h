@@ -43,6 +43,7 @@ public:
   bool bAlive;
   int agentIdx;
   double state[MAX_RL_STATE_VARS]; // current state -- indexed by K0..Kn
+  int ballControlState[11]; // current ball state -- indexed by K0..Kn
   ObjectT teammates[11]; // current mapping from index to teammates
   ObjectT opponents[11]; // current mapping from index to opponents
 
@@ -55,6 +56,8 @@ public:
   void PushStack(const string &s);
 
   void PopStack();
+
+  size_t ballControlHash();
 };
 
 /**
@@ -178,7 +181,6 @@ public:
 
 private:
   ChoicePoint<int> *moveToChoice;
-//  ChoicePoint<double> *moveSpeedChoice;
 };
 
 class Stay : public HierarchicalFSM {

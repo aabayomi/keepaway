@@ -197,7 +197,7 @@ private:
   unordered_map<num_choice_t, vector<int>> validChoicesMap;
   unordered_map<num_choice_t, vector<choice_t>> jointChoicesMap;
   unordered_map<machine_state_t, num_choice_t> numChoicesMap;
-  transition_t staticTransitions;
+  unordered_map<size_t, transition_t> staticTransitions;
 
   void saveStaticTransitions(string filename);
 

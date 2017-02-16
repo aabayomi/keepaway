@@ -59,6 +59,10 @@ void Memory::PopStack() {
   }
 }
 
+size_t Memory::ballControlHash() {
+  return hash<vector<int>>().operator()(vector<int>(ballControlState, ballControlState + HierarchicalFSM::num_teammates));
+}
+
 int HierarchicalFSM::num_features;
 int HierarchicalFSM::num_teammates;
 int HierarchicalFSM::num_opponents;
@@ -201,6 +205,13 @@ string HierarchicalFSM::getState() {
     return "!WM->sortClosestTo(teammate, num_teammates, T0)";
   if (T0 != Memory::ins().teammates[0])
     return "T0 != teammate[0]";
+
+  auto ballPos = WM->getBallPos();
+  for (int i = 0; i < num_teammates; ++i) {
+    auto o = Memory::ins().teammates[i];
+    Memory::ins().ballControlState[i]
+        = WM->getGlobalPosition(o).getDistanceTo(ballPos) < WM->getMaximalKickDist(o);
+  }
 
   for (int i = 0; i < num_opponents; i++)
     Memory::ins().opponents[i] = SoccerTypes::getOpponentObjectFromIndex(i);

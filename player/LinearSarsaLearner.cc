@@ -6,7 +6,7 @@
 #include "gzstream.h"
 #include <boost/algorithm/string/replace.hpp>
 
-#define DETERMINISTIC_GRAPH 1
+#define DETERMINISTIC_GRAPH 0
 
 namespace fsm {
 
@@ -329,9 +329,10 @@ LinearSarsaLearner::validChoicesRaw(const num_choice_t &num_choices) {
 
 bool LinearSarsaLearner::isStaticTransition(const machine_state_t &machine_state,
                                             int c) {
-  return staticTransitions.count(machine_state) &&
-         staticTransitions[machine_state].count(c) &&
-         staticTransitions[machine_state][c].size();
+  auto hash = Memory::ins().ballControlHash();
+  return staticTransitions[hash].count(machine_state) &&
+         staticTransitions[hash][machine_state].count(c) &&
+         staticTransitions[hash][machine_state][c].size();
 }
 
 namespace {
@@ -465,21 +466,22 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
                     "(%d) -> (%s)",
                 to_prettystring(lastMachineState).c_str(), lastJointChoiceIdx,
                 to_prettystring(machineState).c_str());
-        staticTransitions[lastMachineState][lastJointChoiceIdx][machineState] +=
+        auto hash = Memory::ins().ballControlHash();
+        staticTransitions[hash][lastMachineState][lastJointChoiceIdx][machineState] +=
             1.0;
 
-        if (hasCircle(staticTransitions)) {
+        if (hasCircle(staticTransitions[hash])) {
           Log.log(101,
                   "LinearSarsaLearner::step: staticTransitions has circle");
-          staticTransitions[lastMachineState][lastJointChoiceIdx].erase(
+          staticTransitions[hash][lastMachineState][lastJointChoiceIdx].erase(
               machineState);
-          if (staticTransitions[lastMachineState][lastJointChoiceIdx].empty()) {
-            staticTransitions[lastMachineState].erase(lastJointChoiceIdx);
-            if (staticTransitions[lastMachineState].empty()) {
-              staticTransitions.erase(lastMachineState);
+          if (staticTransitions[hash][lastMachineState][lastJointChoiceIdx].empty()) {
+            staticTransitions[hash][lastMachineState].erase(lastJointChoiceIdx);
+            if (staticTransitions[hash][lastMachineState].empty()) {
+              staticTransitions[hash].erase(lastMachineState);
             }
           }
-          Assert(!hasCircle(staticTransitions));
+          Assert(!hasCircle(staticTransitions[hash]));
         }
       }
 
@@ -579,17 +581,18 @@ double LinearSarsaLearner::QValue(double *state,
                                   const machine_state_t &machine_state,
                                   int choice, int (*tiles)[RL_MAX_NUM_TILINGS],
                                   int num_tilings) {
-  if (isStaticTransition(machine_state, choice)) {
+  if (useStaticTransition && isStaticTransition(machine_state, choice)) {
+    auto hash = Memory::ins().ballControlHash();
     if (Log.isInLogLevel(101))
       Log.log(
           101, "LinearSarsaLearner::QValue: static transition Q(s, m=%s, c=%d) "
               "= V(s, m=%s)",
           to_prettystring(machine_state).c_str(), choice,
-          to_prettystring(staticTransitions[machine_state][choice]).c_str());
+          to_prettystring(staticTransitions[hash][machine_state][choice]).c_str());
 
     double ret = 0.0;
     double sum = 0.0;
-    for (auto &e : staticTransitions[machine_state][choice]) {
+    for (auto &e : staticTransitions[hash][machine_state][choice]) {
       if (e.first != machine_state) {
         ret += e.second * Value(state, e.first);
         sum += e.second;
