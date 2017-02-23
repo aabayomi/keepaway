@@ -264,7 +264,6 @@ SoccerCommand KeepawayPlayer::jolKeepers()
 
   int numK = WM->getNumKeepers();
 
-
   int features = WM->keeperStateVars(state);
   Assert(features == 0 || features == SA->getNumFeatures());
   if (features != SA->getNumFeatures()) return idle("features != SA->getNumFeatures()"); // do nothing

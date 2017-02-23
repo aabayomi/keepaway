@@ -23,12 +23,13 @@ make clean
 make -j `nproc` release
 
 exec 1>console.log 2>&1                                                              
-for lambda in 0.5; do
-    for initialweight in 0.5; do
-        ./train.sh -z -b none -sf -g 1.0 -L $lambda -I $initialweight $* &
-        ./train.sh -z -b none -sf -g 1.0 -L $lambda -I $initialweight $* -T &
-    done
-done
+
+lambda=0.5
+initialweight=0.5
+
+./train.sh -z -b none -sf -g 1.0 -L $lambda -I $initialweight $* & #hamq
+./train.sh -z -b none -sf -g 1.0 -L $lambda -I $initialweight $* -T & #hamq-int
+./train.sh -b none -sf -g 1.0 -L $lambda -I $initialweight $* & #joint option learning
 
 wait
 
