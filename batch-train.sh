@@ -29,7 +29,6 @@ initialweight=0.5
 
 ./train.sh -z -b none -sf -g 1.0 -L $lambda -I $initialweight $* & #hamq
 ./train.sh -z -b none -sf -g 1.0 -L $lambda -I $initialweight $* -T & #hamq-int
-./train.sh -b none -sf -g 1.0 -L $lambda -I $initialweight $* & #joint option learning
 
 wait
 
