@@ -1,13 +1,35 @@
 # RoboCup Keepaway benchmark player framework
 
-[![Build Status](https://travis-ci.org/aijunbai/keepaway.svg?branch=master)](https://travis-ci.org/aijunbai/keepaway)
+## Concurrent HAMQ Learning
 
-## Full hive mind mode: multi-agent distributed learning
+This is an ongoing project on concurrent reinforcement learning following the HAM framework. More details can be found on following papers:
+-   **Efficient Reinforcement Learning with Hierarchies of Machines by Leveraging Internal Transitions**, *Aijun Bai*, and Stuart Russell,\
+    *Proceedings of the Twenty-Fifth International Joint Conference on Artificial Intelligence (**IJCAI**), Melbourne, Australia, August 19 - 25, 2017.*
+    \[[pdf](https://aijunbai.github.io/publications/IJCAI17-Bai.pdf)\]
+-   **Concurrent Hierarchical Reinforcement Learning for RoboCup Keepaway**, *Aijun
+    Bai*, Stuart Russell, and Xiaoping Chen,\
+    *RoboCup-2017: Robot Soccer World Cup XX, Lecture Notes in
+    Artificial Intelligence (**RoboCup**), Springer Verlag, Berlin, 2017.*
+    \[[pdf](https://aijunbai.github.io/publications/LNAI17-Bai.pdf)\]
+-   **Speeding Up HAM Learning with Internal Transitions**, *Aijun Bai*, and Stuart Russell,\
+    *The Multi-disciplinary Conference on Reinforcement Learning and Decision Making (**RLDM**)
+    2017, Ann Arbor, Michigan, USA, June 11-14, 2017.*
+    \[[pdf](https://aijunbai.github.io/publications/RLDM17-Bai.pdf)\]
 
-In a senario where A at t1 passes to B, B at t2 passes to A, A at t3 passes to C,
+
+### Initial policy
+[![HAMQ-INT on RoboCup Keepaway (initial policy)](gifs/keepaway_initialized.gif)](https://www.youtube.com/watch?v=GFd0b3wV0Rk "initial policy")
+
+### Converged policy
+[![HAMQ-INT on RoboCup Keepaway (converged policy)](gifs/keepaway_converged.gif)](https://www.youtube.com/watch?v=ob249J8Kxi0 "converged policy")
+
+## Full Hive Mind Learning
+
+Full-hive-mind learning extends the original work of Stone and et. al. 
+In a scenario where A at t1 passes to B, B at t2 passes to A, A at t3 passes to C,
 C at t4 passes to B and B at t5 recievs the ball, the original single agent learning 
 or hive mind learning have only 2 updates: t1-t3 for A and it2-t5 for B; the new 
-full hive mind learning has 4 updates: t1-t2 for B, t2-t3 for A, t3-t4 for C 
+full-hive-mind algorithm has 4 updates: t1-t2 for B, t2-t3 for A, t3-t4 for C 
 and t4-t5 for B. Weights as well as traces are shared for this purpose. Global 
 optimality can be ensured given fixed opponents.
 
