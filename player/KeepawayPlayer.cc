@@ -75,7 +75,7 @@ void KeepawayPlayer::mainLoop( )
   if (!WM->waitForNewInformation()) bContLoop = false;
   if (bContLoop) WM->updateAll();
 
-  if (/*WM->getSide() == SIDE_RIGHT ||*/ SA) { // joint option learner or taker
+  if (WM->getSide() == SIDE_RIGHT || SA) { // joint option learner or taker
     if (!WM->waitForNewInformation()) bContLoop = false;
 
     while (bContLoop)                                 // as long as server alive
@@ -368,18 +368,17 @@ SoccerCommand KeepawayPlayer::taker()
     ACT->putCommandInQueue( soc = holdBall( 0.3 ) );
     Log.log(101, "holdBall( 0.3 )");
     return soc;
-  }
+  }  
 
-  // If not first (or second) closest, then mark open opponent
+  // If not first or second closest, then mark open opponent
   int numT = WM->getNumTakers();
-  ObjectT T[ 11 ];
+  ObjectT T[ numT ];
   for ( int i = 0; i < numT; i++ )
     T[ i ] = SoccerTypes::getTeammateObjectFromIndex( i );
   WM->sortClosestTo( T, numT, OBJECT_BALL );
-
-  if (numT > 1 && T[0] != WM->getAgentObjectType() &&
-      T[ 1 ] != WM->getAgentObjectType() ) {
-    ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS,
+  if ( numT > 2 && T[ 0 ] != WM->getAgentObjectType() &&
+       T[ 1 ] != WM->getAgentObjectType() ) {
+    ObjectT withBall = WM->getFastestInSetTo( OBJECT_SET_OPPONENTS, 
                                               OBJECT_BALL );
     Log.log(101, "markMostOpenOpponent( withBall )");
     ACT->putCommandInQueue( soc = markMostOpenOpponent( withBall ) );
@@ -388,33 +387,20 @@ SoccerCommand KeepawayPlayer::taker()
   }
 
   // If teammate has it, don't mess with it
-  double dDist = std::numeric_limits<double>::max();
-  ObjectT closest = WM->getClosestInSetTo( OBJECT_SET_PLAYERS,
+  double dDist;
+  ObjectT closest = WM->getClosestInSetTo( OBJECT_SET_PLAYERS, 
                                            OBJECT_BALL, &dDist );
 
   if ( SoccerTypes::isTeammate( closest ) &&
        closest != WM->getAgentObjectType() &&
-       dDist < WM->getMaximalKickDist(closest)) {
-    Log.log(101, "turnBodyToObject( OBJECT_BALL )");
+       dDist < SS->getMaximalKickDist() ) {
     ACT->putCommandInQueue( soc = turnBodyToObject( OBJECT_BALL ) );
     ACT->putCommandInQueue( alignNeckWithBody() );
     return soc;
   }
 
-  closest = WM->getClosestInSetTo(OBJECT_SET_OPPONENTS,
-                                  OBJECT_BALL, &dDist);
-
-  if (SoccerTypes::isOpponent(closest) &&
-      dDist < WM->getMaximalKickDist(closest)) { // opp can kick
-    Log.log(101, "move to ball");
-    soc = moveToPos(WM->getBallPos(), 30.0);
-  }
-  else {
-    Log.log(101, "intercept");
-    soc = intercept( false );
-  }
-
-  ACT->putCommandInQueue( soc );
+  // Otherwise try to intercept the ball
+  ACT->putCommandInQueue( soc = intercept( false ) );
   ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
   return soc;
 }

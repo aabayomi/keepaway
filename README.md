@@ -2,7 +2,7 @@
 
 ## Concurrent HAMQ Learning
 
-This is an ongoing project on concurrent reinforcement learning following the HAM framework. More details can be found on following papers:
+This is an ongoing project on concurrent reinforcement learning following the HAM framework. More details can be found in following papers:
 -   **Efficient Reinforcement Learning with Hierarchies of Machines by Leveraging Internal Transitions**, *Aijun Bai*, and Stuart Russell,\
     *Proceedings of the Twenty-Fifth International Joint Conference on Artificial Intelligence (**IJCAI**), Melbourne, Australia, August 19 - 25, 2017.*
     \[[pdf](https://aijunbai.github.io/publications/IJCAI17-Bai.pdf)\]
@@ -22,6 +22,10 @@ This is an ongoing project on concurrent reinforcement learning following the HA
 
 ### Converged policy
 [![HAMQ-INT on RoboCup Keepaway (converged policy)](gifs/keepaway_converged.gif)](https://www.youtube.com/watch?v=ob249J8Kxi0 "converged policy")
+
+## Joint Option Learning
+Joint option learning aims to learn over joint option space concurrently. A joint option is defined as a tuple of options for all keepers. This method is still underdevelopment.
+To clarify, it is not the concurrent-Option method (which uses the full hive mind idea as described in the next section) as mentioned in the above papers.
 
 ## Full Hive Mind Learning
 
