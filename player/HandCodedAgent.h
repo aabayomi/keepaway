@@ -36,30 +36,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "WorldModel.h"
 #include <cstdlib>
 
-// hand coded agent for K1
-class HandCodedAgent : public jol::SMDPAgent
+class HandCodedAgent:public SMDPAgent
 {
-  WorldModel *WM;
-  int alwaysHold();
+	WorldModel *WM;
+	int alwaysHold();
+	int random();
+	int handCoded( double state[] );
 
-  int random();
-  int handCoded( double state[] );
+	char policy[256];
 
-  char policy[256];
+public:
+	HandCodedAgent( int    numFeatures,
+									int    numActions,
+									char   *strPolicy,
+									WorldModel *ws );
 
- public:
-  HandCodedAgent( int    numFeatures,
-				    char   *strPolicy,
-				    WorldModel *ws );
-
-	virtual void sync(bool load) {}
-
-  int startEpisode(double state[]);
-
-  int step(double reward, double state[]);
-
-  void endEpisode(double reward);
-  void setParams(int iCutoffEpisodes, int iStopLearningEpisodes){exit(1);} //*met 8/16/05
+	int  startEpisode( int current_time, double state[] );
+	int  step( int current_time, double reward, double state[] );
+	void endEpisode( int current_time, double reward );
+	void setParams(int iCutoffEpisodes, int iStopLearningEpisodes){exit(1);} //*met 8/16/05
 };
 
 #endif

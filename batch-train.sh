@@ -29,8 +29,8 @@ for i in `seq 4`; do
     gamma=$(python -c "import random; print(random.uniform(0.9, 1.0))")
     initialweight=$(python -c "import random; print(random.uniform(0.0, 1.0))")
 
-    ./train.sh -z -b none -sf -g $gamma -L $lambda -I $initialweight $* & #hamq
-    ./train.sh -z -b none -sf -g $gamma -L $lambda -I $initialweight $* -T & #hamq-int
+    ./train.sh -b none -sf -g $gamma -L $lambda -I $initialweight $* & #hamq
+    ./train.sh -b none -sf -g $gamma -L $lambda -I $initialweight $* -T & #hamq-int
 done
 
 wait

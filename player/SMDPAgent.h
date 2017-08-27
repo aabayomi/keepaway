@@ -34,7 +34,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <utility>
 #include <vector>
-#include <zconf.h>
 #include <cassert>
 #include <cstdlib>
 #include <sstream>
@@ -43,39 +42,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include "SoccerTypes.h"
 #include "Logger.h"
-#include "JointOptionLearning.h"
 
-class WorldModel;
 
-namespace jol {
-
-class SMDPAgent {
-public:
-  WorldModel *WM;
+class SMDPAgent
+{
   int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
-  int lastAction;
-  int lastActionTime;
-  int agentIdx;
+  int m_numActions;  /* number of possible actions <= MAX_ACTIONS */
+
+protected:
 
   int getNumFeatures() const { return m_numFeatures; }
-
-  int getNumActions() const { return JointActionSpace::ins().numActions(); }
+  int getNumActions()  const { return m_numActions;  }
 
 public:
-  SMDPAgent(int numFeatures, WorldModel *WM);
 
+  SMDPAgent( int numFeatures, int numActions )
+  { m_numFeatures = numFeatures; m_numActions = numActions; }
   virtual ~SMDPAgent() {}
 
-  virtual int startEpisode(double state[]) = 0;
-
-  virtual int step(double reward, double state[]) = 0;
-
-  virtual void endEpisode(double reward) = 0;
+  // abstract methods to be supplied by implementing class
+  virtual int  startEpisode( int current_time, double state[] ) = 0;
+  virtual int  step( int current_time, double reward, double state[] ) = 0;
+  virtual void endEpisode( int current_time, double reward ) = 0;
+  virtual void setParams(int iCutoffEpisodes, int iStopLearningEpisodes) = 0; //*met 8/16/05
 
   // Optional customization point.
   virtual void shutDown() {}
-};
-
-}
+} ;
 
 #endif

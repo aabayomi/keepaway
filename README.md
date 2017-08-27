@@ -23,10 +23,6 @@ This is an ongoing project on concurrent reinforcement learning following the HA
 ### Converged policy
 [![HAMQ-INT on RoboCup Keepaway (converged policy)](gifs/keepaway_converged.gif)](https://www.youtube.com/watch?v=ob249J8Kxi0 "converged policy")
 
-## Joint Option Learning
-Joint option learning aims to learn over joint option space concurrently. A joint option is defined as a tuple of options for all keepers. This method is still underdevelopment.
-To clarify, it is not the concurrent-Option method (which uses the full hive mind idea as described in the next section) as mentioned in the above papers.
-
 ## Full Hive Mind Learning
 
 Full-hive-mind learning extends the original work of Stone and et. al. 
@@ -36,8 +32,6 @@ or hive mind learning have only 2 updates: t1-t3 for A and it2-t5 for B; the new
 full-hive-mind algorithm has 4 updates: t1-t2 for B, t2-t3 for A, t3-t4 for C 
 and t4-t5 for B. Weights as well as traces are shared for this purpose. Global 
 optimality can be ensured given fixed opponents.
-
-- Aijun Bai
 
 ## Usages
 

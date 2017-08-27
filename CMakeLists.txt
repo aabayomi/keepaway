@@ -23,8 +23,6 @@ set(SOURCE_FILES
         player/HandCodedAgent.h
         player/KeepawayPlayer.cc
         player/KeepawayPlayer.h
-        player/LinearSarsaAgent.cc
-        player/LinearSarsaAgent.h
         player/Logger.cc
         player/Logger.h
         player/LoggerDraw.cc
@@ -62,8 +60,6 @@ set(SOURCE_FILES
         player/WorldModelSayMsgTypes.cc
         player/WorldModelSayMsgTypes.h
         player/WorldModelUpdate.cc
-        player/JointOptionLearning.cc
-        player/JointOptionLearning.h
         player/HierarchicalFSM.cc
         player/HierarchicalFSM.h
         player/ChoicePoint.h

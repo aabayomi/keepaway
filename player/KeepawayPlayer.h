@@ -40,7 +40,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class KeepawayPlayer : public BasicPlayer {
 protected:
   Time m_timeLastSay;           /*!< last time communicated         */
-  jol::SMDPAgent *SA;
 
   // methods associated with saying (defined in KeepawayPlayer.cc)
   bool shallISaySomething();
@@ -49,8 +48,7 @@ protected:
                       char *str);
 
 public:
-  KeepawayPlayer(jol::SMDPAgent *sa,
-                 ActHandler *a,
+  KeepawayPlayer(ActHandler *a,
                  WorldModel *wm,
                  ServerSettings *ss,
                  PlayerSettings *cs,
