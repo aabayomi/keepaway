@@ -10,6 +10,7 @@ QLEARNING=""
 USESTATICTRANSITION=""
 GAMMA="1.0"
 LAMBDA="0.5"
+ALPHA="0.125"
 INITIALWEIGHT="0.5"
 BUILD="release"
 LEARNING="--keeper-learn --keeper-policy=learned"
@@ -19,7 +20,7 @@ QFILE="Q"
 QFILE2=""
 MEMORYCHECK=""
 
-while getopts  "b:g:L:q:I:lfmsnzMQT" flag; do
+while getopts  "b:g:L:A:q:I:lfmsnzMQT" flag; do
     case "$flag" in
         f) FULLSTATE="--fullstate" ;; 
         m) MONITOR="--monitor" ;;
@@ -30,6 +31,7 @@ while getopts  "b:g:L:q:I:lfmsnzMQT" flag; do
         T) USESTATICTRANSITION="--usestatictransition" ;;
         g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         L) LAMBDA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
+        A) ALPHA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         I) INITIALWEIGHT="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         b) BUILD="$OPTARG" ;;
         n) LEARNING="--keeper-policy=learned! --taker-policy=learned!" ;;
@@ -46,6 +48,10 @@ fi
 
 if [ ! -z $LAMBDA ]; then
     QFILE="${QFILE}_l${LAMBDA}"
+fi
+
+if [ ! -z $ALPHA ]; then
+    QFILE="${QFILE}_a${ALPHA}"
 fi
 
 if [ ! -z $INITIALWEIGHT ]; then
@@ -86,7 +92,7 @@ ulimit -c unlimited
     --keeper-output="keeper_$QFILE" --keeper-input="keeper_$QFILE" \
     --taker-output="taker_$QFILE" --taker-input="taker_$QFILE" \
     $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
-    $HIERARCHICALFSM --gamma=$GAMMA --Lambda=$LAMBDA\
+    $HIERARCHICALFSM --gamma=$GAMMA --lambd=$LAMBDA --alpha=$ALPHA \
     --initial-weight=$INITIALWEIGHT \
     $QLEARNING $USESTATICTRANSITION --label=`basename $QFILE .gz` 2>&1 | tee $CONSOLE_LOG
 

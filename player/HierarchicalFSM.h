@@ -116,6 +116,7 @@ public:
                          double widths[],
                          double gamma,
                          double lambda,
+                         double alpha,
                          double initialWeight,
                          bool qLearning,
                          bool UseStaticTransition,

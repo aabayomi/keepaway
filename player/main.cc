@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
   bool hierarchicalFSM = false;
   double gamma = 1.0;
   double lambda = 0.0;
+  double alpha = 0.125;
   double initialWeight = 0.0;
   bool qLearning = false;
   bool UseStaticTransition = false;
@@ -188,6 +189,10 @@ int main(int argc, char *argv[]) {
           str = &argv[i + 1][0];
           lambda = Parse::parseFirstDouble(&str);
           break;
+        case 'A': // alpha 
+          str = &argv[i + 1][0];
+          alpha = Parse::parseFirstDouble(&str);
+          break;
         case 'm':                                   // mode int
           str = &argv[i + 1][0];
           iMode = Parse::parseFirstInt(&str);
@@ -258,6 +263,7 @@ int main(int argc, char *argv[]) {
          "hierarchical FSM : " << hierarchicalFSM << endl <<
          "gamma : " << gamma << endl <<
          "lambda : " << lambda << endl <<
+         "alpha : " << alpha << endl <<
          "initialWeight: " << initialWeight << endl <<
          "qlearning: " << qLearning << endl <<
          "UseStaticTransition: " << UseStaticTransition << endl <<
@@ -297,13 +303,13 @@ int main(int argc, char *argv[]) {
     if (string(strTeamName) == "keepers") {
       fsm::HierarchicalFSM::initialize(
           numFeatures, iNumKeepers, iNumTakers, bLearn,
-          resolutions, gamma, lambda, initialWeight, qLearning,
+          resolutions, gamma, lambda, alpha, initialWeight, qLearning,
           UseStaticTransition, loadWeightsFile, saveWeightsFile, strTeamName);
     }
     else {
       fsm::HierarchicalFSM::initialize(
           numFeatures, iNumTakers, iNumKeepers, bLearn,
-          resolutions, gamma, lambda, initialWeight, qLearning,
+          resolutions, gamma, lambda, alpha, initialWeight, qLearning,
           UseStaticTransition, loadWeightsFile, saveWeightsFile, strTeamName);
     };
   }

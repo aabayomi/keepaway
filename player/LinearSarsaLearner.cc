@@ -78,7 +78,7 @@ LinearSarsaLearner::LinearSarsaLearner() {
 }
 
 void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
-                                    double Lambda, double weight,
+                                    double Lambda, double Alpha, double weight,
                                     bool QLearning, bool UseStaticTransition,
                                     string loadWeightsFile,
                                     string saveWeightsFile_, string teamName_) {
@@ -94,9 +94,9 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
   }
 
   initialWeight = teamName_ == "keepers" ? weight : -weight;
-  alpha = 0.125;
   gamma = Gamma;
   lambda = Lambda;
+  alpha = Alpha;
   epsilon = 0.01;
 
   lastJointChoiceIdx = -1;

@@ -93,7 +93,7 @@ public:
 
   void initialize(
       bool learning, double width[],
-      double gamma, double lambda,
+      double gamma, double lambda, double alpha,
       double weight, bool qLearning,
       bool UseStaticTransition,
       string loadWeightsFile,
@@ -137,9 +137,9 @@ private:
 private:
   unordered_map<string, Barrier *> barriers;
 
-  double alpha;
   double gamma;
   double lambda;
+  double alpha;
   double epsilon;
   double tileWidths[MAX_RL_STATE_VARS];
 

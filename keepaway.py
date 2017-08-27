@@ -36,7 +36,7 @@ def launch_player(player_type, index, options):
         i = '1', # verbose
         m = '0', # running mode
         g = float(options.gamma),
-        L=float(options.Lambda),
+        L=float(options.lambd),
         I = float(options.initial_weight),
         z = int(options.hierarchical_fsm),
         Q = int(options.qlearning),
@@ -335,8 +335,8 @@ def parse_options(args = None, **defaults):
         '--gamma', type = 'float', default = 1.0,
         help="Gamma.")
     parser.add_option(
-        '--Lambda', type='float', default=0.0,
-        help="Lambda.")
+        '--lambd', type='float', default=0.0,
+        help="lambd.")
     parser.add_option(
         '--memory-check', action='store_true', default=False,
         help="Use valgrind to check memory bugs.")
