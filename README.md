@@ -11,11 +11,6 @@ This is an ongoing project on concurrent reinforcement learning following the HA
     *RoboCup-2017: Robot Soccer World Cup XX, Lecture Notes in
     Artificial Intelligence (**RoboCup**), Springer Verlag, Berlin, 2017.*
     \[[pdf](https://aijunbai.github.io/publications/LNAI17-Bai.pdf)\]
--   **Speeding Up HAM Learning with Internal Transitions**, *Aijun Bai*, and Stuart Russell,\
-    *The Multi-disciplinary Conference on Reinforcement Learning and Decision Making (**RLDM**)
-    2017, Ann Arbor, Michigan, USA, June 11-14, 2017.*
-    \[[pdf](https://aijunbai.github.io/publications/RLDM17-Bai.pdf)\]
-
 
 ### Initial policy
 [![HAMQ-INT on RoboCup Keepaway (initial policy)](gifs/keepaway_initialized.gif)](https://www.youtube.com/watch?v=GFd0b3wV0Rk "initial policy")
