@@ -2,15 +2,11 @@
 
 ## Concurrent HAMQ Learning
 
-This is an ongoing project on concurrent reinforcement learning following the HAM framework. More details can be found in following papers:
+This is an ongoing project on concurrent reinforcement learning following the HAM framework. 
+More details can be found in following papers:
 -   **Efficient Reinforcement Learning with Hierarchies of Machines by Leveraging Internal Transitions**, *Aijun Bai*, and Stuart Russell,\
     *Proceedings of the Twenty-Fifth International Joint Conference on Artificial Intelligence (**IJCAI**), Melbourne, Australia, August 19 - 25, 2017.*
     \[[pdf](https://aijunbai.github.io/publications/IJCAI17-Bai.pdf)\]
--   **Concurrent Hierarchical Reinforcement Learning for RoboCup Keepaway**, *Aijun
-    Bai*, Stuart Russell, and Xiaoping Chen,\
-    *RoboCup-2017: Robot Soccer World Cup XX, Lecture Notes in
-    Artificial Intelligence (**RoboCup**), Springer Verlag, Berlin, 2017.*
-    \[[pdf](https://aijunbai.github.io/publications/LNAI17-Bai.pdf)\]
 
 ### Initial policy
 [![HAMQ-INT on RoboCup Keepaway (initial policy)](gifs/keepaway_initialized.gif)](https://www.youtube.com/watch?v=GFd0b3wV0Rk "initial policy")

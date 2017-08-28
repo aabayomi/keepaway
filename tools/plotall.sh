@@ -28,21 +28,21 @@ make clean
 make
 
 cp graph.gnuplot.template graph.gnuplot
-cp hist.gnuplot.template hist.gnuplot
+# cp hist.gnuplot.template hist.gnuplot
 
 for var in "$@"; do
     output="`echo $var | sed -e 's/-/ /g' | awk '{$1 = ""; print $0;}' | sed -e 's/ //g'`"
     output="`basename $output .kwy`"
     output="`echo $output | sed -e 's/_/-/g' -e 's/gamma/g/g' -e 's/initialweight/w/g' -e 's/fullstate//g'`"
     ./winsum.sh $var $output
-    ./hist.sh $var $output
+    # ./hist.sh $var $output
 done
 
 sed -i '$ s/...$//g' graph.gnuplot
-sed -i '$ s/...$//g' hist.gnuplot
+# sed -i '$ s/...$//g' hist.gnuplot
 
 gnuplot graph.gnuplot
-gnuplot hist.gnuplot
+# gnuplot hist.gnuplot
 
 evince graph.eps &
 # evince hist.eps &
