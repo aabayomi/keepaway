@@ -128,7 +128,7 @@ private:
   unordered_map<string, string> sharedMemory;
 };
 
-inline void SemTimedWait(sem_t *sem, int ms = 800) {
+inline void SemTimedWait(sem_t *sem, int ms = 1000) {
   if (ms > 0) {
     ms = ms / 2 + rand() % ms; // randomize
     struct timespec ts;
@@ -142,6 +142,7 @@ inline void SemTimedWait(sem_t *sem, int ms = 800) {
       continue;
 
     if (ret == -1) {
+      PRINT_VALUE("SemTimedWait");
       PRINT_VALUE(strerror(errno));
     }
   } else {

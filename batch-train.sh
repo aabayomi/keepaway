@@ -24,10 +24,13 @@ make -j `nproc` release
 
 exec 1>console.log 2>&1                                                              
 
-for i in `seq 5`; do
+./train.sh -b none -sf -g 1.0 -L 0.5 -A 0.125 -I 0.5 $* & #hamq
+./train.sh -b none -sf -g 1.0 -L 0.5 -A 0.125 -I 0.5 -T $* & #hamq
+
+for i in `seq 4`; do
     gamma=$(python -c "import random; print('{:.3f}'.format(random.uniform(0.9, 1.0)))")
     lambda=$(python -c "import random; print('{:.3f}'.format(random.uniform(0.0, 0.5)))")
-    alpha=$(python -c "import random; print('{:.3f}'.format(random.uniform(0.005, 0.2)))")
+    alpha=$(python -c "import random; print('{:.3f}'.format(random.uniform(0.001, 0.25)))")
     initialweight=$(python -c "import random; print('{:.3f}'.format(random.uniform(0.0, 1.0)))")
 
     ./train.sh -b none -sf -g $gamma -L $lambda -A $alpha -I $initialweight $* & #hamq
