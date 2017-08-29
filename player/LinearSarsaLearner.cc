@@ -405,10 +405,8 @@ int LinearSarsaLearner::step(int current_time) {
       delta += pow(gamma, tau) * Q[choice];
     }
 
-    if (!isStaticTransition(lastMachineState, lastJointChoiceIdx)) {
-      updateWeights(delta, numTilings);
-      Q[choice] = QValue(state, machineState, choice, tiles_, numTilings);
-    }
+    updateWeights(delta, numTilings);
+    Q[choice] = QValue(state, machineState, choice, tiles_, numTilings);
 
     decayTraces(gamma * lambda);
     for (auto a : validChoices(numChoices)) {
@@ -522,9 +520,7 @@ void LinearSarsaLearner::endEpisode(int current_time) {
       Assert(lastJointChoiceTime <= current_time);
       double tau = current_time - lastJointChoiceTime;
       double delta = reward(tau) - Q[lastJointChoiceIdx];
-      if (!isStaticTransition(lastMachineState, lastJointChoiceIdx)) {
-        updateWeights(delta, numTilings);
-      }
+      updateWeights(delta, numTilings);
     }
 
     lastJointChoiceIdx = -1;
