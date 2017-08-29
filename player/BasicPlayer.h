@@ -130,7 +130,6 @@ private:
 
 inline void SemTimedWait(sem_t *sem, int ms = 1000) {
   if (ms > 0) {
-    ms = ms / 2 + rand() % ms; // randomize
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_nsec += ms * 1000000;
