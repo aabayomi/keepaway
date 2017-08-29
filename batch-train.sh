@@ -20,7 +20,7 @@
 set -o nounset                              # Treat unset variables as an error
 
 NPROC=`nproc`
-N=`expr $NPROC / 2 - 1`
+N=`expr $NPROC / 4`
 
 make clean
 make -j `nproc` release
