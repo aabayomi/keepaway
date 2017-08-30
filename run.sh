@@ -7,7 +7,6 @@ LOG=""
 LOGLEVEL="101"
 HIERARCHICALFSM=""
 QLEARNING=""
-USESTATICTRANSITION=""
 GAMMA="1.0"
 LAMBDA="0.5"
 ALPHA="0.125"
@@ -20,7 +19,7 @@ QFILE="Q"
 QFILE2=""
 MEMORYCHECK=""
 
-while getopts  "b:g:L:A:q:I:lfmsnzMQT" flag; do
+while getopts  "b:g:L:A:q:I:lfmsnzMQ" flag; do
     case "$flag" in
         f) FULLSTATE="--fullstate" ;; 
         m) MONITOR="--monitor" ;;
@@ -28,7 +27,6 @@ while getopts  "b:g:L:A:q:I:lfmsnzMQT" flag; do
         l) LOG="--log-dir=$LOGDIR --log-game --log-text --log-level $LOGLEVEL" ;;
         z) HIERARCHICALFSM="--hierarchical-fsm" ;;
         Q) QLEARNING="--qlearning" ;;
-        T) USESTATICTRANSITION="--usestatictransition" ;;
         g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         L) LAMBDA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         A) ALPHA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
@@ -70,10 +68,6 @@ if [ ! -z $QLEARNING ]; then
     QFILE="${QFILE}_ql"
 fi
 
-if [ ! -z $USESTATICTRANSITION ]; then
-    QFILE="${QFILE}_st"
-fi
-
 QFILE="${QFILE}.gz"
 
 if [ ! -z $QFILE2 ]; then
@@ -94,5 +88,5 @@ ulimit -c unlimited
     $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
     $HIERARCHICALFSM --gamma=$GAMMA --lambd=$LAMBDA --alpha=$ALPHA \
     --initial-weight=$INITIALWEIGHT \
-    $QLEARNING $USESTATICTRANSITION --label=`basename $QFILE .gz` 2>&1 | tee $CONSOLE_LOG
+    $QLEARNING --label=`basename $QFILE .gz` 2>&1 | tee $CONSOLE_LOG
 

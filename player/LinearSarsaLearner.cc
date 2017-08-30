@@ -79,14 +79,13 @@ LinearSarsaLearner::LinearSarsaLearner() {
 
 void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
                                     double Lambda, double Alpha, double weight,
-                                    bool QLearning, bool UseStaticTransition,
+                                    bool QLearning,
                                     string loadWeightsFile,
                                     string saveWeightsFile_, string teamName_) {
   bLearning = learning;
   bSaveWeights = bLearning && saveWeightsFile_.length() > 0;
   saveWeightsFile = saveWeightsFile_;
   qLearning = QLearning;
-  useStaticTransition = UseStaticTransition;
   teamName = teamName_;
 
   for (int i = 0; i < HierarchicalFSM::num_features; i++) {
@@ -124,7 +123,6 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
     exepath += to_string(lambda);
     exepath += to_string(initialWeight);
     exepath += to_string(qLearning);
-    exepath += to_string(useStaticTransition);
     exepath += teamName;
     auto h = hash<string>()(exepath); // hashing
     sharedMemory = "/" + to_string(h) + ".shm";
@@ -162,9 +160,6 @@ void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
       fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
       colTab->reset();
     }
-
-    if (useStaticTransition)
-      loadStaticTransitions(teamName + "_transitions.xml");
   }
 }
 
@@ -173,34 +168,6 @@ void LinearSarsaLearner::shutDown() {
     if (bLearning && bSaveWeights) {
       cerr << "Saving weights at shutdown." << endl;
       saveWeights(saveWeightsFile.c_str());
-    }
-
-    if (useStaticTransition) {
-      saveStaticTransitions(teamName + "_transitions.xml");
-
-#if DETERMINISTIC_GRAPH
-      dot::Graph G;
-      for (auto &e : staticTransitions) {
-        auto s = to_prettystring(e.first);
-        boost::replace_all(s, ", {", ",\n{");
-        G.addNode(s, "red");
-        for (auto &o : e.second) {
-          auto a = to_string(o.first);
-          auto sa = s + ";  " + a;
-          G.addNode(sa, "gray");
-          G.addEdge(s, sa, "blue", a);
-          for (auto &x : o.second) {
-            auto s_ = to_prettystring(x.first);
-            boost::replace_all(s_, ", {", ",\n{");
-            auto n = to_string(x.second);
-            G.addNode(s_, "orange");
-            G.addEdge(sa, s_, "green", n);
-          }
-        }
-      }
-
-      G.dump(teamName + "_transitions.dot");
-#endif
     }
   }
 
@@ -287,27 +254,6 @@ LinearSarsaLearner::validChoices(const num_choice_t &num_choices) {
   return validChoicesMap[num_choices];
 }
 
-void LinearSarsaLearner::saveStaticTransitions(string filename) {
-  std::ofstream ofs(filename);
-  Assert(ofs.good());
-  boost::archive::xml_oarchive oa(ofs);
-  oa << BOOST_SERIALIZATION_NVP(validChoicesMap);
-  oa << BOOST_SERIALIZATION_NVP(jointChoicesMap);
-  oa << BOOST_SERIALIZATION_NVP(numChoicesMap);
-  oa << BOOST_SERIALIZATION_NVP(staticTransitions);
-}
-
-void LinearSarsaLearner::loadStaticTransitions(string filename) {
-  std::ifstream ifs(filename);
-  if (!ifs.good())
-    return;
-  boost::archive::xml_iarchive ia(ifs);
-  ia >> BOOST_SERIALIZATION_NVP(validChoicesMap);
-  ia >> BOOST_SERIALIZATION_NVP(jointChoicesMap);
-  ia >> BOOST_SERIALIZATION_NVP(numChoicesMap);
-  ia >> BOOST_SERIALIZATION_NVP(staticTransitions);
-}
-
 vector<choice_t>
 LinearSarsaLearner::validChoicesRaw(const num_choice_t &num_choices) {
   if (num_choices.empty())
@@ -325,49 +271,6 @@ LinearSarsaLearner::validChoicesRaw(const num_choice_t &num_choices) {
   }
 
   return ret;
-}
-
-bool LinearSarsaLearner::isStaticTransition(const machine_state_t &machine_state,
-                                            int c) {
-  auto hash = Memory::ins().ballControlHash();
-  return staticTransitions[hash].count(machine_state) &&
-         staticTransitions[hash][machine_state].count(c) &&
-         staticTransitions[hash][machine_state][c].size();
-}
-
-namespace {
-bool dfs(
-    const machine_state_t &root,
-    unordered_map<machine_state_t,
-        unordered_map<int, unordered_map<machine_state_t, double>>> &G,
-    unordered_set<machine_state_t> &visited,
-    unordered_set<machine_state_t> &path) {
-  if (path.count(root)) {
-    return true;
-  }
-
-  visited.insert(root);
-  path.insert(root);
-  if (G.count(root)) {
-    for (auto &pa : G[root]) {
-      for (auto &next : pa.second) {
-        if (dfs(next.first, G, visited, path))
-          return true;
-      }
-    }
-  }
-  return false;
-};
-}
-
-bool LinearSarsaLearner::hasCircle(transition_t &G) {
-  unordered_set<machine_state_t> visited;
-  for (auto &pa : G) {
-    unordered_set<machine_state_t> path;
-    if (!visited.count(pa.first) && dfs(pa.first, G, visited, path))
-      return true;
-  }
-  return false;
 }
 
 double LinearSarsaLearner::reward(double tau) {
@@ -457,32 +360,6 @@ int LinearSarsaLearner::step(int current_time, int num_choices) {
     return 0; // action state
   } else {
     if (Memory::ins().agentIdx == 0) {
-      if (useStaticTransition &&
-          current_time == lastJointChoiceTime && lastMachineState.size() &&
-          machineState.size() && lastMachineState != machineState) {
-        Log.log(101, "LinearSarsaLearner::step: save static transition (%s) + "
-                    "(%d) -> (%s)",
-                to_prettystring(lastMachineState).c_str(), lastJointChoiceIdx,
-                to_prettystring(machineState).c_str());
-        auto hash = Memory::ins().ballControlHash();
-        staticTransitions[hash][lastMachineState][lastJointChoiceIdx][machineState] +=
-            1.0;
-
-        if (hasCircle(staticTransitions[hash])) {
-          Log.log(101,
-                  "LinearSarsaLearner::step: staticTransitions has circle");
-          staticTransitions[hash][lastMachineState][lastJointChoiceIdx].erase(
-              machineState);
-          if (staticTransitions[hash][lastMachineState][lastJointChoiceIdx].empty()) {
-            staticTransitions[hash][lastMachineState].erase(lastJointChoiceIdx);
-            if (staticTransitions[hash][lastMachineState].empty()) {
-              staticTransitions[hash].erase(lastMachineState);
-            }
-          }
-          Assert(!hasCircle(staticTransitions[hash]));
-        }
-      }
-
       lastJointChoiceIdx = step(current_time);
       lastJointChoiceTime = current_time;
       lastJointChoice = jointChoicesMap[numChoices][lastJointChoiceIdx];
@@ -577,27 +454,6 @@ double LinearSarsaLearner::QValue(double *state,
                                   const machine_state_t &machine_state,
                                   int choice, int (*tiles)[RL_MAX_NUM_TILINGS],
                                   int num_tilings) {
-  if (useStaticTransition && isStaticTransition(machine_state, choice)) {
-    auto hash = Memory::ins().ballControlHash();
-    if (Log.isInLogLevel(101))
-      Log.log(
-          101, "LinearSarsaLearner::QValue: static transition Q(s, m=%s, c=%d) "
-              "= V(s, m=%s)",
-          to_prettystring(machine_state).c_str(), choice,
-          to_prettystring(staticTransitions[hash][machine_state][choice]).c_str());
-
-    double ret = 0.0;
-    double sum = 0.0;
-    for (auto &e : staticTransitions[hash][machine_state][choice]) {
-      if (e.first != machine_state) {
-        ret += e.second * Value(state, e.first);
-        sum += e.second;
-      }
-    }
-    if (sum > 0.0)
-      return ret / sum;
-  }
-
   auto q = computeQ(choice, tiles, num_tilings);
   Log.log(101, "LinearSarsaLearner::QValue: Q(s, m=%s, c=%d) = %f",
           to_prettystring(machine_state).c_str(), choice, q);

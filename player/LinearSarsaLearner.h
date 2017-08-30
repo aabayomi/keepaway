@@ -15,12 +15,6 @@
 #include <functional>
 #include "dot_graph.h"
 
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/unordered_map.hpp>
-#include <boost/serialization/string.hpp>
-
 namespace std {
 
 template<class T>
@@ -95,7 +89,6 @@ public:
       bool learning, double width[],
       double gamma, double lambda, double alpha,
       double weight, bool qLearning,
-      bool UseStaticTransition,
       string loadWeightsFile,
       string saveWeightsFile,
       string teamName);
@@ -128,7 +121,6 @@ public:
 private:
   bool bLearning;
   bool qLearning;
-  bool useStaticTransition;
   string saveWeightsFile;
   bool bSaveWeights;
   SharedData *sharedData;
@@ -199,15 +191,7 @@ private:
   unordered_map<machine_state_t, num_choice_t> numChoicesMap;
   unordered_map<size_t, transition_t> staticTransitions;
 
-  void saveStaticTransitions(string filename);
-
-  void loadStaticTransitions(string filename);
-
   double reward(double tau);
-
-  bool isStaticTransition(const machine_state_t &machine_state, int c);
-
-  bool hasCircle(transition_t &G);
 };
 
 }

@@ -251,14 +251,13 @@ void HierarchicalFSM::initialize(int numFeatures, int numTeammates,
                                  int numOpponents, bool bLearn,
                                  double widths[], double gamma, double lambda, double alpha,
                                  double initialWeight, bool qLearning,
-                                 bool UseStaticTransition,
                                  string loadWeightsFile,
                                  string saveWeightsFile, string teamName) {
   num_features = numFeatures;
   num_teammates = numTeammates;
   num_opponents = numOpponents;
   LinearSarsaLearner::ins().initialize(bLearn, widths, gamma, lambda, alpha,
-                                       initialWeight, qLearning, UseStaticTransition,
+                                       initialWeight, qLearning,
                                        loadWeightsFile, saveWeightsFile, teamName);
 }
 

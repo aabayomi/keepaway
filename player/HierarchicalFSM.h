@@ -10,6 +10,7 @@
 #include <vector>
 #include "BasicPlayer.h"
 #include "LinearSarsaLearner.h"
+#include <limits.h>
 
 namespace fsm {
 class HierarchicalFSM;
@@ -119,7 +120,6 @@ public:
                          double alpha,
                          double initialWeight,
                          bool qLearning,
-                         bool UseStaticTransition,
                          string loadWeightsFile,
                          string saveWeightsFile,
                          string teamName);
