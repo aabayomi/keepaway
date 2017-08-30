@@ -10,16 +10,6 @@ This is an ongoing project on concurrent reinforcement learning following the HA
 ### Converged policy
 [![HAMQ-INT on RoboCup Keepaway (converged policy)](gifs/keepaway_converged.gif)](https://www.youtube.com/watch?v=ob249J8Kxi0 "converged policy")
 
-## Full Hive Mind Learning
-
-Full-hive-mind learning extends the original work of Stone and et. al. 
-In a scenario where A at t1 passes to B, B at t2 passes to A, A at t3 passes to C,
-C at t4 passes to B and B at t5 recievs the ball, the original single agent learning 
-or hive mind learning have only 2 updates: t1-t3 for A and it2-t5 for B; the new 
-full-hive-mind algorithm has 4 updates: t1-t2 for B, t2-t3 for A, t3-t4 for C 
-and t4-t5 for B. Weights as well as traces are shared for this purpose. Global 
-optimality can be ensured given fixed opponents.
-
 ## Usages
 
 - Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh [-h HIVE_MODE] [-g GAMMA] [-l] [-f] [-m] [-s]```

@@ -13,7 +13,6 @@
 #include "HierarchicalFSM.h"
 #include <cstddef>
 #include <functional>
-#include "dot_graph.h"
 
 namespace std {
 
