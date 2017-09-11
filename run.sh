@@ -16,10 +16,11 @@ LEARNING="--keeper-learn --keeper-policy=learned"
 LEARNING="$LEARNING --taker-learn --taker-policy=learned"
 LOGDIR="logs"
 QFILE="Q"
-QFILE2=""
+KEEPERQFILE2=""
+TAKERQFILE2=""
 MEMORYCHECK=""
 
-while getopts  "b:g:L:A:q:I:lfmsnzMQ" flag; do
+while getopts  "b:g:L:A:K:T:I:lfmsnzMQ" flag; do
     case "$flag" in
         f) FULLSTATE="--fullstate" ;; 
         m) MONITOR="--monitor" ;;
@@ -33,7 +34,8 @@ while getopts  "b:g:L:A:q:I:lfmsnzMQ" flag; do
         I) INITIALWEIGHT="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         b) BUILD="$OPTARG" ;;
         n) LEARNING="--keeper-policy=learned! --taker-policy=learned!" ;;
-        q) QFILE2="$OPTARG" ;;
+        K) KEEPERQFILE2="$OPTARG" ;;
+        T) TAKERQFILE2="$OPTARG" ;;
         M) MEMORYCHECK="--memory-check" ;;
     esac
 done
@@ -69,9 +71,15 @@ if [ ! -z $QLEARNING ]; then
 fi
 
 QFILE="${QFILE}.gz"
+KEEPERQFILE="keeper_$QFILE"
+TAKERQFILE="taker_$QFILE"
 
-if [ ! -z $QFILE2 ]; then
-    QFILE="$QFILE2" # overwrite QFILE
+if [ ! -z $KEEPERQFILE2 ]; then
+    KEEPERQFILE="$KEEPERQFILE2" # overwrite QFILE
+fi
+
+if [ ! -z $TAKERQFILE2 ]; then
+    TAKERQFILE="$TAKERQFILE2" # overwrite QFILE
 fi
 
 if [ $BUILD != "none" ]; then
@@ -83,8 +91,8 @@ CONSOLE_LOG="$LOGDIR/`basename $QFILE .gz`.console"
 ulimit -c unlimited
 ./keepaway.py --keeper-count=3 --taker-count=2 \
     $MEMORYCHECK $LEARNING \
-    --keeper-output="keeper_$QFILE" --keeper-input="keeper_$QFILE" \
-    --taker-output="taker_$QFILE" --taker-input="taker_$QFILE" \
+    --keeper-output="$KEEPERQFILE" --keeper-input="$KEEPERQFILE" \
+    --taker-output="$TAKERQFILE" --taker-input="$TAKERQFILE" \
     $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
     $HIERARCHICALFSM --gamma=$GAMMA --lambd=$LAMBDA --alpha=$ALPHA \
     --initial-weight=$INITIALWEIGHT \

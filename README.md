@@ -12,21 +12,17 @@ This is an ongoing project on concurrent reinforcement learning following the HA
 
 ## Usages
 
-- Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh [-h HIVE_MODE] [-g GAMMA] [-l] [-f] [-m] [-s]```
- - ```-h HIVE_MODE```: set hive mind mode for ```keepaway_player```: 0 - single agent learning; 1 - single agent learning with shared weights; 2 - multi-agent distributed learning with shared weights and traces
- - ```-g GAMMA```: specify the discount factor used when learning
+- Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh [-g GAMMA] [-L LAMBDA] [-A ALPHA] [-I INITIALWEIGHT] [-l] [-f] [-m] [-s]```
+ - ```-g GAMMA```: specify the discount factor
+ - ```-L GAMMA```: specify the Lambda constant 
+ - ```-A ALPHA```: specify the learning rate
  - ```-l```: turn on logging for ```keepaway_player``` and ``rcssserver```
  - ```-f```: turn on fullstate perception within ```rcssserver```
  - ```-m```: launch a monitor, technically ```rcsssmonitor```
  - ```-s```: turn on synch mode within ```rcssserver```
 
-- Evaluate a specified policy by simulation:```./evaluate.sh [-p POLICY] [-q QFILE] [-l] [-f] [-m] [-s]```
- - ```-p POLICY```: specify the policy to evaluate, for example: hand, hold, random or learn
- - ```-q QFILE```: speficy the learned Q function for a learned policy
-  - ```-l```: turn on logging for ```keepaway_player``` and ``rcssserver```
- - ```-f```: turn on fullstate perception within ```rcssserver```
- - ```-m```: launch a monitor, technically ```rcsssmonitor```
- - ```-s```: turn on synch mode within ```rcssserver```
+- Evaluate a specified policy by simulation:```./evaluate.sh KEEPERQFILE```
+ - ```KEEPERQFILE```: learned Q file for keepers
 
 # Old READMEs
 

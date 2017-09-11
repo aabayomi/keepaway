@@ -1,4 +1,6 @@
 #!/bin/bash
 
-./run.sh -sfmnz $* # need a -q arg option
+KEEPERQFILE="$1"
+
+./run.sh -sfmnz -K $KEEPERQFILE 
 
