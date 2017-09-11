@@ -20,5 +20,4 @@ breakpoints
 build/
 Debug/
 Release/
-data/
 cmake-build-debug/

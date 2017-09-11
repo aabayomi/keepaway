@@ -1,0 +1,168 @@
+rcssserver-15.3.0
+
+Copyright (C) 1995, 1996, 1997, 1998, 1999 Electrotechnical Laboratory.
+2000 - RoboCup Soccer Simulator Maintenance Group.
+
+Simulator Random Seed: 1504503835
+CSVSaver: Ready
+STDOutSaver: Ready
+Using simulator's random seed as Hetero Player Seed: 1504503835
+wind factor: rand: 0.000000, vector: (0.000000, 0.000000)
+
+Hit CTRL-C to exit
+A new (v4) monitor connected.
+team : keepers
+port : 51523
+host : 127.0.0.1
+version : 12
+mode : 0
+playernr : 2
+reconnect : -1
+hierarchical FSM : 1
+gamma : 1
+lambda : 0.227
+alpha : 0.09
+initialWeight: 0.346
+qlearning: 0
+be learning : 1
+Loading weights from keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+failed to open weight file: keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+A monitor disconnected
+A new (v12) player (keepers 1) connected.
+team : keepers
+port : 51523
+host : 127.0.0.1
+version : 12
+mode : 0
+playernr : 2
+reconnect : -1
+hierarchical FSM : 1
+gamma : 1
+lambda : 0.227
+alpha : 0.09
+initialWeight: 0.346
+qlearning: 0
+be learning : 1
+Loading weights from keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+failed to open weight file: keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+A new (v12) player (keepers 2) connected.
+team : keepers
+port : 51523
+host : 127.0.0.1
+version : 12
+mode : 0
+playernr : 2
+reconnect : -1
+hierarchical FSM : 1
+gamma : 1
+lambda : 0.227
+alpha : 0.09
+initialWeight: 0.346
+qlearning: 0
+be learning : 1
+Loading weights from keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+failed to open weight file: keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+A new (v12) player (keepers 3) connected.
+A new (v4) monitor connected.
+team : takers
+port : 51523
+host : 127.0.0.1
+version : 12
+mode : 0
+playernr : 2
+reconnect : -1
+hierarchical FSM : 1
+gamma : 1
+lambda : 0.227
+alpha : 0.09
+initialWeight: 0.346
+qlearning: 0
+be learning : 1
+Loading weights from taker_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+failed to open weight file: taker_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+A new (v4) monitor connected.
+A monitor disconnected
+A monitor disconnected
+A new (v12) player (takers 1) connected.
+team : takers
+port : 51523
+host : 127.0.0.1
+version : 12
+mode : 0
+playernr : 2
+reconnect : -1
+hierarchical FSM : 1
+gamma : 1
+lambda : 0.227
+alpha : 0.09
+initialWeight: 0.346
+qlearning: 0
+be learning : 1
+Loading weights from taker_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+failed to open weight file: taker_Q_g1._l0.227_a0.09_w0.346_fsm.gz
+A new (v12) player (takers 2) connected.
+A new (v4) monitor connected.
+['rcssserver', 'server::coach=0', 'server::coach_port=51524', 'server::forbid_kick_off_offside=1', 'server::half_time=-1', 'server::keepaway=1', 'server::keepaway_start=8', 'server::keepaway_length=20', 'server::keepaway_width=20', 'server::keepaway_logging=1', 'server::keepaway_log_dir=./logs', 'server::keepaway_log_fixed=1', 'server::keepaway_log_fixed_name=20170904054355-Q_g1._l0.227_a0.09_w0.346_fsm', 'server::game_logging=0', 'server::olcoach_port=51525', 'server::port=51523', 'server::stamina_inc_max=3500', 'server::fullstate_l=1', 'server::fullstate_r=1', 'server::synch_mode=1', 'server::synch_offset=60', 'server::synch_see_offset=0', 'server::text_logging=0', 'server::use_offside=0', 'server::visible_angle=360']
+/home/aibai/keepaway_0903.dlworkspace/player/keepaway_player -A 0.09 -I 0.346 -L 0.227 -Q 0 -e 1 -f keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz -g 1.0 -i 1 -j 2 -k 3 -l 0 -m 0 -o logs/keeper_Q_g1._l0.227_a0.09_w0.346_fsm_1.log -p 51523 -q learned -t keepers -w keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz -z 1
+/home/aibai/keepaway_0903.dlworkspace/player/keepaway_player -A 0.09 -I 0.346 -L 0.227 -Q 0 -e 1 -f keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz -g 1.0 -i 1 -j 2 -k 3 -l 0 -m 0 -o logs/keeper_Q_g1._l0.227_a0.09_w0.346_fsm_2.log -p 51523 -q learned -t keepers -w keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz -z 1
+/home/aibai/keepaway_0903.dlworkspace/player/keepaway_player -A 0.09 -I 0.346 -L 0.227 -Q 0 -e 1 -f keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz -g 1.0 -i 1 -j 2 -k 3 -l 0 -m 0 -o logs/keeper_Q_g1._l0.227_a0.09_w0.346_fsm_3.log -p 51523 -q learned -t keepers -w keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz -z 1
+/home/aibai/keepaway_0903.dlworkspace/player/keepaway_player -A 0.09 -I 0.346 -L 0.227 -Q 0 -e 1 -f taker_Q_g1._l0.227_a0.09_w0.346_fsm.gz -g 1.0 -i 1 -j 2 -k 3 -l 0 -m 0 -o logs/taker_Q_g1._l0.227_a0.09_w0.346_fsm_1.log -p 51523 -q learned -t takers -w taker_Q_g1._l0.227_a0.09_w0.346_fsm.gz -z 1
+/home/aibai/keepaway_0903.dlworkspace/player/keepaway_player -A 0.09 -I 0.346 -L 0.227 -Q 0 -e 1 -f taker_Q_g1._l0.227_a0.09_w0.346_fsm.gz -g 1.0 -i 1 -j 2 -k 3 -l 0 -m 0 -o logs/taker_Q_g1._l0.227_a0.09_w0.346_fsm_2.log -p 51523 -q learned -t takers -w taker_Q_g1._l0.227_a0.09_w0.346_fsm.gz -z 1
+Sent dispstart!
+rcssmonitor-15.1.0
+
+Copyright (C) 2009 - 2012 RoboCup Soccer Simulator Maintenance Group.
+
+rcssmonitor: cannot connect to X server 
+"SemTimedWait" = '"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+SemTimedWait'
+strerror(errno) = 'Connection timed out'
+A monitor disconnected
+Someone missed a cycle at 6385273
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+Someone missed a cycle at 6385274
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+Someone missed a cycle at 6385275
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+Someone missed a cycle at 6385276
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+Someone missed a cycle at 10027490
+"SemTimedWait" = 'SemTimedWait'
+strerror(errno) = 'Connection timed out'
+Shutting down player 2
+   Number of holes: 0 (0.000000)
+   Teammates seen: 0 (0.000000)
+   Opponents seen: 0 (0.000000)
+Saving weights at shutdown.Shutting down player 3
+   Number of holes: 0 (0.000000)
+   Teammates seen: 0 (0.000000)
+   Opponents seen: 0 (0.000000)
+Saving weights at shutdown.
+
+Shutting down player 1
+   Number of holes: 0 (0.000000)
+   Teammates seen: 0 (0.000000)
+   Opponents seen: 0 (0.000000)
+Shutting down player 1
+   Number of holes: 0 (0.000000)
+   Teammates seen: 0 (0.000000)
+   Opponents seen: 0 (0.000000)
+Shutting down player 2
+   Number of holes: 0 (0.000000)
+   Teammates seen: 0 (0.000000)
+   Opponents seen: 0 (0.000000)
