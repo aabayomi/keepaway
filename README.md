@@ -2,13 +2,23 @@
 
 ## Concurrent HAMQ Learning
 
-This is an ongoing project on concurrent reinforcement learning following the HAM framework. 
-
+This ongoing project demonstrates a **concurrent partial program** approach to the RoboCup Keepaway task. Some details can be found in:
+-   **Efficient Reinforcement Learning with Hierarchies of Machines by Leveraging Internal Transitions**, *Aijun Bai*, and Stuart Russell,\
+    *Proceedings of the Twenty-Fifth International Joint Conference on Artificial Intelligence (**IJCAI**), Melbourne, Australia, August 19 - 25, 2017.*
+    \[[pdf](https://aijunbai.github.io/publications/IJCAI17-Bai.pdf)\]
+    \[[bib](https://aijunbai.github.io/publications/IJCAI17-Bai.bib)\]
+-   **Concurrent Hierarchical Reinforcement Learning for RoboCup Keepaway**, *Aijun
+    Bai*, Stuart Russell, and Xiaoping Chen,\
+    *RoboCup-2017: Robot Soccer World Cup XX, Lecture Notes in
+    Artificial Intelligence (**RoboCup**), Springer Verlag, Berlin, 2017.*
+    \[[pdf](https://aijunbai.github.io/publications/LNAI17-Bai.pdf)\]
+    \[[bib](https://aijunbai.github.io/publications/LNAI17-Bai.bib)\]
+    
 ### Initial policy
-[![HAMQ-INT on RoboCup Keepaway (initial policy)](gifs/keepaway_initialized.gif)](https://www.youtube.com/watch?v=GFd0b3wV0Rk "initial policy")
+[![HAMQ on RoboCup Keepaway (initial policy)](gifs/keepaway_initialized.gif)](https://www.youtube.com/watch?v=GFd0b3wV0Rk "initial policy")
 
 ### Converged policy
-[![HAMQ-INT on RoboCup Keepaway (converged policy)](gifs/keepaway_converged.gif)](https://www.youtube.com/watch?v=ob249J8Kxi0 "converged policy")
+[![HAMQ on RoboCup Keepaway (converged policy)](gifs/keepaway_converged.gif)](https://www.youtube.com/watch?v=ob249J8Kxi0 "converged policy")
 
 ## Usages
 
@@ -23,6 +33,8 @@ This is an ongoing project on concurrent reinforcement learning following the HA
 
 - Evaluate a specified policy by simulation:```./evaluate.sh KEEPERQFILE```
  - ```KEEPERQFILE```: learned Q file for keepers
+ 
+ One learned policy with very high performance is included in the ```data``` directory for reference.
 
 # Old READMEs
 
