@@ -55,7 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 FileLock::FileLock(const string &name) {
   static const timespec sleepTime = {0, 1 * 1000 * 1000}; //1ms
-  lockName = "/run/lock/" + name + ".file_lock";
+  lockName = "/tmp/" + name + ".file_lock";
 
   for (;;) {
     lock = open(lockName.c_str(), O_CREAT | O_EXCL, 0664);
