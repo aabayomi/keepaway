@@ -22,7 +22,7 @@ This ongoing project demonstrates a **concurrent partial program** approach to t
 
 ## Usages
 
-- Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh [-g GAMMA] [-L LAMBDA] [-A ALPHA] [-I INITIALWEIGHT] [-l] [-f] [-m] [-s]```
+Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh [-g GAMMA] [-L LAMBDA] [-A ALPHA] [-I INITIALWEIGHT] [-l] [-f] [-m] [-s]```
  - ```-g GAMMA```: specify the discount factor
  - ```-L GAMMA```: specify the Lambda constant 
  - ```-A ALPHA```: specify the learning rate
@@ -31,10 +31,16 @@ This ongoing project demonstrates a **concurrent partial program** approach to t
  - ```-m```: launch a monitor, technically ```rcsssmonitor```
  - ```-s```: turn on synch mode within ```rcssserver```
 
-- Evaluate a specified policy by simulation:```./evaluate.sh KEEPERQFILE```
+Evaluate a specified policy by simulation:```./evaluate.sh KEEPERQFILE```
  - ```KEEPERQFILE```: learned Q file for keepers
  
- One learned policy with very high performance is included in the ```data``` directory for reference.
+One learned policy with very high performance is included in the ```data``` directory for reference.
+
+## Install rcssserver
+- ```sudo add-apt-repository ppa:gnurubuntu/rubuntu```
+- ```sudo apt update```
+- ```sudo apt install rcssserver rcssmonitor rcsslogplayer```
+
 
 # Old READMEs
 

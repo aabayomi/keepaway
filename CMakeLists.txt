@@ -69,4 +69,4 @@ set(SOURCE_FILES
         player/gzstream.h)
 
 add_executable(keepaway_player ${SOURCE_FILES})
-target_link_libraries(keepaway_player pthread dl rt z boost_serialization)
+target_link_libraries(keepaway_player pthread dl rt z)
