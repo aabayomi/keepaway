@@ -1,4 +1,5 @@
 # RoboCup Keepaway benchmark player framework
+[![Build Status](https://travis-ci.org/aijunbai/keepaway.svg?branch=fullteam)](https://travis-ci.org/aijunbai/keepaway)
 
 ## Concurrent HAMQ Learning
 This ongoing project demonstrates a **concurrent partial program** approach to the RoboCup Keepaway task. More details can be found in:
