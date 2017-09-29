@@ -25,23 +25,25 @@ This ongoing project demonstrates a **concurrent partial program** approach to t
 - ```sudo apt update```
 - ```sudo apt install rcssserver rcssmonitor rcsslogplayer```
 - ```git clone https://github.com/aijunbai/keepaway```
+- ```cd keepaway```
+- ```make release```
 
 ## Usages
-### Train a group of keepaway players using a linear SARSA algorithm
-```./train.sh [-g GAMMA] [-L LAMBDA] [-A ALPHA] [-I INITIALWEIGHT] [-l] [-f] [-m] [-s]```
- - ```-g GAMMA```: specify the discount factor
- - ```-L GAMMA```: specify the Lambda constant 
- - ```-A ALPHA```: specify the learning rate
- - ```-l```: turn on logging for ```keepaway_player``` and ``rcssserver```
- - ```-f```: turn on fullstate perception within ```rcssserver```
- - ```-m```: launch a monitor, technically ```rcsssmonitor```
- - ```-s```: turn on synch mode within ```rcssserver```
-
-### Evaluate a specified policy by simulation
-```./evaluate.sh KEEPERQFILE```
- - ```KEEPERQFILE```: learned Q file for keepers
+- Train a group of keepers using SARSA: ```./train.sh [-g GAMMA] [-L LAMBDA] [-A ALPHA] [-I INITIALWEIGHT] [-l] [-f] [-m] [-s]```
+   - ```-g GAMMA```: specify the discount factor [default: 1.0]
+   - ```-L GAMMA```: specify the Lambda constant [default: 0.5]
+    - ```-A ALPHA```: specify the learning rate [default: 0.125]
+    - ```-I INITIALWEIGHT```: spefify the initial weight for inner Q tables [default: 0.5]
+    - ```-l```: turn on logging for ```keepaway_player``` and ``rcssserver``` [default: false]
+    - ```-f```: turn on fullstate perception within ```rcssserver``` [default: true]
+    - ```-m```: launch a monitor, technically ```rcsssmonitor``` [default: true]
+    - ```-s```: turn on synch mode within ```rcssserver``` [default: true]
+- Evaluate a learned policy by simulation: ```./evaluate.sh QFILE```
+   - ```QFILE```: learned Q file for keepers
+- Train a set of groups simultaneously with random hyperparameters: ```./batch-train.sh```
+- Evaluate a set of learned policies simultaneously: ```./batch-evaluate.sh QFILES...```
  
-One learned policy with very high performance is included in the ```data``` directory for reference.
+One learned policy is included in the ```data``` directory for reference. It can be evaluated by running: ```./evaluate.sh data/keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz```
 
 ## Related Project
 - HAMQ and HAMQ-INT on standard Taxi domain: [https://github.com/aijunbai/taxi](https://github.com/aijunbai/taxi)
