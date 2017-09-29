@@ -1,8 +1,7 @@
 # RoboCup Keepaway benchmark player framework
 
 ## Concurrent HAMQ Learning
-
-This ongoing project demonstrates a **concurrent partial program** approach to the RoboCup Keepaway task. Some details can be found in:
+This ongoing project demonstrates a **concurrent partial program** approach to the RoboCup Keepaway task. More details can be found in:
 -   **Efficient Reinforcement Learning with Hierarchies of Machines by Leveraging Internal Transitions**, *Aijun Bai*, and Stuart Russell,\
     *Proceedings of the Twenty-Fifth International Joint Conference on Artificial Intelligence (**IJCAI**), Melbourne, Australia, August 19 - 25, 2017.*
     \[[pdf](https://aijunbai.github.io/publications/IJCAI17-Bai.pdf)\]
@@ -14,15 +13,21 @@ This ongoing project demonstrates a **concurrent partial program** approach to t
     \[[pdf](https://aijunbai.github.io/publications/LNAI17-Bai.pdf)\]
     \[[bib](https://aijunbai.github.io/publications/LNAI17-Bai.bib)\]
     
-### Initial policy
+### Before learning
 [![HAMQ on RoboCup Keepaway (initial policy)](gifs/keepaway_initialized.gif)](https://www.youtube.com/watch?v=GFd0b3wV0Rk "initial policy")
 
-### Converged policy
+### After learning
 [![HAMQ on RoboCup Keepaway (converged policy)](gifs/keepaway_converged.gif)](https://www.youtube.com/watch?v=ob249J8Kxi0 "converged policy")
 
-## Usages
+## Install
+- ```sudo add-apt-repository ppa:gnurubuntu/rubuntu```
+- ```sudo apt update```
+- ```sudo apt install rcssserver rcssmonitor rcsslogplayer```
+- ```git clone https://github.com/aijunbai/keepaway```
 
-Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh [-g GAMMA] [-L LAMBDA] [-A ALPHA] [-I INITIALWEIGHT] [-l] [-f] [-m] [-s]```
+## Usages
+### Train a group of keepaway players using a linear SARSA algorithm
+```./train.sh [-g GAMMA] [-L LAMBDA] [-A ALPHA] [-I INITIALWEIGHT] [-l] [-f] [-m] [-s]```
  - ```-g GAMMA```: specify the discount factor
  - ```-L GAMMA```: specify the Lambda constant 
  - ```-A ALPHA```: specify the learning rate
@@ -31,15 +36,14 @@ Train a group of keepaway players using a linear SARSA algorithm: ```./train.sh 
  - ```-m```: launch a monitor, technically ```rcsssmonitor```
  - ```-s```: turn on synch mode within ```rcssserver```
 
-Evaluate a specified policy by simulation:```./evaluate.sh KEEPERQFILE```
+### Evaluate a specified policy by simulation
+```./evaluate.sh KEEPERQFILE```
  - ```KEEPERQFILE```: learned Q file for keepers
  
 One learned policy with very high performance is included in the ```data``` directory for reference.
 
-## Install rcssserver
-- ```sudo add-apt-repository ppa:gnurubuntu/rubuntu```
-- ```sudo apt update```
-- ```sudo apt install rcssserver rcssmonitor rcsslogplayer```
+## Related Project
+- HAMQ and HAMQ-INT on standard Taxi domain: [https://github.com/aijunbai/taxi](https://github.com/aijunbai/taxi)
 
 
 # Old READMEs
