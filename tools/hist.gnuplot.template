@@ -2,13 +2,20 @@
 # Gregory Kuhlmann, 2002
 
 # Color output
-set terminal postscript eps color solid "Helvetica" 24
+# set terminal postscript eps color solid "Helvetica" 24 size 15,7
+set terminal pngcairo size 1600,900 enhanced font 'Verdana,10'
 
 # Black & White output
 #set terminal postscript eps monochrome dashed "Helvetica" 24
 
 # Output file
-set output "./hist.eps"
+# set output "./graph.eps"
+set output "./hist.png"
+
+# Legend
+#set key right top right
+#set key outside
+set key above vertical maxrows 6
 
 # Appearance
 set border 3

@@ -25,7 +25,7 @@ tools:
 
 cleanall:
 	cd tools; make clean
-	rm -f /run/lock/*.file_lock
+	rm -f /tmp/*.file_lock
 	rm -f /run/shm/*.shm
 	rm -fr /run/shm/sem.*
 	rm -fr Debug Release

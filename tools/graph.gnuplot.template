@@ -2,13 +2,15 @@
 # Gregory Kuhlmann, 2002
 
 # Color output
-set terminal postscript eps color solid "Helvetica" 24 size 15,7
+# set terminal postscript eps color solid "Helvetica" 24 size 15,7
+set terminal pngcairo size 1600,900 enhanced font 'Verdana,10'
 
 # Black & White output
 #set terminal postscript eps monochrome dashed "Helvetica" 24
 
 # Output file
-set output "./graph.eps"
+# set output "./graph.eps"
+set output "./graph.png"
 
 # Legend
 #set key right top right
@@ -24,10 +26,10 @@ set multiplot
 set grid
 
 # Axes
-# set xrange [0:]
+set xrange [0:]
 set xlabel "Training Time (hours)"
 
-# set yrange [:]
+set yrange [0:]
 set ylabel "Episode Duration (seconds)"
 
 # set log x
