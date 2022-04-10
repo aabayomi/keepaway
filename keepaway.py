@@ -399,6 +399,7 @@ def run(options):
         launch_monitor(options)
 
     # All done.
+    print(Any(keeper_pids = keeper_pids, server_pid = server_pid))
     return Any(keeper_pids = keeper_pids, server_pid = server_pid)
 
 

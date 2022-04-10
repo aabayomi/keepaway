@@ -88,6 +88,7 @@ fi
 
 CONSOLE_LOG="$LOGDIR/`basename $QFILE .gz`.console"
 
+
 ulimit -c unlimited
 ./keepaway.py --keeper-count=3 --taker-count=2 \
     $MEMORYCHECK $LEARNING \

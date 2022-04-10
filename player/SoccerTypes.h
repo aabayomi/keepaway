@@ -58,7 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unordered_map>
 #include "Geometry.h"     // needed for AngDeg
 #include "ServerSettings.h"
-#include <linux/limits.h>
+#include <limits.h>
 #include <cstring>
 #include <unistd.h>
 
