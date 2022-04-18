@@ -22,10 +22,10 @@ class CrossEntropyAgent:public SMDPAgent
   int epochNum;
   int lastAction;
 
-  double alpha;
-  double gamma;
-  double lambda;
-  double epsilon;
+  // double alpha;
+  // double gamma;
+  // double lambda;
+  // double epsilon;
 
   int batchSize;
 

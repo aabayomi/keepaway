@@ -83,11 +83,6 @@ CrossEntropyAgent::CrossEntropyAgent( int numFeatures, int numActions, bool bLea
  // batch size is the number of samples to generate
  batchSize = 25;
 
-  // alpha = 0.125;
-  // gamma = 1.0;
-  // lambda = 0;
-  // epsilon = 0.01;
-  // minimumTrace = 0.01;
 
   epochNum = 0;
   lastAction = -1;
