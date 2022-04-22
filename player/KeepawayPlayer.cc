@@ -67,6 +67,7 @@ KeepawayPlayer::KeepawayPlayer(ActHandler *act, WorldModel *wm,
     puts the best soccer command in the queue of the ActHandler. */
 void KeepawayPlayer::mainLoop( )
 {
+
   Log.setHeader(-1);
   bool bContLoop = true;
 

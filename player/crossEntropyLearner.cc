@@ -86,12 +86,9 @@ CrossEntropyAgent::CrossEntropyAgent( int numFeatures, int numActions, bool bLea
 
   epochNum = 0;
   lastAction = -1;
-
-  numNonzeroTraces = 0;
   weights = weightsRaw;
   for ( int i = 0; i < RL_MEMORY_SIZE; i++ ) {
     weights[ i ] = 0;
-    traces[ i ] = 0;
   }
 
   srand( (unsigned int) 0 );
@@ -122,7 +119,22 @@ void CrossEntropyAgent::setEpsilon(double epsilon) {
 // At the start of update Q and choose and action
 int CrossEntropyAgent::startEpisode( double state[] )
 {
- 
+    epochNum++;
+    loadTiles( state );
+    for ( int a = 0; a < getNumActions(); a++ ) {
+        Q[ a ] = computeQ( a );
+    }
+
+    lastAction = selectAction();
+
+    char buffer[128];
+    sprintf( buffer, "Q[%d] = %.2f", lastAction, Q[lastAction] );
+    LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
+                     buffer,
+                     1, COLOR_BROWN );
+
+    if (hiveMind) saveWeights(weightsFile);
+    return lastAction;
 }
 
 
