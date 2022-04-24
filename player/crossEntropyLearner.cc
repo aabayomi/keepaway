@@ -7,9 +7,16 @@
 #include <time.h>
 #include <sstream>
 #include <random>
-#include "CrossEntropyAgent.h"
+#include <vector>
+#include <algorithm>
+#include <utility>
+#include <array>
+#include <eigen3/Eigen/Dense>
+#include "crossEntropyLearner.h"
 #include "LoggerDraw.h"
 
+
+using namespace Eigen;
 // If all is well, there should be no mention of anything keepaway- or soccer-
 // related in this file. 
 
@@ -33,54 +40,60 @@ struct CollisionTableHeader {
  * Returns the memory location after the header because that's useful for colTab
  * data array.
  */
-long* loadColTabHeader(collision_table* colTab, double* weights) {
-  CollisionTableHeader* colTabHeader =
-    reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
-  // Do each field individually, since they don't all line up exactly for an
-  // easy copy.
-  colTab->calls = colTabHeader->calls;
-  colTab->clearhits = colTabHeader->clearhits;
-  colTab->collisions = colTabHeader->collisions;
-  colTab->m = colTabHeader->m;
-  colTab->safe = colTabHeader->safe;
-  if (VERBOSE_HIVE_MIND) {
-    cout << "Loaded colTabHeader:" << endl
-      << " calls: " << colTab->calls << endl
-      << " clearhits: " << colTab->clearhits << endl
-      << " collisions: " << colTab->collisions << endl
-      << " m: " << colTab->m << endl
-      << " safe: " << colTab->safe << endl;
-  }
-  return reinterpret_cast<long*>(colTabHeader + 1);
-}
+// long* loadColTabHeader(collision_table* colTab, double* weights) {
+//   CollisionTableHeader* colTabHeader =
+//     reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
+//   // Do each field individually, since they don't all line up exactly for an
+//   // easy copy.
+//   colTab->calls = colTabHeader->calls;
+//   colTab->clearhits = colTabHeader->clearhits;
+//   colTab->collisions = colTabHeader->collisions;
+//   // colTab->m = colTabHeader->m;
+//   colTab->safe = colTabHeader->safe;
+//   if (VERBOSE_HIVE_MIND) {
+//     cout << "Loaded colTabHeader:" << endl
+//       << " calls: " << colTab->calls << endl
+//       << " clearhits: " << colTab->clearhits << endl
+//       << " collisions: " << colTab->collisions << endl
+//       // << " m: " << colTab->m << endl
+//       << " safe: " << colTab->safe << endl;
+//   }
+//   return reinterpret_cast<long*>(colTabHeader + 1);
+// }
 
 extern LoggerDraw LogDraw;
 
-CrossEntropyAgent::CrossEntropyAgent( int numFeatures, int numActions, bool bLearn,
+CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLearn,
                                     double widths[],
                                     char *loadWeightsFile, char *saveWeightsFile, bool hiveMind ):
+
   SMDPAgent( numFeatures, numActions ), hiveFile(-1)
 
 {
+  
+  
   bLearning = bLearn;
 
   for ( int i = 0; i < getNumFeatures(); i++ ) {
     tileWidths[ i ] = widths[ i ];
   }
 
-  // Saving weights (including for hive mind) requires learning and a file name.
-  this->hiveMind = false;
-  if ( bLearning && strlen( saveWeightsFile ) > 0 ) {
-    strcpy( weightsFile, saveWeightsFile );
-    bSaveWeights = true;
-    // Hive mind further requires loading and saving from the same file.
-    if (!strcmp(loadWeightsFile, saveWeightsFile)) {
-      this->hiveMind = hiveMind;
-    }
-  }
-  else {
-    bSaveWeights = false;
-  }
+//   // Saving weights (including for hive mind) requires learning and a file name.
+//   this->hiveMind = false;
+//   if ( bLearning && strlen( saveWeightsFile ) > 0 ) {
+//     strcpy( weightsFile, saveWeightsFile );
+//     bSaveWeights = true;
+//     // Hive mind further requires loading and saving from the same file.
+//     if (!strcmp(loadWeightsFile, saveWeightsFile)) {
+//       this->hiveMind = hiveMind;
+//     }
+//   }
+//   else {
+//     bSaveWeights = false;
+//   }
+
+
+
 
 
 
@@ -88,6 +101,7 @@ CrossEntropyAgent::CrossEntropyAgent( int numFeatures, int numActions, bool bLea
   mean = 0.0;
   std = 100.0;
   N = 25;
+  k = 10; // k best weights
   std::default_random_engine generator;
   std::normal_distribution<double> distribution(mean,std);
 
@@ -109,26 +123,52 @@ CrossEntropyAgent::CrossEntropyAgent( int numFeatures, int numActions, bool bLea
   // initialized map 
   // incomplete .
 
-  std::map< array<float, RL_MEMORY_SIZE>, float> samples;
-
-
+  std::map< array<double, RL_MEMORY_SIZE>, double> samples;
 
   srand( (unsigned int) 0 );
+  srand48((unsigned int) 0);
   int tmp[ 2 ];
   float tmpf[ 2 ];
-  colTab = new collision_table( RL_MEMORY_SIZE, 1 );
+
+  // colTab = new collision_table( RL_MEMORY_SIZE, 1 );
 
   GetTiles( tmp, 1, 1, tmpf, 0 );  // A dummy call to set the hashing table    
   srand( time( NULL ) );
+  srand48((unsigned int) time(NULL));
 
-  if ( strlen( loadWeightsFile ) > 0 )
-    loadWeights( loadWeightsFile );
+
+  // if ( strlen( loadWeightsFile ) > 0 )
+  //   loadWeights( loadWeightsFile );
+
+  if (bLearning || !bLearning) {
+
+    string exepath = getexepath();
+    // exepath += "LinearSarsaLearner::initialize";
+    exepath += *loadWeightsFile;
+    exepath += *saveWeightsFile;
+    // exepath += to_string(gamma);
+    // exepath += to_string(lambda);
+    exepath += to_string(weights);
+    // exepath += to_string(qLearning);
+    // exepath += teamName;
+    auto h = hash<string>()(exepath); // hashing
+    // sharedMemory = "/" + to_string(h) + ".shm";
+
+      colTab ->colTab;
+      if (loadWeightsFile.empty() || !loadWeights(loadWeightsFile.c_str())) {
+        fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
+        colTab->reset();
+      }
+  }
+
+
+
 }
 
 
 
 
-// Q state-action value estimate 
+// Q state-action value estimate.
 double CrossEntropyAgent::getQ(int action) {
   if (action < 0 || action > getNumActions()) {
     throw "invalid action";
@@ -165,14 +205,6 @@ int CrossEntropyAgent::startEpisode( double state[] )
 // Cross Entropy 
 int CrossEntropyAgent::step( double reward, double state[] )
 {
-  // at each t
-  // generate best sets of n weights from distrbution 
-  // find the best sets of values with the corresponding weights
-  // sort these weights
-  // update mean 
-  // update std. 
-
-
   if (hiveMind) loadColTabHeader(colTab, weights);
 
   // Use either the discounted reward or culmilative reward
@@ -194,8 +226,7 @@ int CrossEntropyAgent::step( double reward, double state[] )
                    buffer,
                    1, COLOR_BROWN );
   //
-  
-  
+
 
 
 }
@@ -206,25 +237,18 @@ void CrossEntropyAgent::endEpisode( double reward )
 
 {
   // Store weights and reward
-
-  samples[weights] = reward;
+  samples[weights] = reward;  //??
 
   // save reward and weights
   if (*counter < N){
     counter++;
   }else{
-
-    /// update weights and reset both the counter and samples map.
+    // update weights and reset both the counter and samples map.
     updateWeights()
     *counter = 0;
     samples.clear();
   }
   
-  
-
-
-
-
 
 }
 
@@ -260,7 +284,6 @@ void CrossEntropyAgent::shutDown()
 int CrossEntropyAgent::selectAction()
 {
   int action;
-
   // Epsilon-greedy
   if ( bLearning && drand48() < epsilon ) {     /* explore */
     action = rand() % getNumActions();
@@ -268,10 +291,7 @@ int CrossEntropyAgent::selectAction()
   else{
     action = argmaxQ();
   }
-
   return action;
-
-
 }
 
 
@@ -423,12 +443,12 @@ int CrossEntropyAgent::argmaxQ()
 
 
 // This is change to mean / Standard deviation helper function 
-bool CrossEntropyAgent::sortByVal(const pair<array, double> &a, 
-               const pair<array, double> &b) 
+
+bool CrossEntropyAgent::sortByVal(const pair<array<double, 2>, double> &a, 
+               const pair<array<double, 2>, double> &b) 
 { 
     return (a.second < b.second); 
 } 
-
 
 
 void CrossEntropyAgent::updateWeights( double delta )
@@ -443,18 +463,67 @@ void CrossEntropyAgent::updateWeights( double delta )
   //   //cout << "weights[" << f << "] = " << weights[f] << endl;
   // }
 
-  // select the best set of weights
-
-
-
-  // find the mean for these weights and update mean pointer
-
-
-
-  // find the std of the weights and update std pointer
-
-
+  /* select the best set of weights 
   
+  */
+
+    // create a empty vector of pairs
+    std::vector<pair<array<double, RL_MEMORY_SIZE>, double>> vec;
+
+    // copy key-value pairs from the map to the vector
+    std::map<array<double, RL_MEMORY_SIZE>, double> :: iterator it;
+
+    for ( it=samples.begin(); it!=samples.end(); it++) {
+        vec.push_back(make_pair(it->first, it->second));
+    }
+
+    // Sorts the weights by the reward
+    sort(vec.begin(), vec.end(), sortByVal ); 
+
+
+    float sumWeights = 0
+
+    for (int i = 0; i < vec.size(); i++){
+      if ( i <= k-1) {
+          for (int j = 0; j < vec[i].first.size(); j++) {
+              sumWeights += vec[i].first[j];                    
+          }
+      }
+      else {
+          break;
+      }
+    }
+
+    // update the pointer of mean
+    // should we divide by index instead of total selected samples??
+    *mean = sumWeights / k;
+
+    // find the std of the weights and update std pointer.
+
+    typedef Matrix <double,1,RL_MEMORY_SIZE> Vector4d ;
+    Vector4d mu = Vector4d :: Constant (*mean);
+  
+    // this can be combined with one above.
+    float sum;
+
+    for (int i = 0; i < vec.size(); i++){
+      if ( i <= k-1) {
+         Vector4d W; 
+         Vector4d P;
+          for (int j = 0; j < vec[i].first.size(); j++) {
+              W(0,j) = vec[0].first[j];      
+          }
+
+          P = W - mu;
+          Q = P.traspose().dot(P);
+          sum += Q;
+      }
+      else {
+          break;
+      }
+    }
+
+    *std = sum / N;
 }
 
 

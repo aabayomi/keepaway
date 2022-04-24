@@ -1,8 +1,10 @@
 *.o
 *.pyc
+*.gz
 CMakeLists.txt.user
 /logs/
 /player/demo_extension.so
+/player/*
 /player/keepaway_player
 /player/Makefile.bak
 /tools/hist
@@ -21,3 +23,4 @@ build/
 Debug/
 Release/
 cmake-build-debug/
+data/*

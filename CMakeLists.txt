@@ -62,6 +62,8 @@ set(SOURCE_FILES
         player/WorldModelUpdate.cc
         player/HierarchicalFSM.cc
         player/HierarchicalFSM.h
+        player/crossEntropyLearner.h
+        player/crossEntropyLearner.cc
         player/ChoicePoint.h
         player/LinearSarsaLearner.cc
         player/LinearSarsaLearner.h

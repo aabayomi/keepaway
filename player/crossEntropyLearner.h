@@ -28,6 +28,7 @@ class CrossEntropyAgent:public SMDPAgent
   double std;
   int N;
   int counter;
+  int k;
 
   // double alpha;
   // double gamma;
