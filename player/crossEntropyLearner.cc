@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <sstream>
+#include <random>
 #include "CrossEntropyAgent.h"
 #include "LoggerDraw.h"
 
@@ -59,6 +60,7 @@ CrossEntropyAgent::CrossEntropyAgent( int numFeatures, int numActions, bool bLea
                                     double widths[],
                                     char *loadWeightsFile, char *saveWeightsFile, bool hiveMind ):
   SMDPAgent( numFeatures, numActions ), hiveFile(-1)
+
 {
   bLearning = bLearn;
 
@@ -80,16 +82,36 @@ CrossEntropyAgent::CrossEntropyAgent( int numFeatures, int numActions, bool bLea
     bSaveWeights = false;
   }
 
- // batch size is the number of samples to generate
- batchSize = 25;
 
+
+  // number of iterations for updating weights
+  mean = 0.0;
+  std = 100.0;
+  N = 25;
+  std::default_random_engine generator;
+  std::normal_distribution<double> distribution(mean,std);
+
+  int *counter = 0;
 
   epochNum = 0;
   lastAction = -1;
+
   weights = weightsRaw;
+
+  // store initial weights by sampling from a distrbution
   for ( int i = 0; i < RL_MEMORY_SIZE; i++ ) {
-    weights[ i ] = 0;
+    double w = distribution(generator);
+    weights[ i ] = w;
+
   }
+
+  // Create an hash map to store weights and current reward.
+  // initialized map 
+  // incomplete .
+
+  std::map< array<float, RL_MEMORY_SIZE>, float> samples;
+
+
 
   srand( (unsigned int) 0 );
   int tmp[ 2 ];
@@ -103,6 +125,9 @@ CrossEntropyAgent::CrossEntropyAgent( int numFeatures, int numActions, bool bLea
     loadWeights( loadWeightsFile );
 }
 
+
+
+
 // Q state-action value estimate 
 double CrossEntropyAgent::getQ(int action) {
   if (action < 0 || action > getNumActions()) {
@@ -111,9 +136,6 @@ double CrossEntropyAgent::getQ(int action) {
   return Q[action];
 }
 
-void CrossEntropyAgent::setEpsilon(double epsilon) {
-  this->epsilon = epsilon;
-}
 
 
 // At the start of update Q and choose and action
@@ -171,30 +193,41 @@ int CrossEntropyAgent::step( double reward, double state[] )
   LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
                    buffer,
                    1, COLOR_BROWN );
-
-
-  ///
-  for ( int n = 0; n < batchSize; n++ ){
-
-  }
-
-
-
+  //
+  
+  
 
 
 }
-
-
-
-
-
 
 
 // Add the reward and update Mean and Standard deviation
 void CrossEntropyAgent::endEpisode( double reward )
+
 {
+  // Store weights and reward
+
+  samples[weights] = reward;
+
+  // save reward and weights
+  if (*counter < N){
+    counter++;
+  }else{
+
+    /// update weights and reset both the counter and samples map.
+    updateWeights()
+    *counter = 0;
+    samples.clear();
+  }
+  
+  
+
+
+
+
 
 }
+
 
 void CrossEntropyAgent::shutDown()
 {
@@ -389,18 +422,48 @@ int CrossEntropyAgent::argmaxQ()
 }
 
 
-// This is change to mean / Std helper function 
+// This is change to mean / Standard deviation helper function 
+bool CrossEntropyAgent::sortByVal(const pair<array, double> &a, 
+               const pair<array, double> &b) 
+{ 
+    return (a.second < b.second); 
+} 
+
+
+
 void CrossEntropyAgent::updateWeights( double delta )
+
 {
-  double tmp = delta * alpha / numTilings;
-  for ( int i = 0; i < numNonzeroTraces; i++ ) {
-    int f = nonzeroTraces[ i ];
-    if ( f > RL_MEMORY_SIZE || f < 0 )
-      cerr << "f is too big or too small!!" << f << endl;
-    weights[ f ] += tmp * traces[ f ];
-    //cout << "weights[" << f << "] = " << weights[f] << endl;
-  }
+  // double tmp = delta * alpha / numTilings;
+  // for ( int i = 0; i < numNonzeroTraces; i++ ) {
+  //   int f = nonzeroTraces[ i ];
+  //   if ( f > RL_MEMORY_SIZE || f < 0 )
+  //     cerr << "f is too big or too small!!" << f << endl;
+  //   weights[ f ] += tmp * traces[ f ];
+  //   //cout << "weights[" << f << "] = " << weights[f] << endl;
+  // }
+
+  // select the best set of weights
+
+
+
+  // find the mean for these weights and update mean pointer
+
+
+
+  // find the std of the weights and update std pointer
+
+
+  
 }
+
+
+
+
+
+
+
+
 
 void CrossEntropyAgent::loadTiles( double state[] )
 {
@@ -421,69 +484,74 @@ void CrossEntropyAgent::loadTiles( double state[] )
 }
 
 
+
+
+
+
+
 // Clear any trace for feature f      
-void CrossEntropyAgent::clearTrace( int f)
-{
-  if ( f > RL_MEMORY_SIZE || f < 0 )
-    cerr << "ClearTrace: f out of range " << f << endl;
-  if ( traces[ f ] != 0 )
-    clearExistentTrace( f, nonzeroTracesInverse[ f ] );
-}
+// void CrossEntropyAgent::clearTrace( int f)
+// {
+//   if ( f > RL_MEMORY_SIZE || f < 0 )
+//     cerr << "ClearTrace: f out of range " << f << endl;
+//   if ( traces[ f ] != 0 )
+//     clearExistentTrace( f, nonzeroTracesInverse[ f ] );
+// }
 
 // Clear the trace for feature f at location loc in the list of nonzero traces 
-void CrossEntropyAgent::clearExistentTrace( int f, int loc )
-{
-  if ( f > RL_MEMORY_SIZE || f < 0 )
-    cerr << "ClearExistentTrace: f out of range " << f << endl;
-  traces[ f ] = 0.0;
-  numNonzeroTraces--;
-  nonzeroTraces[ loc ] = nonzeroTraces[ numNonzeroTraces ];
-  nonzeroTracesInverse[ nonzeroTraces[ loc ] ] = loc;
-}
+// void CrossEntropyAgent::clearExistentTrace( int f, int loc )
+// {
+//   if ( f > RL_MEMORY_SIZE || f < 0 )
+//     cerr << "ClearExistentTrace: f out of range " << f << endl;
+//   traces[ f ] = 0.0;
+//   numNonzeroTraces--;
+//   nonzeroTraces[ loc ] = nonzeroTraces[ numNonzeroTraces ];
+//   nonzeroTracesInverse[ nonzeroTraces[ loc ] ] = loc;
+// }
 
 // Decays all the (nonzero) traces by decay_rate, removing those below minimum_trace 
-void CrossEntropyAgent::decayTraces( double decayRate )
-{
-  int f;
-  for ( int loc = numNonzeroTraces - 1; loc >= 0; loc-- ) {
-    f = nonzeroTraces[ loc ];
-    if ( f > RL_MEMORY_SIZE || f < 0 )
-      cerr << "DecayTraces: f out of range " << f << endl;
-    traces[ f ] *= decayRate;
-    if ( traces[ f ] < minimumTrace )
-      clearExistentTrace( f, loc );
-  }
-}
+// void CrossEntropyAgent::decayTraces( double decayRate )
+// {
+//   int f;
+//   for ( int loc = numNonzeroTraces - 1; loc >= 0; loc-- ) {
+//     f = nonzeroTraces[ loc ];
+//     if ( f > RL_MEMORY_SIZE || f < 0 )
+//       cerr << "DecayTraces: f out of range " << f << endl;
+//     traces[ f ] *= decayRate;
+//     if ( traces[ f ] < minimumTrace )
+//       clearExistentTrace( f, loc );
+//   }
+// }
 
 // Set the trace for feature f to the given value, which must be positive   
-void CrossEntropyAgent::setTrace( int f, float newTraceValue )
-{
-  if ( f > RL_MEMORY_SIZE || f < 0 )
-    cerr << "SetTraces: f out of range " << f << endl;
-  if ( traces[ f ] >= minimumTrace )
-    traces[ f ] = newTraceValue;         // trace already exists              
-  else {
-    while ( numNonzeroTraces >= RL_MAX_NONZERO_TRACES )
-      increaseMinTrace(); // ensure room for new trace              
-    traces[ f ] = newTraceValue;
-    nonzeroTraces[ numNonzeroTraces ] = f;
-    nonzeroTracesInverse[ f ] = numNonzeroTraces;
-    numNonzeroTraces++;
-  }
-}
+// void CrossEntropyAgent::setTrace( int f, float newTraceValue )
+// {
+//   if ( f > RL_MEMORY_SIZE || f < 0 )
+//     cerr << "SetTraces: f out of range " << f << endl;
+//   if ( traces[ f ] >= minimumTrace )
+//     traces[ f ] = newTraceValue;         // trace already exists              
+//   else {
+//     while ( numNonzeroTraces >= RL_MAX_NONZERO_TRACES )
+//       increaseMinTrace(); // ensure room for new trace              
+//     traces[ f ] = newTraceValue;
+//     nonzeroTraces[ numNonzeroTraces ] = f;
+//     nonzeroTracesInverse[ f ] = numNonzeroTraces;
+//     numNonzeroTraces++;
+//   }
+// }
 
 // Try to make room for more traces by incrementing minimum_trace by 10%,
 // culling any traces that fall below the new minimum                      
-void CrossEntropyAgent::increaseMinTrace()
-{
-  minimumTrace *= 1.1;
-  cerr << "Changing minimum_trace to " << minimumTrace << endl;
-  for ( int loc = numNonzeroTraces - 1; loc >= 0; loc-- ) { // necessary to loop downwards    
-    int f = nonzeroTraces[ loc ];
-    if ( traces[ f ] < minimumTrace )
-      clearExistentTrace( f, loc );
-  }
-}
+// void CrossEntropyAgent::increaseMinTrace()
+// {
+//   minimumTrace *= 1.1;
+//   cerr << "Changing minimum_trace to " << minimumTrace << endl;
+//   for ( int loc = numNonzeroTraces - 1; loc >= 0; loc-- ) { // necessary to loop downwards    
+//     int f = nonzeroTraces[ loc ];
+//     if ( traces[ f ] < minimumTrace )
+//       clearExistentTrace( f, loc );
+//   }
+// }
 
 void CrossEntropyAgent::setParams(int iCutoffEpisodes, int iStopLearningEpisodes)
 {

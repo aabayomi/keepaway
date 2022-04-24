@@ -22,6 +22,13 @@ class CrossEntropyAgent:public SMDPAgent
   int epochNum;
   int lastAction;
 
+  
+  // normal distribution variables
+  double mean;
+  double std;
+  int N;
+  int counter;
+
   // double alpha;
   // double gamma;
   // double lambda;

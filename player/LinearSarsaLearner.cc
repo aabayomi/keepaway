@@ -688,4 +688,5 @@ bool LinearSarsaLearner::saveWeights(const char *filename) {
   os.close();
   return true;
 }
+
 }
