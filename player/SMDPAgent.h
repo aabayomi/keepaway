@@ -60,6 +60,8 @@ public:
   { m_numFeatures = numFeatures; m_numActions = numActions; }
   virtual ~SMDPAgent() {}
 
+  string saveWeightsFile;
+
   // abstract methods to be supplied by implementing class
   virtual int  startEpisode( int current_time, double state[] ) = 0;
   virtual int  step( int current_time, double reward, double state[] ) = 0;
