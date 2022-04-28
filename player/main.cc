@@ -58,6 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KeepawayPlayer.h"
 #include "HandCodedAgent.h"
 #include "HierarchicalFSM.h"
+#include "crossEntropyLearner.h"
 
 #include "Parse.h"
 #include "gzstream.h"
@@ -97,6 +98,7 @@ int main(int argc, char *argv[]) {
   bool bInfo = false;
   bool bSuppliedLogFile = false;
   bool hierarchicalFSM = false;
+  bool crossEntropy = false;
   double gamma = 1.0;
   double lambda = 0.0;
   double alpha = 0.125;
@@ -241,6 +243,10 @@ int main(int argc, char *argv[]) {
           str = &argv[i + 1][0];
           hierarchicalFSM = Parse::parseFirstInt(&str) == 1;
           break;
+        case 'E':
+          str = &argv[i + 1][0];
+          crossEntropy = Parse::parseFirstInt(&str) == 1;
+          break;
         default:
           cerr << "(main) Unknown command option: " << argv[i] << endl;
       }
@@ -256,6 +262,7 @@ int main(int argc, char *argv[]) {
          "playernr : " << iNr << endl <<
          "reconnect : " << iReconnect << endl <<
          "hierarchical FSM : " << hierarchicalFSM << endl <<
+         "cross entropy method : " << crossEntropy << endl <<
          "gamma : " << gamma << endl <<
          "lambda : " << lambda << endl <<
          "alpha : " << alpha << endl <<
@@ -276,6 +283,9 @@ int main(int argc, char *argv[]) {
   ActHandler a(&c, &wm, &ss);                // link actHandler and worldmodel
   SenseHandler s(&c, &wm, &ss, &cs);         // link senseHandler with wm
 
+  
+  SMDPAgent *sa = NULL;
+
   double ranges[MAX_RL_STATE_VARS];
   double minValues[MAX_RL_STATE_VARS];
   double resolutions[MAX_RL_STATE_VARS];
@@ -290,25 +300,65 @@ int main(int argc, char *argv[]) {
                                                     iNumKeepers, iNumTakers);
   }
 
-  if (!hierarchicalFSM) {
+   int numActions = iNumKeepers;
+
+  
+  // cout << "crossEntropy nnnnnnnn"<< crossEntropy << endl;
+
+
+ if (!crossEntropy) {
     cerr << "No agent!" << endl;
     return EXIT_FAILURE;
   } else {
     if (string(strTeamName) == "keepers") {
-      fsm::HierarchicalFSM::initialize(
-          numFeatures, iNumKeepers, iNumTakers, bLearn,
-          resolutions, gamma, lambda, alpha, initialWeight, qLearning,
-          loadWeightsFile, saveWeightsFile, strTeamName);
+
+      CrossEntropyAgent* CrossEntropyAgent = new CrossEntropyAgent(
+        numFeatures, numActions, bLearn, resolutions,
+        loadWeightsFile, saveWeightsFile);
+
+      sa = CrossEntropyAgent;
+
+
+      // fsm::HierarchicalFSM::initialize(
+      //     numFeatures, iNumKeepers, iNumTakers, bLearn,
+      //     resolutions, gamma, lambda, alpha, initialWeight, qLearning,
+      //     loadWeightsFile, saveWeightsFile, strTeamName);
     }
     else {
-      fsm::HierarchicalFSM::initialize(
-          numFeatures, iNumTakers, iNumKeepers, bLearn,
-          resolutions, gamma, lambda, alpha, initialWeight, qLearning,
-          loadWeightsFile, saveWeightsFile, strTeamName);
+
+      //  CrossEntropyAgent* CrossEntropyAgent = new CrossEntropyAgent(
+      //   numFeatures, numActions, bLearn, resolutions,
+      //   loadWeightsFile, saveWeightsFile);
+
+      //   sa = CrossEntropyAgent;
     };
   }
 
-  KeepawayPlayer bp(&a, &wm, &ss, &cs, strTeamName,
+
+  
+
+
+
+
+  // if (!hierarchicalFSM) {
+  //   cerr << "No agent!" << endl;
+  //   return EXIT_FAILURE;
+  // } else {
+  //   if (string(strTeamName) == "keepers") {
+  //     fsm::HierarchicalFSM::initialize(
+  //         numFeatures, iNumKeepers, iNumTakers, bLearn,
+  //         resolutions, gamma, lambda, alpha, initialWeight, qLearning,
+  //         loadWeightsFile, saveWeightsFile, strTeamName);
+  //   }
+  //   else {
+  //     fsm::HierarchicalFSM::initialize(
+  //         numFeatures, iNumTakers, iNumKeepers, bLearn,
+  //         resolutions, gamma, lambda, alpha, initialWeight, qLearning,
+  //         loadWeightsFile, saveWeightsFile, strTeamName);
+  //   };
+  // }
+
+  KeepawayPlayer bp( sa, &a, &wm, &ss, &cs, strTeamName,
                     iNumKeepers, iNumTakers, dVersion, iReconnect);
 
   pthread_create(&sense, NULL, sense_callback, &s); // start listening

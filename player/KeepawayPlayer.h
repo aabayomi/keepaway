@@ -35,43 +35,96 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "BasicPlayer.h"
 #include "SMDPAgent.h"
 
+// /*! This class is a superclass from BasicPlayer and contains a more
+//     sophisticated decision procedure to determine the next action. */
+// class KeepawayPlayer : public BasicPlayer {
+// protected:
+//   Time m_timeLastSay;           /*!< last time communicated         */
+
+//   // methods associated with saying (defined in KeepawayPlayer.cc)
+//   bool shallISaySomething();
+
+//   void makeSayMessage(SoccerCommand soc,
+//                       char *str);
+
+// public:
+//   KeepawayPlayer(ActHandler *a,
+//                  WorldModel *wm,
+//                  ServerSettings *ss,
+//                  PlayerSettings *cs,
+//                  char *strTeamName,
+//                  int iNumKeepers,
+//                  int iNumTakers,
+//                  double dVersion,
+//                  int iReconnect = -1);
+
+//   void mainLoop();
+
+//   // behaviors
+//   SoccerCommand keeper();
+
+//   SoccerCommand jolKeepers();
+
+//   SoccerCommand idle(std::string error);
+
+//   SoccerCommand jolExecute(int action, int agentIdx, ObjectT K[]);
+
+//   SoccerCommand taker();
+
+// };
+
+// #endif
+
+
+
+
 /*! This class is a superclass from BasicPlayer and contains a more
     sophisticated decision procedure to determine the next action. */
-class KeepawayPlayer : public BasicPlayer {
-protected:
-  Time m_timeLastSay;           /*!< last time communicated         */
+class KeepawayPlayer:public BasicPlayer
+{
+ protected:
+  bool          bContLoop;               /*!< is server is alive             */
+
+  Time          m_timeLastSay;           /*!< last time communicated         */
+  Time          m_timeStartEpisode;
+  SMDPAgent     *SA;
 
   // methods associated with saying (defined in KeepawayPlayer.cc)
-  bool shallISaySomething();
+  bool          shallISaySomething        (                                  );
+  void          makeSayMessage            ( SoccerCommand  soc,
+					    char *         str               );
 
-  void makeSayMessage(SoccerCommand soc,
-                      char *str);
+ public:
+  KeepawayPlayer                          ( SMDPAgent      *sa,
+					    ActHandler     *a,
+                                            WorldModel     *wm,
+                                            ServerSettings *ss,
+                                            PlayerSettings *cs,
+                                            char           *strTeamName,
+					    int            iNumKeepers,
+					    int            iNumTakers,
+                                            double         dVersion,
+                                            int            iReconnect = -1   );
 
-public:
-  KeepawayPlayer(ActHandler *a,
-                 WorldModel *wm,
-                 ServerSettings *ss,
-                 PlayerSettings *cs,
-                 char *strTeamName,
-                 int iNumKeepers,
-                 int iNumTakers,
-                 double dVersion,
-                 int iReconnect = -1);
-
-  void mainLoop();
+  void          mainLoop                  (                                  );
 
   // behaviors
   SoccerCommand keeper();
+  SoccerCommand keeperWithBall();
+  SoccerCommand keeperSupport( ObjectT fastest );
+  SoccerCommand interpretKeeperAction( int action );
+  
 
-  SoccerCommand jolKeepers();
 
-  SoccerCommand idle(std::string error);
-
-  SoccerCommand jolExecute(int action, int agentIdx, ObjectT K[]);
+  ObjectT chooseLookObject( double ballThr );
 
   SoccerCommand taker();
+
+  SoccerCommand jolKeepers();
+  SoccerCommand idle(std::string error);
+  SoccerCommand jolExecute(int action, int agentIdx, ObjectT K[]);
+
 
 };
 
 #endif
-

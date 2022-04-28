@@ -6,6 +6,7 @@ SYNCH=""
 LOG=""
 LOGLEVEL="101"
 HIERARCHICALFSM=""
+CROSSENTROPY=""
 QLEARNING=""
 GAMMA="1.0"
 LAMBDA="0.5"
@@ -20,13 +21,14 @@ KEEPERQFILE2=""
 TAKERQFILE2=""
 MEMORYCHECK=""
 
-while getopts  "b:g:L:A:K:T:I:lfmsnzMQ" flag; do
+while getopts  "b:g:L:A:K:T:I:lfmsnzEMQ" flag; do
     case "$flag" in
         f) FULLSTATE="--fullstate" ;; 
         m) MONITOR="--monitor" ;;
         s) SYNCH="--synch-mode" ;;
         l) LOG="--log-dir=$LOGDIR --log-game --log-text --log-level $LOGLEVEL" ;;
         z) HIERARCHICALFSM="--hierarchical-fsm" ;;
+        E) CROSSENTROPY="--crossEntropy" ;;
         Q) QLEARNING="--qlearning" ;;
         g) GAMMA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
         L) LAMBDA="`echo $OPTARG | sed -e 's/[0]*$//g'`" ;;
@@ -39,6 +41,8 @@ while getopts  "b:g:L:A:K:T:I:lfmsnzMQ" flag; do
         M) MEMORYCHECK="--memory-check" ;;
     esac
 done
+
+echo Test range: $CROSSENTROPY
 
 PORT="--port=`shuf -i 2000-65000 -n 1`"
 
@@ -64,6 +68,10 @@ fi
 
 if [ ! -z $HIERARCHICALFSM ]; then
     QFILE="${QFILE}_fsm"
+fi
+
+if [ ! -z $CROSSENTROPY ]; then
+    QFILE="${QFILE}_cem"
 fi
 
 if [ ! -z $QLEARNING ]; then
@@ -95,7 +103,7 @@ ulimit -c unlimited
     --keeper-output="$KEEPERQFILE" --keeper-input="$KEEPERQFILE" \
     --taker-output="$TAKERQFILE" --taker-input="$TAKERQFILE" \
     $SYNCH $MONITOR $FULLSTATE $LOG $PORT \
-    $HIERARCHICALFSM --gamma=$GAMMA --lambd=$LAMBDA --alpha=$ALPHA \
+    $HIERARCHICALFSM $CROSSENTROPY --gamma=$GAMMA --lambd=$LAMBDA --alpha=$ALPHA \
     --initial-weight=$INITIALWEIGHT \
     $QLEARNING --label=`basename $QFILE .gz` 2>&1 | tee $CONSOLE_LOG
 

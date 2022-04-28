@@ -1,5 +1,9 @@
-#ifndef LINEAR_SARSA_AGENT
-#define LINEAR_SARSA_AGENT
+
+#ifndef CROSSENTROPYAGENT
+#define CROSSENTROPYAGENT
+
+// #ifndef LINEAR_SARSA_AGENT
+// #define LINEAR_SARSA_AGENT
 
 #include "SMDPAgent.h"
 #include "tiles2.h"
@@ -34,7 +38,6 @@
 // };
 
 // }
-
 
 
 

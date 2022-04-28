@@ -40,11 +40,15 @@ struct CollisionTableHeader {
 
 extern LoggerDraw LogDraw;
 
+
+
+
+
 CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLearn,
                                     double widths[],
                                     string loadWeightsFile, string saveWeightsFile ):
 
-  SMDPAgent( numFeatures, numActions ), hiveFile(-1)
+  SMDPAgent( numFeatures, numActions )
 
 {
   

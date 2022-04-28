@@ -40,6 +40,7 @@ def launch_player(player_type, index, options):
         A = float(options.alpha),
         I = float(options.initial_weight),
         z = int(options.hierarchical_fsm),
+        E = int(options.crossEntropy),
         Q = int(options.qlearning),
         l = options.log_level, # log level
         o = 'logs/{}_{}_{}.log'.format(player_type, options.label, index + 1),
@@ -325,6 +326,9 @@ def parse_options(args = None, **defaults):
     parser.add_option(
         '--hierarchical-fsm', action='store_true', default=False,
         help = "Use hierarchical FSMs for learning.")
+    parser.add_option(
+        '--crossEntropy', action='store_true', default=False,
+        help = "Use cross entropy for learning.")
     parser.add_option(
         '--qlearning', action='store_true', default=False,
         help = "Use QLearning (instead of SARSA).")
