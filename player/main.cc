@@ -312,11 +312,9 @@ int main(int argc, char *argv[]) {
   } else {
     if (string(strTeamName) == "keepers") {
 
-      CrossEntropyAgent* CrossEntropyAgent = new CrossEntropyAgent(
-        numFeatures, numActions, bLearn, resolutions,
-        loadWeightsFile, saveWeightsFile);
+      CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
 
-      sa = CrossEntropyAgent;
+      sa = variable;
 
 
       // fsm::HierarchicalFSM::initialize(
@@ -325,6 +323,13 @@ int main(int argc, char *argv[]) {
       //     loadWeightsFile, saveWeightsFile, strTeamName);
     }
     else {
+
+        cout<< "Takers here" << endl;
+
+        CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
+
+        sa = variable;
+
 
       //  CrossEntropyAgent* CrossEntropyAgent = new CrossEntropyAgent(
       //   numFeatures, numActions, bLearn, resolutions,

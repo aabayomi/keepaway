@@ -50,8 +50,8 @@ class CrossEntropyAgent:public SMDPAgent
   bool bSaveWeights;
 
   /// Hive mind indicator and file descriptor.
-  bool hiveMind;
-  int hiveFile;
+  //bool hiveMind;
+  //int hiveFile;
   
   int epochNum;
   int lastAction;
@@ -71,7 +71,7 @@ class CrossEntropyAgent:public SMDPAgent
   // double lambda;
   // double epsilon;
 
-  int batchSize;
+  //int batchSize;
 
   double tileWidths[ MAX_RL_STATE_VARS ];
   double Q[MAX_RL_ACTIONS ];
@@ -81,15 +81,15 @@ class CrossEntropyAgent:public SMDPAgent
   array<double,RL_MEMORY_SIZE> weights;
 
 
-  double traces[ RL_MEMORY_SIZE ];
+ // double traces[ RL_MEMORY_SIZE ];
 
   int tiles[MAX_RL_ACTIONS ][ RL_MAX_NUM_TILINGS ];
   int numTilings;
 
-  double minimumTrace;
-  int nonzeroTraces[ RL_MAX_NONZERO_TRACES ];
-  int numNonzeroTraces;
-  int nonzeroTracesInverse[ RL_MEMORY_SIZE ];
+  //double minimumTrace;
+  //int nonzeroTraces[ RL_MAX_NONZERO_TRACES ];
+  //int numNonzeroTraces;
+  //int nonzeroTracesInverse[ RL_MEMORY_SIZE ];
 
   collision_table *colTab;
 
@@ -107,18 +107,18 @@ class CrossEntropyAgent:public SMDPAgent
 
   // Value function methods for CMACs
   int  selectAction();
-  void initializeTileWidths( int numK, int numT );
+  //void initializeTileWidths( int numK, int numT );
   double computeQ( int a );
   int  argmaxQ();
   void updateWeights();
-  virtual void loadTiles( double state[] );
+  void loadTiles( double state[] );
 
   // Eligibility trace methods
-  void clearTrace( int f );
-  void clearExistentTrace( int f, int loc );
-  void decayTraces( double decayRate );
-  void setTrace( int f, float newTraceValue );
-  void increaseMinTrace();
+  //void clearTrace( int f );
+  //void clearExistentTrace( int f, int loc );
+  //void decayTraces( double decayRate );
+  //void setTrace( int f, float newTraceValue );
+  //void increaseMinTrace();
 
  public:
   CrossEntropyAgent                  ( int    numFeatures,
@@ -130,12 +130,12 @@ class CrossEntropyAgent:public SMDPAgent
 
   // Support for extra modes and/or analysis.
   double getQ(int action);
-  void setEpsilon(double epsilon);
+  //void setEpsilon(double epsilon);
 
   // SMDP Sarsa implementation
-  int  startEpisode( double state[] );
-  int  step( double reward, double state[] );
-  void endEpisode( double reward );
+  int  startEpisode( int current_time, double state[] );
+  int  step( int current_time, double reward, double state[] );
+  void endEpisode( int current_time, double reward );
   void setParams(int iCutoffEpisodes, int iStopLearningEpisodes);
   void shutDown();
 } ;

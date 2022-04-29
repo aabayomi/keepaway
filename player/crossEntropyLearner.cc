@@ -121,7 +121,7 @@ double CrossEntropyAgent::getQ(int action) {
 
 
 // At the start of update Q and choose and action
-int CrossEntropyAgent::startEpisode( double state[] )
+int CrossEntropyAgent::startEpisode(int current_time, double state[] )
 {
     epochNum++;
     loadTiles( state );
@@ -221,7 +221,7 @@ void CrossEntropyAgent::updateWeights()
 
 
 
-int CrossEntropyAgent::step( double reward, double state[] )
+int CrossEntropyAgent::step(int current_time, double reward, double state[] )
 {
  
   // Use either the discounted reward or culmilative reward
@@ -264,7 +264,7 @@ int CrossEntropyAgent::step( double reward, double state[] )
 
 
 // Add the reward and update Mean and Standard deviation
-void CrossEntropyAgent::endEpisode( double reward )
+void CrossEntropyAgent::endEpisode(int current_time, double reward )
 
 {
   // Store weights and reward
