@@ -65,6 +65,8 @@ class CrossEntropyAgent:public SMDPAgent
   int counter;
   int k;
   std::map< array<double, RL_MEMORY_SIZE>, double> samples;
+  
+
 
   // double alpha;
   // double gamma;

@@ -34,8 +34,36 @@ struct CollisionTableHeader {
   long clearhits;
   long collisions;
 };
+
 #pragma pack(pop)
 #define VERBOSE_HIVE_MIND false
+
+
+// /**
+//  * Assumes collision table header follows weights.
+//  * Returns the memory location after the header because that's useful for colTab
+//  * data array.
+//  */
+// long* loadColTabHeader(collision_table* colTab, double* weights) {
+//   CollisionTableHeader* colTabHeader =
+//     reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
+//   // Do each field individually, since they don't all line up exactly for an
+//   // easy copy.
+//   colTab->calls = colTabHeader->calls;
+//   colTab->clearhits = colTabHeader->clearhits;
+//   colTab->collisions = colTabHeader->collisions;
+//   colTab->m = colTabHeader->m;
+//   colTab->safe = colTabHeader->safe;
+//   if (VERBOSE_HIVE_MIND) {
+//     cout << "Loaded colTabHeader:" << endl
+//       << " calls: " << colTab->calls << endl
+//       << " clearhits: " << colTab->clearhits << endl
+//       << " collisions: " << colTab->collisions << endl
+//       << " m: " << colTab->m << endl
+//       << " safe: " << colTab->safe << endl;
+//   }
+//   return reinterpret_cast<long*>(colTabHeader + 1);
+// }
 
 
 extern LoggerDraw LogDraw;
@@ -85,6 +113,8 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
   float tmpf[ 2 ];
 
   // colTab = new collision_table( RL_MEMORY_SIZE, 1 );
+  // colTab = 
+  colTab = new collision_table; colTab;
 
   GetTiles( tmp, 1, 1, tmpf, 0 );  // A dummy call to set the hashing table    
   srand( time( NULL ) );
