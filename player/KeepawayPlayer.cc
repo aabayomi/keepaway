@@ -372,19 +372,145 @@ void KeepawayPlayer::mainLoop( )
 {
   Log.setHeader(-1);
   bool bContLoop = true;
+  Log.log(101, "Got into the main loop");
 
   // do initialization stuff
-  if (!WM->waitForNewInformation()) bContLoop = false;
-  if (bContLoop) WM->updateAll();
+  // if (!WM->waitForNewInformation()) bContLoop = false;
+  // if (bContLoop) WM->updateAll();
 
-  fsm::HierarchicalFSM *player = 0;
-  if (WM->getSide() == SIDE_LEFT) {
-    player = new fsm::Keeper(this);
-  } else {
-    player = new fsm::Taker(this);
+  // fsm::HierarchicalFSM *player = 0;
+  // Log.log(Wm->getSide())
+  // if (WM->getSide() == SIDE_LEFT) {
+  //   player = new fsm::Keeper(this);
+  // } else {
+  //   player = new fsm::Taker(this);
+  // }
+  // fsm::Run(player).operator()();
+  // delete player;
+
+
+  Timing timer;
+
+  // wait for new information from the server
+  // cannot say bContLoop=WM->wait... since bContLoop can be changed elsewhere
+  if(  WM->waitForNewInformation() == false )
+    bContLoop =  false;
+
+  while( bContLoop )                                 // as long as server alive
+  {
+    Log.logWithTime( 3, "  start update_all" );
+    Log.setHeader( WM->getCurrentCycle() );
+
+    #if USE_DRAW_LOG
+      LogDraw.setTime( WM->getCurrentCycle() );
+    #endif
+
+    if( WM->updateAll( ) == true )
+    {
+      timer.restartTime();
+
+      
+
+      SoccerCommand soc;
+
+      if ( WM->getSide() == SIDE_LEFT ){
+         SoccerCommand keeper();
+        //  soc = keeper();
+      }
+        
+      else {
+        SoccerCommand taker();
+        // soc = taker();
+      }
+
+      if( shallISaySomething() == true )           // shall I communicate
+        {
+          m_timeLastSay = WM->getCurrentTime();
+          char strMsg[MAX_SAY_MSG];
+          makeSayMessage( soc, strMsg );
+          if( strlen( strMsg ) != 0 )
+            Log.log( 600, "send communication string: %s", strMsg );
+          WM->setCommunicationString( strMsg );
+        }
+      Log.logWithTime( 3, "  determined action; waiting for new info" );
+      // directly after see message, will not get better info, so send commands
+      if( WM->getTimeLastSeeMessage() == WM->getCurrentTime() ||
+          (SS->getSynchMode() == true && WM->getRecvThink() == true ))
+      {
+        Log.logWithTime( 3, "  send messages directly" );
+        ACT->sendCommands( );
+        Log.logWithTime( 3, "  sent messages directly" );
+        if( SS->getSynchMode() == true  )
+        {
+          WM->processRecvThink( false );
+          ACT->sendMessageDirect( "(done)" );
+        }
+      }
+    }  
+    else
+      Log.logWithTime( 3, "  HOLE no action determined; waiting for new info");
+
+    int iIndex;
+    double dConfThr = PS->getPlayerConfThr();
+    char buffer[128];
+    for( ObjectT o = WM->iterateObjectStart( iIndex, OBJECT_SET_TEAMMATES, dConfThr);
+           o != OBJECT_ILLEGAL;
+           o = WM->iterateObjectNext ( iIndex, OBJECT_SET_TEAMMATES, dConfThr ) ) {
+      #if USE_DRAW_LOG
+
+      LogDraw.logCircle( "Players", WM->getGlobalPosition( o ), 1.6, 80,
+                         false,
+                         COLOR_ORANGE, WM->getConfidence( o ) );
+      #endif
+      sprintf( buffer, "%d", SoccerTypes::getIndex( o ) + 1 );
+
+    #if USE_DRAW_LOG
+      LogDraw.logText( "Players", WM->getGlobalPosition( o ),
+                       buffer,
+                       80, COLOR_ORANGE );
+      #endif
+    }
+    // Me
+    ObjectT o = WM->getAgentObjectType();
+    
+    #if USE_DRAW_LOG
+    LogDraw.logCircle( "Players", WM->getGlobalPosition( o ), 1.6, 81,
+                       false,
+                       COLOR_PURPLE, WM->getConfidence( o ) );
+    #endif
+
+    sprintf( buffer, "%d", SoccerTypes::getIndex( o ) + 1 );
+
+    #if USE_DRAW_LOG
+    LogDraw.logText( "Players", WM->getGlobalPosition( o ),
+                     buffer,
+                     81, COLOR_PURPLE );
+     #endif
+    for( ObjectT o = WM->iterateObjectStart( iIndex, OBJECT_SET_OPPONENTS, dConfThr);
+           o != OBJECT_ILLEGAL;
+           o = WM->iterateObjectNext ( iIndex, OBJECT_SET_OPPONENTS, dConfThr ) ) {
+      #if USE_DRAW_LOG
+      LogDraw.logCircle( "Players", WM->getGlobalPosition( o ), 1.6, 80,
+                         false,
+                         COLOR_PINK, WM->getConfidence( o ) );
+      #endif
+      sprintf( buffer, "%d", SoccerTypes::getIndex( o ) + 1 );
+      
+      #if USE_DRAW_LOG
+      LogDraw.logText( "Players", WM->getGlobalPosition( o ),
+                       buffer,
+                       80, COLOR_PINK );
+      #endif
+    }
+
+    Log.logWithTime( 604, "time for action: %f", timer.getElapsedTime()*1000 );
+           
+    // wait for new information from the server cannot say
+    // bContLoop=WM->wait... since bContLoop can be changed elsewhere
+    if(  WM->waitForNewInformation() == false )
+        bContLoop =  false;
   }
-  fsm::Run(player).operator()();
-  delete player;
+
 
 
   

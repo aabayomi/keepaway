@@ -204,7 +204,8 @@ int main(int argc, char *argv[]) {
           break;
         case 'o':                                   // output file log info
 # ifdef _Compress
-          os.open((string(argv[i + 1]) + ".gz").c_str());
+          //os.open((string(argv[i + 1]) + ".gz").c_str());
+          os.open((string(argv[i + 1])).c_str());
 #else
           os.open(argv[i + 1]);
 #endif
@@ -311,7 +312,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   } else {
     if (string(strTeamName) == "keepers") {
-
+      Log.log(101, "Keepers here");
       CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
 
       sa = variable;
@@ -324,7 +325,7 @@ int main(int argc, char *argv[]) {
     }
     else {
 
-        cout<< "Takers here" << endl;
+        
 
         CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
 

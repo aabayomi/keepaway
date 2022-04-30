@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
 import time
+import logging
+
+logging.basicConfig(filename='python_debug.log', level=logging.DEBUG)
+
 
 class Any:
     """
@@ -10,6 +14,8 @@ class Any:
     def __init__(self, **args):
         if args:
             self.__dict__.update(args)
+
+
 
 
 def ensure_parent_dir(name):
@@ -88,7 +94,7 @@ def launch_player(player_type, index, options):
         command = ['valgrind', relative('./player/keepaway_player')] + player_options
     else:
         command = [relative('./player/keepaway_player')] + player_options
-
+    logging.debug(command)
     print " ".join(command)
     popen = Popen(command)
     return popen.pid
@@ -199,6 +205,7 @@ def launch_server(options):
     command = ['rcssserver'] + server_options
     print command
     # print " ".join(command)
+    logging.debug("Built the comand to connect to the server")
     popen = Popen(command)
 
     # Wait until the server is ready.
@@ -389,14 +396,18 @@ def run(options):
         keeper_pids.append(launch_player('keeper', i, options))
         time.sleep(0.5)
     # Watch for the team to make sure keepers are team 0.
+    logging.debug('Finished creating the keepers')
     wait_for_players(options.port, 'keepers')
+    logging.debug('finished waiting for keeper players')
 
     # Then takers.
-    for i in xrange(options.taker_count):
-        launch_player('taker', i, options)
-        time.sleep(0.5)
-    # Allow dispstart to kick off play.
-    wait_for_players(options.port, 'takers', True)
+    logging.debug("number of takers recieved by the server: ")
+    logging.debug(options.taker_count)
+    # for i in xrange(options.taker_count):
+    #     launch_player('taker', i, options)
+    #     time.sleep(0.5)
+    # # Allow dispstart to kick off play.
+    # wait_for_players(options.port, 'takers', True)
 
     # Then monitor.
     if options.monitor:
@@ -466,6 +477,8 @@ def wait_for_players(port, team_name, go = False):
                 while True:
                     data, sender = sock.recvfrom(8192)
                     connected = True
+                    logging.debug(data)
+                    logging.debug(sender)
                     # Update the port for further communications.
                     port = sender[1]
                     if team_name in data:
