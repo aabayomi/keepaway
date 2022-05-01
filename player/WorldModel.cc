@@ -2364,3 +2364,4 @@ bool WorldModel::isTmControllBall() {
   bool tmControllBall = WK0_dist_to_B < getMaximalKickDist(K0);
   return tmControllBall || isBallKickable();
 }
+

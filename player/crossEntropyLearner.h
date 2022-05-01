@@ -14,6 +14,7 @@
 #include <string>
 #include "BasicPlayer.h"
 #include <unordered_map>
+#include <map>
 #include "tiles2.h"
 #include "HierarchicalFSM.h"
 #include <cstddef>
@@ -136,11 +137,20 @@ class CrossEntropyAgent:public SMDPAgent
   //void setEpsilon(double epsilon);
 
   // SMDP Sarsa implementation
-  int  startEpisode( int current_time, double state[] );
-  int  step( int current_time, double reward, double state[] );
-  void endEpisode( int current_time, double reward );
-  void setParams(int iCutoffEpisodes, int iStopLearningEpisodes);
+  // int  startEpisode( int current_time, double state[] );
+  // int  step( int current_time, double reward, double state[] );
+  // void endEpisode( int current_time, double reward );
+  // void setParams(int iCutoffEpisodes, int iStopLearningEpisodes);
+  // void shutDown();
+
+  int  startEpisode( double state[] );
+  int  step( double reward, double state[] );
+  void endEpisode( double reward );
+  void setParams(int iCutoffEpisodes, int iStopLearningEpisodes); //*met 8/16/05
+
+  // Optional customization point.
   void shutDown();
+
 } ;
 
 #endif

@@ -1122,7 +1122,17 @@ public:
 
   bool isNewEpisode();
 
-  double keeperReward(int lastActionTime);
+  // double keeperReward(int lastActionTime);
+
+  int getTimeLastAction (  );
+  
+  int           getLastAction              (                                 );
+
+  void setLastAction  ( int iAction );
+  int           m_lastAction;
+  int           m_timeLastAction;
+
+  double keeperReward();
 
   int keeperStateVars(double state[]);
 

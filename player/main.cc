@@ -320,7 +320,8 @@ int main(int argc, char *argv[]) {
   } else {
     if (string(strTeamName) == "keepers") {
       Log.log("Keepers here");
-      CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
+
+      CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
 
       sa = variable;
 

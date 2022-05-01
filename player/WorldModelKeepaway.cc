@@ -92,9 +92,31 @@ bool WorldModel::isNewEpisode() {
   return m_newEpisode;
 }
 
-double WorldModel::keeperReward(int lastActionTime) {
-  double reward = getCurrentCycle() - lastActionTime;
+// double WorldModel::keeperReward(int lastActionTime) {
+//   double reward = getCurrentCycle() - lastActionTime;
+//   return reward;
+// }
+
+double WorldModel::keeperReward()
+{
+  double reward = getCurrentCycle() - getTimeLastAction();
   return reward;
+}
+
+int WorldModel::getLastAction()
+{
+  return m_lastAction;
+}
+
+int WorldModel::getTimeLastAction(){
+  return m_lastAction;
+}
+
+void WorldModel::setLastAction( int iAction )
+{
+  m_lastAction = iAction;
+  m_timeLastAction = 
+    ( iAction == UnknownIntValue ) ? UnknownTime : getCurrentCycle();
 }
 
 int WorldModel::keeperStateVars(double state[])

@@ -120,9 +120,9 @@ class KeepawayPlayer:public BasicPlayer
 
   SoccerCommand taker();
 
-  SoccerCommand jolKeepers();
-  SoccerCommand idle(std::string error);
-  SoccerCommand jolExecute(int action, int agentIdx, ObjectT K[]);
+  //SoccerCommand jolKeepers();
+  //SoccerCommand idle(std::string error);
+  //SoccerCommand jolExecute(int action, int agentIdx, ObjectT K[]);
 
 
 };
