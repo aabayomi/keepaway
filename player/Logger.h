@@ -139,12 +139,13 @@ class Logger
   char     m_strHeader[MAX_HEADER];/*!< header string printed before msg     */
   ostream* m_os;                   /*!< output stream to print messages to   */
   string   m_strSignal;            /*!< temporary string for other messages  */
-
+  ofstream myFile;
 public:
   Logger( ostream& os=cout, int iMinLogLevel=0, int iMaxLogLevel = 0);
 
   // different methods associated with logging messages
   bool     log              ( int         iLevel, string str              );
+  bool     log              ( string str                                                  );
   bool     log              ( int         i,      const char   *str, ...        );
   bool     logWithTime      ( int         iLevel, const char   *str, ...        );
   bool     logFromSignal    ( int         iLevel, const char   *str, ...        );
@@ -163,6 +164,7 @@ public:
   bool     setHeader        ( int         i1,     int    i2               );
 
   bool     setOutputStream  ( ostream&    os                              );
+  bool     setOutputStream (  string fileName                             );
   ostream& getOutputStream  (                                             );
   void     showLogLevels    ( ostream&    os                              );
 };

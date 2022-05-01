@@ -372,7 +372,7 @@ void KeepawayPlayer::mainLoop( )
 {
   Log.setHeader(-1);
   bool bContLoop = true;
-  Log.log(101, "Got into the main loop");
+  Log.log("Got into the main loop");
 
   // do initialization stuff
   // if (!WM->waitForNewInformation()) bContLoop = false;
@@ -399,6 +399,7 @@ void KeepawayPlayer::mainLoop( )
   while( bContLoop )                                 // as long as server alive
   {
     Log.logWithTime( 3, "  start update_all" );
+    Log.log("start update_all");
     Log.setHeader( WM->getCurrentCycle() );
 
     #if USE_DRAW_LOG
@@ -414,13 +415,13 @@ void KeepawayPlayer::mainLoop( )
       SoccerCommand soc;
 
       if ( WM->getSide() == SIDE_LEFT ){
-         SoccerCommand keeper();
-        //  soc = keeper();
+         //SoccerCommand keeper();
+         soc = keeper();
       }
         
       else {
-        SoccerCommand taker();
-        // soc = taker();
+        //SoccerCommand taker();
+        soc = taker();
       }
 
       if( shallISaySomething() == true )           // shall I communicate
@@ -430,6 +431,7 @@ void KeepawayPlayer::mainLoop( )
           makeSayMessage( soc, strMsg );
           if( strlen( strMsg ) != 0 )
             Log.log( 600, "send communication string: %s", strMsg );
+            //Log.log("send comuncation string: %s", strMsg);
           WM->setCommunicationString( strMsg );
         }
       Log.logWithTime( 3, "  determined action; waiting for new info" );

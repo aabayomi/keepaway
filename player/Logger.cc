@@ -79,6 +79,14 @@ Logger::Logger( ostream& o, int iMin, int iMax )
   m_os = &o;
 }
 
+
+
+
+bool Logger::log(string str){
+  myFile << str << endl;
+  return true;
+}
+
 /*!This method can be used to log information. Only when the specified
    level of the message is part of the set of logged levels the
    information is logged. This method receives a a normal string that
@@ -234,6 +242,7 @@ Timing Logger::getTiming( )
 }
 
 
+
 /*!This method returns whether the supplied log level is recorded, thus
    within the interval [min_log_level..max_log_level] or equal to the extra
    log level.
@@ -307,6 +316,11 @@ bool Logger::setHeader( int i )
   return true;
 }
 
+
+bool Logger::setOutputStream(string str){
+   myFile.open(str);
+   return true;
+}
 
 /*!This method sets the output stream to which the log information is written.
    This outputstream can be standard output (cout) or a reference to a

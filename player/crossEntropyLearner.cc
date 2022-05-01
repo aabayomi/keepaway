@@ -127,7 +127,7 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
     exepath += loadWeightsFile;
     exepath += saveWeightsFile;
     auto h = hash<string>()(exepath); // hashing
-  
+
 
       if (loadWeightsFile.empty() || !loadWeights(loadWeightsFile.c_str())) {
         // fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
@@ -138,8 +138,17 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
         colTab->reset();
       }
   }
+  //Log.log("Right before weight to String");
+  //weightsToString();
 }
 
+void CrossEntropyAgent::weightsToString(){
+  string str = "";
+  for(int i = 0; i < RL_MEMORY_SIZE-1; i++){
+      str = str + " " + std::to_string(weights[i]);
+  }
+  Log.log(str);
+}
 
 // Q state-action value estimate.
 double CrossEntropyAgent::getQ(int action) {
@@ -152,7 +161,9 @@ double CrossEntropyAgent::getQ(int action) {
 
 // At the start of update Q and choose and action
 int CrossEntropyAgent::startEpisode(int current_time, double state[] )
+
 {
+    Log.log("start of Episode");
     epochNum++;
     loadTiles( state );
     for ( int a = 0; a < getNumActions(); a++ ) {
@@ -217,7 +228,7 @@ void CrossEntropyAgent::updateWeights()
     // should we divide by index instead of total selected samples??
     mean = sumWeights / k;
 
-    Log.log(101, "CrossEntropyAgent::updateWeights mean %.2f", mean);
+    //Log.log("CrossEntropyAgent::updateWeights mean %.2f", mean);
 
     // find the std of the weights and update std pointer.
     
@@ -244,7 +255,7 @@ void CrossEntropyAgent::updateWeights()
     }
     std = sum / N;
 
-    Log.log(101, "CrossEntropyAgent::updateWeights std %.2f", std);
+    //Log.log("CrossEntropyAgent::updateWeights std %.2f", std);
 
     
 }
@@ -271,7 +282,7 @@ int CrossEntropyAgent::step(int current_time, double reward, double state[] )
   sprintf( buffer, "Q[%d] = %.2f", lastAction, Q[lastAction] );
 
 
-  Log.log(101, "CrossEntropyAgent::step reward %.2f", lastAction, Q[lastAction]);
+  //Log.log("CrossEntropyAgent::step reward %.2f", lastAction, Q[lastAction]);
 
   // LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
   //                  buffer,
@@ -284,7 +295,7 @@ int CrossEntropyAgent::step(int current_time, double reward, double state[] )
   //char buffer[128];
   sprintf( buffer, "reward: %.2f", reward ); 
 
-  Log.log(101, "CrossEntropyAgent::step reward %.2f", reward);
+  //Log.log("CrossEntropyAgent::step reward %.2f", reward);
 
   // LogDraw.logText( "reward", VecPosition( 25, 30 ),
   //                  buffer,
@@ -303,15 +314,14 @@ void CrossEntropyAgent::endEpisode(int current_time, double reward )
   
   samples[weights] = reward;  //??
 
-  Log.log(101, "CrossEntropyAgent::endEpisode weights %f", samples);
+  //Log.log("CrossEntropyAgent::endEpisode weights %f", samples);
 
   // save reward and weights
   if (counter < N){
     counter++;
-
-    Log.log(101, "CrossEntropyAgent::endEpisode counter %f", counter);
-  }
-  else{
+    Log.log(std::to_string(counter));
+    //Log.log("CrossEntropyAgent::endEpisode counter %f", counter);
+  }else{
     // update weights and reset both the counter and samples map.
     updateWeights();
     counter = 0;

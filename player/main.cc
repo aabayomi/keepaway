@@ -104,6 +104,7 @@ int main(int argc, char *argv[]) {
   double alpha = 0.125;
   double initialWeight = 0.0;
   bool qLearning = false;
+  string loggingFile;
 
 #ifdef _Compress
   ogzstream os;
@@ -206,6 +207,8 @@ int main(int argc, char *argv[]) {
 # ifdef _Compress
           //os.open((string(argv[i + 1]) + ".gz").c_str());
           os.open((string(argv[i + 1])).c_str());
+          loggingFile = string(argv[i+1]);
+
 #else
           os.open(argv[i + 1]);
 #endif
@@ -272,10 +275,14 @@ int main(int argc, char *argv[]) {
          "be learning : " << bLearn << endl;
   }
 
-  if (bSuppliedLogFile)
+  if (bSuppliedLogFile){
     Log.setOutputStream(os);                   // initialize logger
-  else
+    Log.setOutputStream(loggingFile);
+  }
+  else{
     Log.setOutputStream(cout);
+    Log.setOutputStream(loggingFile);
+  }
 
   Log.restartTimer();
 
@@ -283,7 +290,7 @@ int main(int argc, char *argv[]) {
   Connection c(strHost, iPort, MAX_MSG);     // make connection with server
   ActHandler a(&c, &wm, &ss);                // link actHandler and worldmodel
   SenseHandler s(&c, &wm, &ss, &cs);         // link senseHandler with wm
-
+  Log.log("It is working");
   
   SMDPAgent *sa = NULL;
 
@@ -312,7 +319,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   } else {
     if (string(strTeamName) == "keepers") {
-      Log.log(101, "Keepers here");
+      Log.log("Keepers here");
       CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
 
       sa = variable;

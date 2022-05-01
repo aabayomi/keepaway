@@ -403,11 +403,11 @@ def run(options):
     # Then takers.
     logging.debug("number of takers recieved by the server: ")
     logging.debug(options.taker_count)
-    # for i in xrange(options.taker_count):
-    #     launch_player('taker', i, options)
-    #     time.sleep(0.5)
+    for i in xrange(options.taker_count):
+        launch_player('taker', i, options)
+        time.sleep(0.5)
     # # Allow dispstart to kick off play.
-    # wait_for_players(options.port, 'takers', True)
+    wait_for_players(options.port, 'takers', True)
 
     # Then monitor.
     if options.monitor:
