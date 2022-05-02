@@ -78,7 +78,7 @@ if [ ! -z $QLEARNING ]; then
     QFILE="${QFILE}_ql"
 fi
 
-QFILE="${QFILE}.gz"
+QFILE="${QFILE}.log"
 KEEPERQFILE="keeper_$QFILE"
 TAKERQFILE="taker_$QFILE"
 

@@ -66,6 +66,7 @@ class CrossEntropyAgent:public SMDPAgent
   int counter;
   int k;
   std::map< array<double, RL_MEMORY_SIZE>, double> samples;
+  ofstream myFile;
   
 
 
@@ -107,10 +108,11 @@ class CrossEntropyAgent:public SMDPAgent
   // bool sortByVal(const pair<array<double, RL_MEMORY_SIZE>, double> &a, 
   //              const pair<array<double, RL_MEMORY_SIZE>, double> &b);
 
-
+  void weightsLog();
   // Value function methods for CMACs
   int  selectAction();
   //void initializeTileWidths( int numK, int numT );
+  void createFile(const   char *filename);
   double computeQ( int a );
   int  argmaxQ();
   void updateWeights();

@@ -99,7 +99,7 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
   k = 10; // k best weights
   std::default_random_engine generator;
   std::normal_distribution<double> distribution(mean,std);
-
+  
   counter = 0;
   epsilon = 0.01;
 
@@ -130,24 +130,39 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
 
 
       if (loadWeightsFile.empty() || !loadWeights(loadWeightsFile.c_str())) {
+
+          createFile(saveWeightsFile.c_str());
         // fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
           for ( int i = 0; i < RL_MEMORY_SIZE; i++ ) {
             double w = distribution(generator);
+            //Log.log(std::to_string(w));
             weights[ i ] = w;
           }
+          Log.log("Right before making the weightToString call");
+          weightsToString();
+          Log.log("Right after");
         colTab->reset();
       }
   }
+  //weightsLog();
   //Log.log("Right before weight to String");
   //weightsToString();
 }
 
-void CrossEntropyAgent::weightsToString(){
-  string str = "";
-  for(int i = 0; i < RL_MEMORY_SIZE-1; i++){
-      str = str + " " + std::to_string(weights[i]);
+void CrossEntropyAgent::weightsLog(){
+  for(int i = 0; i < RL_MEMORY_SIZE; i++){
+    Log.log(std::to_string(weights[i]));
   }
-  Log.log(str);
+}
+
+void CrossEntropyAgent::createFile(const char *filename){
+  myFile.open(filename);
+}
+
+void CrossEntropyAgent::weightsToString(){
+  Log.log("managed to get inside weightsToString");
+  //myFile << "Hello World";
+  myFile.write(reinterpret_cast<const char*>(&weights), std::streamsize(RL_MEMORY_SIZE*sizeof(double)));
 }
 
 // Q state-action value estimate.
@@ -323,6 +338,7 @@ void CrossEntropyAgent::endEpisode(double reward )
     //Log.log("CrossEntropyAgent::endEpisode counter %f", counter);
   }else{
     // update weights and reset both the counter and samples map.
+    weightsToString();
     updateWeights();
     counter = 0;
     samples.clear();
@@ -336,7 +352,7 @@ void CrossEntropyAgent::shutDown()
   // Always save at shutdown (if we are in saving mode).
   if ( bLearning && bSaveWeights ) {
     cout << "Saving weights at shutdown." << endl;
-    saveWeights(saveWeightsFile.c_str() );
+    //saveWeights(saveWeightsFile.c_str() );
   }
 }
 
@@ -372,12 +388,13 @@ bool CrossEntropyAgent::loadWeights(const char *filename) {
 #endif
 
   is.open(filename);
+  //myFile.open(filename)
   if (!is.good()) {
     cerr << "failed to open weight file: " << filename << endl;
     return false;
   }
-
-  is.read((char *) &weights, RL_MEMORY_SIZE * sizeof(double));
+  //myFile.read((char *) &weights, RL_MEMORY_SIZE * sizeof(double)))
+  is.read(reinterpret_cast<char*>(&weights), std::streamsize(RL_MEMORY_SIZE * sizeof(double)));
     colTab->restore(is);
     is.close();
     cerr << "...done" << endl;
@@ -394,8 +411,9 @@ bool CrossEntropyAgent::saveWeights(const char *filename) {
   ofstream os;
 #endif
 
-  os.open(filename);
+  
   if (!os.good()) {
+    
     cerr << "failed to open weight file: " << filename << endl;
     return false;
   }
