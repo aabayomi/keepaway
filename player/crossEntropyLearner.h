@@ -117,7 +117,7 @@ class CrossEntropyAgent:public SMDPAgent
   int  argmaxQ();
   void updateWeights();
   void loadTiles( double state[] );
-  void weightsToString();
+  void weightsToString(const char* filename);
 
   // Eligibility trace methods
   //void clearTrace( int f );

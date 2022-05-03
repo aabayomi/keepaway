@@ -340,7 +340,6 @@ int LinearSarsaLearner::step(int current_time) {
  * @param num_choices
  * @return
  */
-
 int LinearSarsaLearner::step(int current_time, int num_choices) {
   SCOPED_LOG
   auto stackStr = HierarchicalFSM::getStackStr();
@@ -688,5 +687,4 @@ bool LinearSarsaLearner::saveWeights(const char *filename) {
   os.close();
   return true;
 }
-
 }

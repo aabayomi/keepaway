@@ -139,7 +139,7 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
             weights[ i ] = w;
           }
           Log.log("Right before making the weightToString call");
-          weightsToString();
+          weightsToString(saveWeightsFile.c_str());
           Log.log("Right after");
         colTab->reset();
       }
@@ -159,9 +159,9 @@ void CrossEntropyAgent::createFile(const char *filename){
   myFile.open(filename);
 }
 
-void CrossEntropyAgent::weightsToString(){
-  Log.log("managed to get inside weightsToString");
-  //myFile << "Hello World";
+void CrossEntropyAgent::weightsToString(const char* filename){
+  //have to open it again so that it overwrites whatever is inside, will be useful if writing more than once into the file per training round
+  myFile.open(filename);
   myFile.write(reinterpret_cast<const char*>(&weights), std::streamsize(RL_MEMORY_SIZE*sizeof(double)));
 }
 
@@ -338,7 +338,7 @@ void CrossEntropyAgent::endEpisode(double reward )
     //Log.log("CrossEntropyAgent::endEpisode counter %f", counter);
   }else{
     // update weights and reset both the counter and samples map.
-    weightsToString();
+    //weightsToString();
     updateWeights();
     counter = 0;
     samples.clear();

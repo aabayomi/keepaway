@@ -59,6 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "HandCodedAgent.h"
 #include "HierarchicalFSM.h"
 #include "crossEntropyLearner.h"
+#include "LinearSarsaLearnerOriginal.h"
 
 #include "Parse.h"
 #include "gzstream.h"
@@ -104,6 +105,7 @@ int main(int argc, char *argv[]) {
   double alpha = 0.125;
   double initialWeight = 0.0;
   bool qLearning = false;
+  bool hiveMind = false; 
   string loggingFile;
 
 #ifdef _Compress
@@ -322,7 +324,7 @@ int main(int argc, char *argv[]) {
       Log.log("Keepers here");
 
       CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
-
+      //LinearSarsaAgent2* variable = new LinearSarsaAgent2(numFeatures, numActions, bLearn, resolutions,loadWeightsFile.c_str(), saveWeightsFile.c_str(), hiveMind);
       sa = variable;
 
 
@@ -336,7 +338,7 @@ int main(int argc, char *argv[]) {
         
 
         CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
-
+         //LinearSarsaAgent2* variable = new LinearSarsaAgent2(numFeatures, numActions, bLearn, resolutions,loadWeightsFile.c_str(), saveWeightsFile.c_str(), hiveMind);
         sa = variable;
 
 
