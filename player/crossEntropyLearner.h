@@ -140,6 +140,7 @@ class CrossEntropyAgent:public SMDPAgent
   void oneUpdate();
   void loadTiles( double state[] );
   void weightsToString(const char* filename);
+  void updateweights();
 
   // Eligibility trace methods
   //void clearTrace( int f );

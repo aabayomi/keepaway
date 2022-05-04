@@ -24,3 +24,6 @@ Debug/
 Release/
 cmake-build-debug/
 data/*
+keeper_Q_g1.0_l0.5_a0.125_w0.5_fsm_cem.log
+taker_Q_g1.0_l0.5_a0.125_w0.5_fsm_cem.log
+python_debug.log

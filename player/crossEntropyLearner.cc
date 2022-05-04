@@ -116,6 +116,7 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
   GetTiles(tmp, 1, 1, tmpf, 0); // A dummy call to set the hashing table
   srand(time(NULL));
   srand48((unsigned int)time(NULL));
+  Log.log("Currently I am in the constructor");
 
   if (bLearning || !bLearning)
   {
@@ -164,7 +165,7 @@ void CrossEntropyAgent::createFile(const char *filename)
 void CrossEntropyAgent::weightsToString(const char *filename)
 {
   // have to open it again so that it overwrites whatever is inside, will be useful if writing more than once into the file per training round
-  myFile.open(filename);
+  //myFile.open(filename);
   myFile.write(reinterpret_cast<const char *>(&weights), std::streamsize(RL_MEMORY_SIZE * sizeof(double)));
 }
 
@@ -535,3 +536,6 @@ void CrossEntropyAgent::setParams(int iCutoffEpisodes, int iStopLearningEpisodes
 {
   /* set learning parameters */
 }
+
+
+void updateWeights();
