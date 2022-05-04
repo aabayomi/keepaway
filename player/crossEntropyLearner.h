@@ -9,17 +9,17 @@
 #include "tiles2.h"
 #include <array>
 
-
 #include <vector>
 #include <string>
 #include "BasicPlayer.h"
-#include <unordered_map>
 #include <map>
 #include "tiles2.h"
 #include "HierarchicalFSM.h"
 #include <cstddef>
 #include <functional>
 #include <eigen3/Eigen/Dense>
+#include <unordered_map>
+
 
 // #define RL_MEMORY_SIZE 1048576
 // #define RL_MAX_NONZERO_TRACES 100000
@@ -68,8 +68,9 @@ class CrossEntropyAgent:public SMDPAgent
   int counter;
   int k;
   double tempReward;
+  double maxReward;
   std::map< array<double, RL_MEMORY_SIZE>, double> samples;
-
+  unordered_map<double, array<double, RL_MEMORY_SIZE>> setOfWeights;
   // std::map<double,Triple>R;
 
   std::vector<double> temp;
@@ -93,12 +94,12 @@ class CrossEntropyAgent:public SMDPAgent
 
   array<double,RL_MEMORY_SIZE> weights;
 
-  array<double,RL_MEMORY_SIZE> tempWeights;
- 
+  // array<double,RL_MEMORY_SIZE> tempWeights;
+  
 
   // RowVectorXd = Eigen::Matrix<double, 1, Eigen::Dynamic>;
   // typedef Matrix<double, 1,RL_MEMORY_SIZE > C;
-  // RowVectorXd tempWeights;
+  RowVectorXd tempWeights;
  
   // RowVectorXd newWeights(1048576);
 
@@ -140,7 +141,7 @@ class CrossEntropyAgent:public SMDPAgent
   void oneUpdate();
   void loadTiles( double state[] );
   void weightsToString(const char* filename);
-  void updateweights();
+  void updateweightsEndEpisode();
 
   // Eligibility trace methods
   //void clearTrace( int f );

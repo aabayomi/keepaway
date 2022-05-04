@@ -88,6 +88,7 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
   std = 100.0;
   N = 25;
   k = 10; // k best weights
+  maxReward = 0;
 
   initialWeights = weightsRaw;
 
@@ -134,7 +135,7 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
       for (int i = 0; i < RL_MEMORY_SIZE; i++)
       {
         double w = distribution(generator);
-        // Log.log(std::to_string(w));
+        //Log.log(std::to_string(w));
         weights[i] = w;
         initialWeights[i] = w; 
       }
@@ -294,27 +295,29 @@ void CrossEntropyAgent::oneUpdate()
 {
 
   // loadWeights(saveWeightsFile.c_str());
+  tempWeights = setOfWeights[maxReward];
+  //Log.log("First number of highest reward: " + std::to_string(tempWeights[0]));
+  //Log.log("First number of current weights: " + std::to_string(weights[0]));
+  float sumWeights = 0;
+  for (std::size_t j = 0; j < RL_MEMORY_SIZE; j++)
+  {
+  sumWeights += tempWeights[j];
+  }
 
-  // float sumWeights = 0;
-  // for (std::size_t j = 0; j < RL_MEMORY_SIZE; j++)
-  // {
-  //   sumWeights += tempWeights[j];
-  // }
+  mean = sumWeights / RL_MEMORY_SIZE;
+  Log.log("New Mean: " + std::to_string(mean));
+  //MatrixXd mu = MatrixXd::Constant(1,RL_MEMORY_SIZE,mean);
+  //VectorXd vectorWeights = VectorXd::Constant(1,RL_MEMORY_SIZE, tempWeights);
+  //VectorXd mu = VectorXd :: Constant(1,RL_MEMORY_SIZE,mean) ;
+  //float sum;
+  //float Q;
 
-  // mean = sumWeights / RL_MEMORY_SIZE;
-  // cout<< "Mean " << mean <<endl;
-  // MatrixXd mu = MatrixXd::Constant(1,RL_MEMORY_SIZE,mean);
-  // VectorXd mu = VectorXd :: Constant(1,RL_MEMORY_SIZE,mean) ;
-  // float sum;
-  // float Q;
+  //VectorXd P;
+  //P = tempWeights - mu;
+  //Q = P.transpose().dot(P);
+  //std = Q;
+   // Log.log("New std: " + std::to_string(std));
 
-  // VectorXd P;
-  // P = tempWeights - mu;
-  // Q = P.transpose().dot(P);
-
-  // std = Q;
-
-  // cout<< "STD " << std <<endl;
 
 }
 
@@ -363,7 +366,7 @@ void CrossEntropyAgent::endEpisode(double reward)
 
 {
 
-  samples[weights] = reward; //??
+  //samples[weights] = reward; //??
 
 
   //This block is needed for a single k update.
@@ -372,24 +375,30 @@ void CrossEntropyAgent::endEpisode(double reward)
   // {
   //  tempWeights = weights;
   // }
-
- 
+  //std::array<double,RL_MEMORY_SIZE> copyWeights = weights; 
 
   // save reward and weights
   if (counter < N)
   {
+  setOfWeights[reward] = weights;
+  maxReward = std::max(maxReward, reward);
+  Log.log(std::to_string(reward));
     counter++;
-    Log.log(std::to_string(counter));
-
+    //Log.log(std::to_string(counter));
+    updateweightsEndEpisode();
   }
   else
   {
     // update weights and reset both the counter and samples map.
     // weightsToString();
     // updateWeights();
+    Log.log("Max reward");
+    Log.log(std::to_string(maxReward));
+
     oneUpdate();
     counter = 0;
-    samples.clear();
+    setOfWeights.clear();
+    //samples.clear();
   }
 }
 
@@ -538,4 +547,13 @@ void CrossEntropyAgent::setParams(int iCutoffEpisodes, int iStopLearningEpisodes
 }
 
 
-void updateWeights();
+void CrossEntropyAgent::updateweightsEndEpisode(){
+  std::default_random_engine generator(counter+1);
+  std::normal_distribution<double> distribution(mean, std);
+  for (int i = 0; i < RL_MEMORY_SIZE; i++)
+      {
+        double w = distribution(generator);
+        //Log.log(std::to_string(w));
+        weights[i] = w;
+      }
+}
