@@ -393,7 +393,6 @@ void CrossEntropyAgent::endEpisode(double reward)
     // weightsToString();
     // updateWeights();
     Log.log("Max reward");
-    Log.log(std::to_string(maxReward));
 
     oneUpdate();
     counter = 0;
