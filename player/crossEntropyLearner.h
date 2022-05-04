@@ -19,6 +19,7 @@
 #include "HierarchicalFSM.h"
 #include <cstddef>
 #include <functional>
+#include <eigen3/Eigen/Dense>
 
 // #define RL_MEMORY_SIZE 1048576
 // #define RL_MAX_NONZERO_TRACES 100000
@@ -41,6 +42,7 @@
 // }
 
 
+using namespace Eigen;
 
 class CrossEntropyAgent:public SMDPAgent
 
@@ -65,7 +67,13 @@ class CrossEntropyAgent:public SMDPAgent
   int N;
   int counter;
   int k;
+  double tempReward;
   std::map< array<double, RL_MEMORY_SIZE>, double> samples;
+
+  // std::map<double,Triple>R;
+
+  std::vector<double> temp;
+
   ofstream myFile;
   
 
@@ -80,9 +88,22 @@ class CrossEntropyAgent:public SMDPAgent
   double tileWidths[ MAX_RL_STATE_VARS ];
   double Q[MAX_RL_ACTIONS ];
 
-  // double* weights;
-  // double weightsRaw[ RL_MEMORY_SIZE ];
+  double* initialWeights;
+  double weightsRaw[ RL_MEMORY_SIZE ];
+
   array<double,RL_MEMORY_SIZE> weights;
+
+  array<double,RL_MEMORY_SIZE> tempWeights;
+ 
+
+  // RowVectorXd = Eigen::Matrix<double, 1, Eigen::Dynamic>;
+  // typedef Matrix<double, 1,RL_MEMORY_SIZE > C;
+  // RowVectorXd tempWeights;
+ 
+  // RowVectorXd newWeights(1048576);
+
+
+  // array<double,RL_MEMORY_SIZE> tempWeights;
 
 
  // double traces[ RL_MEMORY_SIZE ];
@@ -96,9 +117,9 @@ class CrossEntropyAgent:public SMDPAgent
   //int nonzeroTracesInverse[ RL_MEMORY_SIZE ];
 
   collision_table *colTab;
-
+  
   // Load / Save weights from/to disk
-  // bool loadWeights( char *filename );
+  // bool loadWeights( string filename );
   bool loadWeights(const char *filename);
 
   // bool saveWeights( char *filename );
@@ -116,6 +137,7 @@ class CrossEntropyAgent:public SMDPAgent
   double computeQ( int a );
   int  argmaxQ();
   void updateWeights();
+  void oneUpdate();
   void loadTiles( double state[] );
   void weightsToString(const char* filename);
 
