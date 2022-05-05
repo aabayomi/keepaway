@@ -64,8 +64,8 @@ set(SOURCE_FILES
         player/HierarchicalFSM.h
         player/crossEntropyLearner.h
         player/crossEntropyLearner.cc
-        player/LinearSarsaLearnerOriginal.cc
-        player/LinearSarsaLearnerOriginal.h
+        # player/LinearSarsaLearnerOriginal.cc
+        # player/LinearSarsaLearnerOriginal.h
         player/ChoicePoint.h
         player/LinearSarsaLearner.cc
         player/LinearSarsaLearner.h

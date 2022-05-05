@@ -59,7 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "HandCodedAgent.h"
 #include "HierarchicalFSM.h"
 #include "crossEntropyLearner.h"
-#include "LinearSarsaLearnerOriginal.h"
+// #include "LinearSarsaLearnerOriginal.h"
 
 #include "Parse.h"
 #include "gzstream.h"

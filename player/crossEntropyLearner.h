@@ -71,6 +71,11 @@ class CrossEntropyAgent:public SMDPAgent
   double maxReward;
   std::map< array<double, RL_MEMORY_SIZE>, double> samples;
   unordered_map<double, array<double, RL_MEMORY_SIZE>> setOfWeights;
+
+  unordered_map<double, double(*)[RL_MEMORY_SIZE]> S;
+
+  std::map<double, double(*)[RL_MEMORY_SIZE]> setOfW;
+
   // std::map<double,Triple>R;
 
   std::vector<double> temp;
@@ -90,16 +95,19 @@ class CrossEntropyAgent:public SMDPAgent
   double Q[MAX_RL_ACTIONS ];
 
   double* initialWeights;
+  double* t;
   double weightsRaw[ RL_MEMORY_SIZE ];
 
   array<double,RL_MEMORY_SIZE> weights;
-
-  // array<double,RL_MEMORY_SIZE> tempWeights;
   
 
-  // RowVectorXd = Eigen::Matrix<double, 1, Eigen::Dynamic>;
-  // typedef Matrix<double, 1,RL_MEMORY_SIZE > C;
-  RowVectorXd tempWeights;
+  array<double,RL_MEMORY_SIZE> tempWeights;
+  
+
+  // RowVectorXd = Eigen::Matrix<double, 1, Eigen::Dynamic>
+  // typedef Matrix<double, 1,RL_MEMORY_SIZE > tempWeights;
+  // RowVectorXd tempWeights;
+  // RowVectorXd initialWeights;
  
   // RowVectorXd newWeights(1048576);
 
