@@ -310,7 +310,7 @@ void CrossEntropyAgent::oneUpdate()
   }
 
   mean = sumWeights / RL_MEMORY_SIZE;
-  Log.log("New Mean: " + std::to_string(mean));
+  //Log.log("New Mean: " + std::to_string(mean));
   
 
   Eigen::RowVectorXd  b = Eigen::Map<Eigen::RowVectorXd, Eigen::Unaligned>(tempWeights.data(), tempWeights.size());
@@ -323,7 +323,7 @@ void CrossEntropyAgent::oneUpdate()
   // std::cout << "Here is the matrix m:\n" <<  P  << std::endl;
   Q = P.transpose().dot(P);
   std = Q;
-  Log.log("New std: " + std::to_string(std));
+  //Log.log("New std: " + std::to_string(std));
 }
 
 int CrossEntropyAgent::step(double reward, double state[])
@@ -370,6 +370,9 @@ int CrossEntropyAgent::step(double reward, double state[])
 void CrossEntropyAgent::endEpisode(double reward)
 
 {
+  if(rand()%200 == 0){
+    saveWeights(saveWeightsFile.c_str());
+  }
   if (counter < N)
   {
     // setOfWeights[reward] = initialWeights;
@@ -378,7 +381,7 @@ void CrossEntropyAgent::endEpisode(double reward)
     // S[reward] = weightsRaw;
     // setOfW.insert(std::pair<double,double*[RL_MEMORY_SIZE]>(reward,weights));
     maxReward = std::max(maxReward, reward);
-    Log.log(std::to_string(reward));
+    //Log.log(std::to_string(reward));
     counter++;
     // Log.log(std::to_string(counter));
     updateweightsEndEpisode();
@@ -388,7 +391,7 @@ void CrossEntropyAgent::endEpisode(double reward)
     // update weights and reset both the counter and samples map.
     // weightsToString();
     // updateWeights();
-    Log.log("Max reward");
+    //Log.log("Max reward");
 
     oneUpdate();
     counter = 0;
@@ -468,7 +471,7 @@ bool CrossEntropyAgent::saveWeights(const char *filename)
     cerr << "failed to open weight file: " << filename << endl;
     return false;
   }
-
+  cerr << "saved the weights" << endl;
   os.write((const char *)&weights, RL_MEMORY_SIZE * sizeof(double));
   colTab->save(os);
   os.close();
