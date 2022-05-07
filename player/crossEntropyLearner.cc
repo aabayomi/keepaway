@@ -87,9 +87,9 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
 
   // number of iterations for updating weights
   mean = 0.0;
-  std = 100.0;
+  std = 1.0;
   N = 25;
-  k = 10; // k best weights
+  k = 1; // k best weights
   maxReward = 0;
 
   // initialWeights = weightsRaw;
@@ -310,7 +310,7 @@ void CrossEntropyAgent::oneUpdate()
   }
 
   mean = sumWeights / RL_MEMORY_SIZE;
-  //Log.log("New Mean: " + std::to_string(mean));
+  Log.log("New Mean: " + std::to_string(mean));
   
 
   Eigen::RowVectorXd  b = Eigen::Map<Eigen::RowVectorXd, Eigen::Unaligned>(tempWeights.data(), tempWeights.size());
@@ -322,8 +322,8 @@ void CrossEntropyAgent::oneUpdate()
   P = b - mu;
   // std::cout << "Here is the matrix m:\n" <<  P  << std::endl;
   Q = P.transpose().dot(P);
-  std = Q;
-  //Log.log("New std: " + std::to_string(std));
+  std = Q /RL_MEMORY_SIZE;
+  Log.log("New std: " + std::to_string(std));
 }
 
 int CrossEntropyAgent::step(double reward, double state[])
