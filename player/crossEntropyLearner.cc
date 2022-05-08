@@ -209,11 +209,6 @@ int CrossEntropyAgent::startEpisode(double state[])
   return lastAction;
 }
 
-bool sortByVal(const pair<array<double, RL_MEMORY_SIZE>, double> &a,
-               const pair<array<double, RL_MEMORY_SIZE>, double> &b)
-{
-  return (a.second < b.second);
-}
 
 void CrossEntropyAgent::updateWeights()
 
@@ -235,7 +230,7 @@ void CrossEntropyAgent::updateWeights()
     vec.push_back(make_pair(it->first, it->second));
   }
   // Sorts the weights by the reward
-  std::sort(vec.begin(), vec.end(), sortByVal);
+
 
   float sumWeights = 0;
 
@@ -329,9 +324,6 @@ void CrossEntropyAgent::oneUpdate()
 int CrossEntropyAgent::step(double reward, double state[])
 {
 
-  // Use either the discounted reward or culmilative reward
-  // i have decided to use the culmulative reward
-
   double totalRewards = reward + Q[lastAction];
 
   loadTiles(state);
@@ -340,9 +332,9 @@ int CrossEntropyAgent::step(double reward, double state[])
     Q[a] = computeQ(a);
   }
 
-  lastAction = selectAction(); // take actions with the maximal weights
-
-  // I dont know what these does completely yet seems like saving the logging informations.
+  // take actions with the maximal weights
+  lastAction = selectAction(); 
+  
   char buffer[128];
   sprintf(buffer, "Q[%d] = %.2f", lastAction, Q[lastAction]);
 
@@ -356,14 +348,6 @@ int CrossEntropyAgent::step(double reward, double state[])
   if (!bLearning)
     return lastAction;
 
-  // char buffer[128];
-  sprintf(buffer, "reward: %.2f", reward);
-
-  // Log.log("CrossEntropyAgent::step reward %.2f", reward);
-
-  // LogDraw.logText( "reward", VecPosition( 25, 30 ),
-  //                  buffer,
-  //                  1, COLOR_NAVY );
 }
 
 // Add the reward and update Mean and Standard deviation
@@ -376,7 +360,6 @@ void CrossEntropyAgent::endEpisode(double reward)
   if (counter < N)
   {
     // setOfWeights[reward] = initialWeights;
-
     setOfWeights[reward] = weights;
     // S[reward] = weightsRaw;
     // setOfW.insert(std::pair<double,double*[RL_MEMORY_SIZE]>(reward,weights));
@@ -388,11 +371,6 @@ void CrossEntropyAgent::endEpisode(double reward)
   }
   else
   {
-    // update weights and reset both the counter and samples map.
-    // weightsToString();
-    // updateWeights();
-    //Log.log("Max reward");
-
     oneUpdate();
     counter = 0;
     setOfWeights.clear();
@@ -482,6 +460,7 @@ bool CrossEntropyAgent::saveWeights(const char *filename)
 double CrossEntropyAgent::computeQ(int a)
 {
   double q = 0;
+
   for (int j = 0; j < numTilings; j++)
   {
     q += weights[tiles[a][j]];

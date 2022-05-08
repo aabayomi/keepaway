@@ -313,66 +313,22 @@ int main(int argc, char *argv[]) {
    int numActions = iNumKeepers;
 
   
-  // cout << "crossEntropy nnnnnnnn"<< crossEntropy << endl;
-
-
  if (!crossEntropy) {
     cerr << "No agent!" << endl;
     return EXIT_FAILURE;
   } else {
     if (string(strTeamName) == "keepers") {
       Log.log("Keepers here");
-
       CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
-      //LinearSarsaAgent2* variable = new LinearSarsaAgent2(numFeatures, numActions, bLearn, resolutions,loadWeightsFile.c_str(), saveWeightsFile.c_str(), hiveMind);
       sa = variable;
-
-
-      // fsm::HierarchicalFSM::initialize(
-      //     numFeatures, iNumKeepers, iNumTakers, bLearn,
-      //     resolutions, gamma, lambda, alpha, initialWeight, qLearning,
-      //     loadWeightsFile, saveWeightsFile, strTeamName);
     }
     else {
-
-        
-
         CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
-         //LinearSarsaAgent2* variable = new LinearSarsaAgent2(numFeatures, numActions, bLearn, resolutions,loadWeightsFile.c_str(), saveWeightsFile.c_str(), hiveMind);
         sa = variable;
-
-
-      //  CrossEntropyAgent* CrossEntropyAgent = new CrossEntropyAgent(
-      //   numFeatures, numActions, bLearn, resolutions,
-      //   loadWeightsFile, saveWeightsFile);
-
-      //   sa = CrossEntropyAgent;
     };
   }
 
 
-  
-
-
-
-
-  // if (!hierarchicalFSM) {
-  //   cerr << "No agent!" << endl;
-  //   return EXIT_FAILURE;
-  // } else {
-  //   if (string(strTeamName) == "keepers") {
-  //     fsm::HierarchicalFSM::initialize(
-  //         numFeatures, iNumKeepers, iNumTakers, bLearn,
-  //         resolutions, gamma, lambda, alpha, initialWeight, qLearning,
-  //         loadWeightsFile, saveWeightsFile, strTeamName);
-  //   }
-  //   else {
-  //     fsm::HierarchicalFSM::initialize(
-  //         numFeatures, iNumTakers, iNumKeepers, bLearn,
-  //         resolutions, gamma, lambda, alpha, initialWeight, qLearning,
-  //         loadWeightsFile, saveWeightsFile, strTeamName);
-  //   };
-  // }
 
   KeepawayPlayer bp( sa, &a, &wm, &ss, &cs, strTeamName,
                     iNumKeepers, iNumTakers, dVersion, iReconnect);
