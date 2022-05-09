@@ -1,5 +1,4 @@
 # RoboCup Keepaway benchmark player framework
-[![Build Status](https://travis-ci.org/aijunbai/keepaway.svg?branch=fullteam)](https://travis-ci.org/aijunbai/keepaway)
 
 ## Cross Entropy Method 
 
