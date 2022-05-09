@@ -9,7 +9,7 @@ before_script:
 script: make all
 notifications:
     email:
-        recipients: aijunbai@gmail.com
+        recipients: odunayo@rocketmail.com
         on_success: never
         on_failure: never
 

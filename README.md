@@ -1,52 +1,20 @@
 # RoboCup Keepaway benchmark player framework
 [![Build Status](https://travis-ci.org/aijunbai/keepaway.svg?branch=fullteam)](https://travis-ci.org/aijunbai/keepaway)
 
-## Concurrent HAMQ Learning
-This ongoing project demonstrates a **concurrent partial program** approach to the RoboCup Keepaway task. More details can be found in:
--   **Efficient Reinforcement Learning with Hierarchies of Machines by Leveraging Internal Transitions**, *Aijun Bai*, and Stuart Russell,\
-    *Proceedings of the Twenty-Fifth International Joint Conference on Artificial Intelligence (**IJCAI**), Melbourne, Australia, August 19 - 25, 2017.*
-    \[[pdf](https://aijunbai.github.io/publications/IJCAI17-Bai.pdf)\]
-    \[[bib](https://aijunbai.github.io/publications/IJCAI17-Bai.bib)\]
--   **Concurrent Hierarchical Reinforcement Learning for RoboCup Keepaway**, *Aijun
-    Bai*, Stuart Russell, and Xiaoping Chen,\
-    *RoboCup-2017: Robot Soccer World Cup XX, Lecture Notes in
-    Artificial Intelligence (**RoboCup**), Springer Verlag, Berlin, 2017.*
-    \[[pdf](https://aijunbai.github.io/publications/LNAI17-Bai.pdf)\]
-    \[[bib](https://aijunbai.github.io/publications/LNAI17-Bai.bib)\]
-    
-### Before learning
-[![HAMQ on RoboCup Keepaway (initial policy)](gifs/keepaway_initialized.gif)](https://www.youtube.com/watch?v=GFd0b3wV0Rk "initial policy")
-
-### After learning
-[![HAMQ on RoboCup Keepaway (converged policy)](gifs/keepaway_converged.gif)](https://www.youtube.com/watch?v=ob249J8Kxi0 "converged policy")
+## Cross Entropy Method 
 
 ## Install
 - ```sudo add-apt-repository ppa:gnurubuntu/rubuntu```
 - ```sudo apt update```
 - ```sudo apt install rcssserver rcssmonitor rcsslogplayer```
-- ```git clone https://github.com/aijunbai/keepaway```
+- ```git clone https://github.com/aabayomi/keepaway.git```
 - ```cd keepaway```
 - ```make release```
 
 ## Usages
-- Train a group of keepers using SARSA: ```./train.sh [-g GAMMA] [-L LAMBDA] [-A ALPHA] [-I INITIALWEIGHT] [-l] [-f] [-m] [-s]```
-   - ```-g GAMMA```: specify the discount factor [default: 1.0]
-   - ```-L GAMMA```: specify the Lambda constant [default: 0.5]
-    - ```-A ALPHA```: specify the learning rate [default: 0.125]
-    - ```-I INITIALWEIGHT```: spefify the initial weight for inner Q tables [default: 0.5]
-    - ```-l```: turn on logging for ```keepaway_player``` and ``rcssserver``` [default: false]
-    - ```-f```: turn on fullstate perception within ```rcssserver``` [default: true]
-    - ```-m```: launch a monitor, technically ```rcsssmonitor``` [default: true]
-    - ```-s```: turn on synch mode within ```rcssserver``` [default: true]
-- Evaluate a learned policy by simulation: ```./evaluate.sh QFILE```
-   - ```QFILE```: learned Q file for keepers
-- Train a set of groups simultaneously with random hyperparameters: ```./batch-train.sh```
-- Evaluate a set of learned policies simultaneously: ```./batch-evaluate.sh QFILES...```
+- Train a group of keepers using cross-entropy method: ```./train.sh ```
  
-One learned policy is included in the ```data``` directory for reference. It can be evaluated by running: ```./evaluate.sh data/keeper_Q_g1._l0.227_a0.09_w0.346_fsm.gz```
-
-## Related Project
-- HAMQ and HAMQ-INT on standard Taxi domain: [https://github.com/aijunbai/taxi](https://github.com/aijunbai/taxi)
+ 
 
 
 # Old READMEs
