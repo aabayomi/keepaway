@@ -12,6 +12,9 @@
 
 ## Usages
 - Train a group of keepers using cross-entropy method: ```./train.sh ```
+
+## Results
+- Training results are in the training directory.
  
  
 
