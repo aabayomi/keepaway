@@ -52,20 +52,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </pre>
 */
 
-
 #include "SenseHandler.h"
 #include "ActHandler.h"
 #include "KeepawayPlayer.h"
 #include "HandCodedAgent.h"
 #include "HierarchicalFSM.h"
 #include "crossEntropyLearner.h"
-// #include "LinearSarsaLearnerOriginal.h"
+#include "LinearSarsaLearner.h"
 
 #include "Parse.h"
 #include "gzstream.h"
-#include <dlfcn.h>    // needed for extension loading.
+#include <dlfcn.h> // needed for extension loading.
 
-extern Logger Log;     /*!< This is a reference to the normal Logger class   */
+extern Logger Log; /*!< This is a reference to the normal Logger class   */
 
 void printOptions();
 
@@ -73,7 +72,8 @@ void printOptions();
     First it reads in all the parameters from the command prompt
     (<program name> -help) and uses these values to create the classes. After
     all the classes are linked, the mainLoop in the Player class is called. */
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   pthread_t sense;
   ServerSettings ss;
   PlayerSettings cs;
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   double alpha = 0.125;
   double initialWeight = 0.0;
   bool qLearning = false;
-  bool hiveMind = false; 
+  bool hiveMind = false;
   string loggingFile;
 
 #ifdef _Compress
@@ -117,183 +117,193 @@ int main(int argc, char *argv[]) {
   // read in all the command options and change the associated variables
   // assume every two values supplied at prompt, form a duo
   char *str;
-  for (int i = 1; i < argc; i = i + 2) {
+  for (int i = 1; i < argc; i = i + 2)
+  {
     // help is only option that does not have to have an argument
-    if (i + 1 >= argc && strncmp(argv[i], "-help", 3) != 0) {
+    if (i + 1 >= argc && strncmp(argv[i], "-help", 3) != 0)
+    {
       cout << "Need argument for option: " << argv[i] << endl;
       exit(0);
     }
 
     // read a command option
-    if (argv[i][0] == '-' && strlen(argv[i]) > 1) {
-      switch (argv[i][1]) {
-        case '?':                                   // print help
+    if (argv[i][0] == '-' && strlen(argv[i]) > 1)
+    {
+      switch (argv[i][1])
+      {
+      case '?': // print help
+        printOptions();
+        exit(0);
+        break;
+      case 'c': // clientconf file
+        if (!cs.readValues(argv[i + 1], ":"))
+          cerr << "Error in reading client file: " << argv[i + 1] << endl;
+        break;
+      case 'd':
+        str = &argv[i + 1][0];
+        break;
+      case 'e': // enable learning 0/1
+        str = &argv[i + 1][0];
+        bLearn = Parse::parseFirstInt(&str) == 1;
+        break;
+      case 'f':
+        saveWeightsFile = argv[i + 1];
+        break;
+      case 'g': // gamma
+        str = &argv[i + 1][0];
+        gamma = Parse::parseFirstDouble(&str);
+        break;
+      case 'h': // host server or help
+        if (strlen(argv[i]) > 2 && argv[i][2] == 'e')
+        {
           printOptions();
           exit(0);
-          break;
-        case 'c':                                   // clientconf file
-          if (!cs.readValues(argv[i + 1], ":"))
-            cerr << "Error in reading client file: " << argv[i + 1] << endl;
-          break;
-        case 'd':
-          str = &argv[i + 1][0];
-          break;
-        case 'e': // enable learning 0/1
-          str = &argv[i + 1][0];
-          bLearn = Parse::parseFirstInt(&str) == 1;
-          break;
-        case 'f':
-          saveWeightsFile = argv[i + 1];
-          break;
-        case 'g': // gamma
-          str = &argv[i + 1][0];
-          gamma = Parse::parseFirstDouble(&str);
-          break;
-        case 'h':                                   // host server or help
-          if (strlen(argv[i]) > 2 && argv[i][2] == 'e') {
-            printOptions();
-            exit(0);
+        }
+        else
+          strcpy(strHost, argv[i + 1]);
+        break;
+      case 'i': // info 1 0
+        str = &argv[i + 1][0];
+        bInfo = Parse::parseFirstInt(&str) == 1;
+        break;
+      case 'I': // initialWeight
+        str = &argv[i + 1][0];
+        initialWeight = Parse::parseFirstDouble(&str);
+        break;
+      case 'j':
+        str = &argv[i + 1][0];
+        iNumTakers = Parse::parseFirstInt(&str);
+        break;
+      case 'k':
+        str = &argv[i + 1][0];
+        iNumKeepers = Parse::parseFirstInt(&str);
+        break;
+      case 'l': // loglevel int[..int]
+        str = &argv[i + 1][0];
+        iMinLogLevel = Parse::parseFirstInt(&str);
+        while (iMinLogLevel != 0)
+        {
+          if (*str == '.' || *str == '-') // '.' or '-' indicates range
+          {
+            *str += 1;
+            iMaxLogLevel = Parse::parseFirstInt(&str);
+            if (iMaxLogLevel == 0)
+              iMaxLogLevel = iMinLogLevel;
+            Log.addLogRange(iMinLogLevel, iMaxLogLevel);
           }
           else
-            strcpy(strHost, argv[i + 1]);
-          break;
-        case 'i':                                   // info 1 0
-          str = &argv[i + 1][0];
-          bInfo = Parse::parseFirstInt(&str) == 1;
-          break;
-        case 'I': // initialWeight
-          str = &argv[i + 1][0];
-          initialWeight = Parse::parseFirstDouble(&str);
-          break;
-        case 'j':
-          str = &argv[i + 1][0];
-          iNumTakers = Parse::parseFirstInt(&str);
-          break;
-        case 'k':
-          str = &argv[i + 1][0];
-          iNumKeepers = Parse::parseFirstInt(&str);
-          break;
-        case 'l':                                   // loglevel int[..int]
-          str = &argv[i + 1][0];
+            Log.addLogLevel(iMinLogLevel);
           iMinLogLevel = Parse::parseFirstInt(&str);
-          while (iMinLogLevel != 0) {
-            if (*str == '.' || *str == '-') // '.' or '-' indicates range
-            {
-              *str += 1;
-              iMaxLogLevel = Parse::parseFirstInt(&str);
-              if (iMaxLogLevel == 0) iMaxLogLevel = iMinLogLevel;
-              Log.addLogRange(iMinLogLevel, iMaxLogLevel);
-            }
-            else
-              Log.addLogLevel(iMinLogLevel);
-            iMinLogLevel = Parse::parseFirstInt(&str);
-          }
-          break;
-        case 'L': // lambda
-          str = &argv[i + 1][0];
-          lambda = Parse::parseFirstDouble(&str);
-          break;
-        case 'A': // alpha 
-          str = &argv[i + 1][0];
-          alpha = Parse::parseFirstDouble(&str);
-          break;
-        case 'm':                                   // mode int
-          str = &argv[i + 1][0];
-          iMode = Parse::parseFirstInt(&str);
-          break;
-        case 'n':                                   // number in formation int
-          str = &argv[i + 1][0];
-          iNr = Parse::parseFirstInt(&str);
-          break;
-        case 'o':                                   // output file log info
-# ifdef _Compress
-          //os.open((string(argv[i + 1]) + ".gz").c_str());
-          os.open((string(argv[i + 1])).c_str());
-          loggingFile = string(argv[i+1]);
+        }
+        break;
+      case 'L': // lambda
+        str = &argv[i + 1][0];
+        lambda = Parse::parseFirstDouble(&str);
+        break;
+      case 'A': // alpha
+        str = &argv[i + 1][0];
+        alpha = Parse::parseFirstDouble(&str);
+        break;
+      case 'm': // mode int
+        str = &argv[i + 1][0];
+        iMode = Parse::parseFirstInt(&str);
+        break;
+      case 'n': // number in formation int
+        str = &argv[i + 1][0];
+        iNr = Parse::parseFirstInt(&str);
+        break;
+      case 'o': // output file log info
+#ifdef _Compress
+                // os.open((string(argv[i + 1]) + ".gz").c_str());
+        os.open((string(argv[i + 1])).c_str());
+        loggingFile = string(argv[i + 1]);
 
 #else
-          os.open(argv[i + 1]);
+        os.open(argv[i + 1]);
 #endif
-          bSuppliedLogFile = true;
-          break;
-        case 'p':                                   // port
-          str = &argv[i + 1][0];
-          iPort = Parse::parseFirstInt(&str);
-          break;
-        case 'q':
-          strcpy(strPolicy, argv[i + 1]);
-          break;
-        case 'Q': // enable qlearning 0/1
-          str = &argv[i + 1][0];
-          qLearning = Parse::parseFirstInt(&str) == 1;
-          break;
-        case 'r':                                   // reconnect 1 0
-          str = &argv[i + 1][0];
-          iReconnect = Parse::parseFirstInt(&str);
-          break;
-        case 's':                                   // serverconf file
-          if (!ss.readValues(argv[i + 1], ":"))
-            cerr << "Error in reading server file: " << argv[i + 1] << endl;
-          break;
-        case 't':                                   // teamname name
-          strcpy(strTeamName, argv[i + 1]);
-          break;
-        case 'v':                                   // version version
-          str = &argv[i + 1][0];
-          dVersion = Parse::parseFirstDouble(&str);
-          break;
-        case 'w':
-          loadWeightsFile = argv[i + 1];
-          break;
-        case 'z':
-          str = &argv[i + 1][0];
-          hierarchicalFSM = Parse::parseFirstInt(&str) == 1;
-          break;
-        case 'E':
-          str = &argv[i + 1][0];
-          crossEntropy = Parse::parseFirstInt(&str) == 1;
-          break;
-        default:
-          cerr << "(main) Unknown command option: " << argv[i] << endl;
+        bSuppliedLogFile = true;
+        break;
+      case 'p': // port
+        str = &argv[i + 1][0];
+        iPort = Parse::parseFirstInt(&str);
+        break;
+      case 'q':
+        strcpy(strPolicy, argv[i + 1]);
+        break;
+      case 'Q': // enable qlearning 0/1
+        str = &argv[i + 1][0];
+        qLearning = Parse::parseFirstInt(&str) == 1;
+        break;
+      case 'r': // reconnect 1 0
+        str = &argv[i + 1][0];
+        iReconnect = Parse::parseFirstInt(&str);
+        break;
+      case 's': // serverconf file
+        if (!ss.readValues(argv[i + 1], ":"))
+          cerr << "Error in reading server file: " << argv[i + 1] << endl;
+        break;
+      case 't': // teamname name
+        strcpy(strTeamName, argv[i + 1]);
+        break;
+      case 'v': // version version
+        str = &argv[i + 1][0];
+        dVersion = Parse::parseFirstDouble(&str);
+        break;
+      case 'w':
+        loadWeightsFile = argv[i + 1];
+        break;
+      case 'z':
+        str = &argv[i + 1][0];
+        hierarchicalFSM = Parse::parseFirstInt(&str) == 1;
+        break;
+      case 'E':
+        str = &argv[i + 1][0];
+        crossEntropy = Parse::parseFirstInt(&str) == 1;
+        break;
+      default:
+        cerr << "(main) Unknown command option: " << argv[i] << endl;
       }
     }
   }
 
-  if (bInfo) {
-    cout << "team : " << strTeamName << endl <<
-         "port : " << iPort << endl <<
-         "host : " << strHost << endl <<
-         "version : " << dVersion << endl <<
-         "mode : " << iMode << endl <<
-         "playernr : " << iNr << endl <<
-         "reconnect : " << iReconnect << endl <<
-         "hierarchical FSM : " << hierarchicalFSM << endl <<
-         "cross entropy method : " << crossEntropy << endl <<
-         "gamma : " << gamma << endl <<
-         "lambda : " << lambda << endl <<
-         "alpha : " << alpha << endl <<
-         "initialWeight: " << initialWeight << endl <<
-         "qlearning: " << qLearning << endl <<
-         "be learning : " << bLearn << endl;
+  if (bInfo)
+  {
+    cout << "team : " << strTeamName << endl
+         << "port : " << iPort << endl
+         << "host : " << strHost << endl
+         << "version : " << dVersion << endl
+         << "mode : " << iMode << endl
+         << "playernr : " << iNr << endl
+         << "reconnect : " << iReconnect << endl
+         << "hierarchical FSM : " << hierarchicalFSM << endl
+         << "cross entropy method : " << crossEntropy << endl
+         << "gamma : " << gamma << endl
+         << "lambda : " << lambda << endl
+         << "alpha : " << alpha << endl
+         << "initialWeight: " << initialWeight << endl
+         << "qlearning: " << qLearning << endl
+         << "be learning : " << bLearn << endl;
   }
 
-  if (bSuppliedLogFile){
-    Log.setOutputStream(os);                   // initialize logger
+  if (bSuppliedLogFile)
+  {
+    Log.setOutputStream(os); // initialize logger
     Log.setOutputStream(loggingFile);
   }
-  else{
+  else
+  {
     Log.setOutputStream(cout);
     Log.setOutputStream(loggingFile);
   }
 
   Log.restartTimer();
 
-  WorldModel wm(&ss, &cs, NULL);              // create worldmodel
-  Connection c(strHost, iPort, MAX_MSG);     // make connection with server
-  ActHandler a(&c, &wm, &ss);                // link actHandler and worldmodel
-  SenseHandler s(&c, &wm, &ss, &cs);         // link senseHandler with wm
+  WorldModel wm(&ss, &cs, NULL);         // create worldmodel
+  Connection c(strHost, iPort, MAX_MSG); // make connection with server
+  ActHandler a(&c, &wm, &ss);            // link actHandler and worldmodel
+  SenseHandler s(&c, &wm, &ss, &cs);     // link senseHandler with wm
   Log.log("It is working");
-  
+
   SMDPAgent *sa = NULL;
 
   double ranges[MAX_RL_STATE_VARS];
@@ -301,36 +311,71 @@ int main(int argc, char *argv[]) {
   double resolutions[MAX_RL_STATE_VARS];
 
   int numFeatures = 0;
-  if (string(strTeamName) == "keepers") {
+  if (string(strTeamName) == "keepers")
+  {
     numFeatures = wm.keeperStateRangesAndResolutions(ranges, minValues, resolutions,
                                                      iNumKeepers, iNumTakers);
   }
-  else {
+  else
+  {
     numFeatures = wm.takerStateRangesAndResolutions(ranges, minValues, resolutions,
                                                     iNumKeepers, iNumTakers);
   }
 
-   int numActions = iNumKeepers;
+  int numActions = iNumKeepers;
 
-  
- if (!crossEntropy) {
+  //  if (!crossEntropy) {
+  //     cerr << "No agent!" << endl;
+  //     return EXIT_FAILURE;
+  //   } else {
+  //     if (string(strTeamName) == "keepers") {
+  //       Log.log("Keepers here");
+  //       CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
+  //       sa = variable;
+  //     }
+  //     else {
+  //         CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
+  //         sa = variable;
+  //     };
+  //   }
+
+  if (!crossEntropy)
+  {
     cerr << "No agent!" << endl;
     return EXIT_FAILURE;
-  } else {
-    if (string(strTeamName) == "keepers") {
+  }
+  else
+  {
+    if (string(strTeamName) == "keepers")
+    {
       Log.log("Keepers here");
-      CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
+      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
       sa = variable;
     }
-    else {
-        CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
-        sa = variable;
+    else
+    {
+      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
+      sa = variable;
     };
   }
 
 
 
-  KeepawayPlayer bp( sa, &a, &wm, &ss, &cs, strTeamName,
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,
                     iNumKeepers, iNumTakers, dVersion, iReconnect);
 
   pthread_create(&sense, NULL, sense_callback, &s); // start listening
@@ -344,29 +389,30 @@ int main(int argc, char *argv[]) {
 
 /*! This function prints the command prompt options that can be supplied to the
     program. */
-void printOptions() {
-  cout << "Command options:" << endl <<
-       " a file                - write drawing log info to " << endl <<
-       " c(lientconf) file     - use file as client conf file" << endl <<
-       " d(rawloglevel) int[..int] - level(s) of drawing debug info" << endl <<
-       " e(nable) learning 0/1  - turn learning on/off" << endl <<
-       " f save weights file   - use file to save weights" << endl <<
-       " h(ost) hostname       - host to connect with" << endl <<
-       " he(lp)                - print this information" << endl <<
-       " hi(ve) 0/1            - use mmap to hive mind the team" << endl <<
-       " i(nfo) 0/1            - print variables used to start" << endl <<
-       " j takers  int         - number of takers" << endl <<
-       " k(eepers) int         - number of keepers" << endl <<
-       " l(oglevel) int[..int] - level of debug info" << endl <<
-       " m(ode) int            - which mode to start up with" << endl <<
-       " n(umber) int          - player number in formation" << endl <<
-       " o(utput) file         - write log info to (screen is default)" << endl <<
-       " p(ort)                - port number to connect with" << endl <<
-       " q policy name         - policy to play with" << endl <<
-       " r(econnect) int       - reconnect as player nr" << endl <<
-       " s(erverconf) file     - use file as server conf file" << endl <<
-       " t(eamname) name       - name of your team" << endl <<
-       " w(eights) file        - use file to load weights" << endl <<
-       " x exit after running for this many episodes" << endl <<
-       " y enable learning after not learning for this many episodes" << endl;
+void printOptions()
+{
+  cout << "Command options:" << endl
+       << " a file                - write drawing log info to " << endl
+       << " c(lientconf) file     - use file as client conf file" << endl
+       << " d(rawloglevel) int[..int] - level(s) of drawing debug info" << endl
+       << " e(nable) learning 0/1  - turn learning on/off" << endl
+       << " f save weights file   - use file to save weights" << endl
+       << " h(ost) hostname       - host to connect with" << endl
+       << " he(lp)                - print this information" << endl
+       << " hi(ve) 0/1            - use mmap to hive mind the team" << endl
+       << " i(nfo) 0/1            - print variables used to start" << endl
+       << " j takers  int         - number of takers" << endl
+       << " k(eepers) int         - number of keepers" << endl
+       << " l(oglevel) int[..int] - level of debug info" << endl
+       << " m(ode) int            - which mode to start up with" << endl
+       << " n(umber) int          - player number in formation" << endl
+       << " o(utput) file         - write log info to (screen is default)" << endl
+       << " p(ort)                - port number to connect with" << endl
+       << " q policy name         - policy to play with" << endl
+       << " r(econnect) int       - reconnect as player nr" << endl
+       << " s(erverconf) file     - use file as server conf file" << endl
+       << " t(eamname) name       - name of your team" << endl
+       << " w(eights) file        - use file to load weights" << endl
+       << " x exit after running for this many episodes" << endl
+       << " y enable learning after not learning for this many episodes" << endl;
 }

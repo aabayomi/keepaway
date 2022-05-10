@@ -60,10 +60,10 @@ set(SOURCE_FILES
         player/WorldModelSayMsgTypes.cc
         player/WorldModelSayMsgTypes.h
         player/WorldModelUpdate.cc
-        player/HierarchicalFSM.cc
-        player/HierarchicalFSM.h
-        player/crossEntropyLearner.h
-        player/crossEntropyLearner.cc
+        # player/HierarchicalFSM.cc
+        # player/HierarchicalFSM.h
+        # player/crossEntropyLearner.h
+        # player/crossEntropyLearner.cc
         player/ChoicePoint.h
         player/LinearSarsaLearner.cc
         player/LinearSarsaLearner.h

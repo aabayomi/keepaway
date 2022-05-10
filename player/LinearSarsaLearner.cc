@@ -1,690 +1,496 @@
-//
-// Created by baj on 10/4/16.
-//
+////////////////////////
 
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <time.h>
+#include <sstream>
 #include "LinearSarsaLearner.h"
-#include "gzstream.h"
-#include <boost/algorithm/string/replace.hpp>
+#include "LoggerDraw.h"
 
-#define DETERMINISTIC_GRAPH 0
+// If all is well, there should be no mention of anything keepaway- or soccer-
+// related in this file. 
 
-namespace fsm {
+/**
+ * Designed specifically to match the serialization format for collision_table.
+ * See collision_table::save and collision_table::restore.
+ */
+#pragma pack(push, 1)
+struct CollisionTableHeader {
+  long m;
+  int safe;
+  long calls;
+  long clearhits;
+  long collisions;
+};
+#pragma pack(pop)
+#define VERBOSE_HIVE_MIND false
 
-void SharedData::reset() {
-  lastJointChoiceIdx = -1;
-  lastJointChoiceTime = UnknownTime;
-  memset(lastJointChoice, 0, sizeof(lastJointChoice));
-
-  memset(Q, 0, sizeof(Q));
-  memset(traces, 0, sizeof(traces));
-  memset(nonzeroTraces, 0, sizeof(nonzeroTraces));
-  memset(nonzeroTracesInverse, 0, sizeof(nonzeroTracesInverse));
-
-  minimumTrace = 0.01;
-  numNonzeroTraces = 0;
-
-  memset(numChoices, 0, sizeof(numChoices));
-  memset(machineState, 0, sizeof(machineState));
-  memset(lastMachineState, 0, sizeof(lastMachineState));
-}
-
-choice_t SharedData::getLastJointChoice() const {
-  return choice_t(lastJointChoice,
-                  lastJointChoice + HierarchicalFSM::num_teammates);
-}
-
-num_choice_t SharedData::getNumChoices() const {
-  num_choice_t ret((unsigned long) HierarchicalFSM::num_teammates);
-  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
-    ret[i] = numChoices[Memory::ins().teammates[i]];
+/**
+ * Assumes collision table header follows weights.
+ * Returns the memory location after the header because that's useful for colTab
+ * data array.
+ */
+long* loadColTabHeader(collision_table* colTab, double* weights) {
+  CollisionTableHeader* colTabHeader =
+    reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
+  // Do each field individually, since they don't all line up exactly for an
+  // easy copy.
+  colTab->calls = colTabHeader->calls;
+  colTab->clearhits = colTabHeader->clearhits;
+  colTab->collisions = colTabHeader->collisions;
+  colTab->m = colTabHeader->m;
+  colTab->safe = colTabHeader->safe;
+  if (VERBOSE_HIVE_MIND) {
+    cout << "Loaded colTabHeader:" << endl
+      << " calls: " << colTab->calls << endl
+      << " clearhits: " << colTab->clearhits << endl
+      << " collisions: " << colTab->collisions << endl
+      << " m: " << colTab->m << endl
+      << " safe: " << colTab->safe << endl;
   }
-  return ret;
+  return reinterpret_cast<long*>(colTabHeader + 1);
 }
 
-machine_state_t SharedData::getMachineState() const {
-  machine_state_t ret((unsigned long) HierarchicalFSM::num_teammates);
-  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
-    ret[i] = machineState[Memory::ins().teammates[i]];
+extern LoggerDraw LogDraw;
+
+LinearSarsaAgent::LinearSarsaAgent( int numFeatures, int numActions, bool bLearn,
+                                    double widths[],
+                                    string loadWeightsFile, string saveWeightsFile, bool hiveMind ):
+  SMDPAgent( numFeatures, numActions ), hiveFile(-1)
+{
+  bLearning = bLearn;
+
+  for ( int i = 0; i < getNumFeatures(); i++ ) {
+    tileWidths[ i ] = widths[ i ];
   }
-  return ret;
-}
 
-machine_state_t SharedData::getLastMachineState() const {
-  machine_state_t ret((unsigned long) HierarchicalFSM::num_teammates);
-  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
-    ret[i] = lastMachineState[i];
+  // Saving weights (including for hive mind) requires learning and a file name.
+  this->hiveMind = false;
+  if ( bLearning && strlen( saveWeightsFile.c_str() ) > 0 ) {
+    strcpy( weightsFile, saveWeightsFile.c_str() );
+    bSaveWeights = true;
+    // Hive mind further requires loading and saving from the same file.
+    if (!strcmp(loadWeightsFile.c_str(), saveWeightsFile.c_str())) {
+      this->hiveMind = hiveMind;
+    }
   }
-  return ret;
-}
+  else {
+    bSaveWeights = false;
+  }
 
-LinearSarsaLearner &LinearSarsaLearner::ins() {
-  static LinearSarsaLearner learner;
-  return learner;
-}
-
-LinearSarsaLearner::~LinearSarsaLearner() { shutDown(); }
-
-LinearSarsaLearner::LinearSarsaLearner() {
-  initialWeight = 0.0;
   alpha = 0.125;
   gamma = 1.0;
-  lambda = 0.0;
+  lambda = 0;
   epsilon = 0.01;
-  bLearning = false;
-  qLearning = false;
-  sharedData = 0;
-  lastJointChoiceIdx = -1;
-  lastJointChoiceTime = UnknownTime;
-}
-
-void LinearSarsaLearner::initialize(bool learning, double width[], double Gamma,
-                                    double Lambda, double Alpha, double weight,
-                                    bool QLearning,
-                                    string loadWeightsFile,
-                                    string saveWeightsFile_, string teamName_) {
-  bLearning = learning;
-  bSaveWeights = bLearning && saveWeightsFile_.length() > 0;
-  saveWeightsFile = saveWeightsFile_;
-  qLearning = QLearning;
-  teamName = teamName_;
-
-  for (int i = 0; i < HierarchicalFSM::num_features; i++) {
-    tileWidths[i] = width[i];
-  }
-
-  initialWeight = teamName_ == "keepers" ? weight : -weight;
-  gamma = Gamma;
-  lambda = Lambda;
-  alpha = Alpha;
-  epsilon = 0.01;
-
-  lastJointChoiceIdx = -1;
-  lastJointChoiceTime = UnknownTime;
-
-  srand((unsigned int) 0);
-  srand48((unsigned int) 0);
-  int tmp[2];
-  float tmpf[2];
-
-  GetTiles(tmp, 1, 1, tmpf, 0); // A dummy call to set the hashing table
-  srand((unsigned int) time(NULL));
-  srand48((unsigned int) time(NULL));
-
-  numTilings = 0;
   minimumTrace = 0.01;
+
+  epochNum = 0;
+  lastAction = -1;
+
   numNonzeroTraces = 0;
+  weights = weightsRaw;
+  for ( int i = 0; i < RL_MEMORY_SIZE; i++ ) {
+    weights[ i ] = 0;
+    traces[ i ] = 0;
+  }
 
-  if (bLearning || !bLearning) {
-    string exepath = getexepath();
-    exepath += "LinearSarsaLearner::initialize";
-    exepath += loadWeightsFile;
-    exepath += saveWeightsFile;
-    exepath += to_string(gamma);
-    exepath += to_string(lambda);
-    exepath += to_string(initialWeight);
-    exepath += to_string(qLearning);
-    exepath += teamName;
-    auto h = hash<string>()(exepath); // hashing
-    sharedMemory = "/" + to_string(h) + ".shm";
+  srand( (unsigned int) 0 );
+  int tmp[ 2 ];
+  float tmpf[ 2 ];
+  colTab = new collision_table( RL_MEMORY_SIZE, 1 );
 
-    int shm_fd = shm_open(sharedMemory.c_str(), O_CREAT | O_RDWR, 0666);
-    if (shm_fd == -1) {
-      printf("prod: Shared memory failed: %s\n", strerror(errno));
-      exit(1);
+  GetTiles( tmp, 1, 1, tmpf, 0 );  // A dummy call to set the hashing table    
+  srand( time( NULL ) );
+
+  if ( strlen( loadWeightsFile.c_str() ) > 0 )
+    loadWeights(loadWeightsFile.c_str());
+}
+
+double LinearSarsaAgent::getQ(int action) {
+  if (action < 0 || action > getNumActions()) {
+    throw "invalid action";
+  }
+  return Q[action];
+}
+
+void LinearSarsaAgent::setEpsilon(double epsilon) {
+  this->epsilon = epsilon;
+}
+
+int LinearSarsaAgent::startEpisode( double state[] )
+{
+  if (hiveMind) loadColTabHeader(colTab, weights);
+  epochNum++;
+  decayTraces( 0 );
+  loadTiles( state );
+  for ( int a = 0; a < getNumActions(); a++ ) {
+    Q[ a ] = computeQ( a );
+  }
+
+  lastAction = selectAction();
+
+  char buffer[128];
+  sprintf( buffer, "Q[%d] = %.2f", lastAction, Q[lastAction] );
+  LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
+                   buffer,
+                   1, COLOR_BROWN );
+
+  for ( int j = 0; j < numTilings; j++ )
+    setTrace( tiles[ lastAction ][ j ], 1.0 );
+  if (hiveMind) saveWeights(weightsFile);
+  return lastAction;
+}
+
+int LinearSarsaAgent::step( double reward, double state[] )
+{
+  if (hiveMind) loadColTabHeader(colTab, weights);
+  double delta = reward - Q[ lastAction ];
+  loadTiles( state );
+  for ( int a = 0; a < getNumActions(); a++ ) {
+    Q[ a ] = computeQ( a );
+  }
+
+  lastAction = selectAction();
+
+  char buffer[128];
+  sprintf( buffer, "Q[%d] = %.2f", lastAction, Q[lastAction] );
+  LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
+                   buffer,
+                   1, COLOR_BROWN );
+
+  if ( !bLearning )
+    return lastAction;
+
+  //char buffer[128];
+  sprintf( buffer, "reward: %.2f", reward ); 
+  LogDraw.logText( "reward", VecPosition( 25, 30 ),
+                   buffer,
+                   1, COLOR_NAVY );
+
+  delta += Q[ lastAction ];
+  updateWeights( delta );
+  Q[ lastAction ] = computeQ( lastAction ); // need to redo because weights changed
+  decayTraces( gamma * lambda );
+
+  for ( int a = 0; a < getNumActions(); a++ ) {  //clear other than F[a]
+    if ( a != lastAction ) {
+      for ( int j = 0; j < numTilings; j++ )
+        clearTrace( tiles[ a ][ j ] );
     }
+  }
+  for ( int j = 0; j < numTilings; j++ )      //replace/set traces F[a]
+    setTrace( tiles[ lastAction ][ j ], 1.0 );
 
-    ftruncate(shm_fd, sizeof(SharedData));
-    sharedData = (SharedData *) mmap(
-        0, sizeof(SharedData), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (sharedData == MAP_FAILED) {
-      printf("prod: Map failed: %s\n", strerror(errno));
-      exit(1);
-    }
+  if (hiveMind) saveWeights(weightsFile);
+  return lastAction;
+}
 
-    Q = sharedData->Q;
-    tiles_ = sharedData->tiles;
-    weights = sharedData->weights;
-    traces = sharedData->traces;
-    nonzeroTraces = sharedData->nonzeroTraces;
-    nonzeroTracesInverse = sharedData->nonzeroTracesInverse;
-    colTab = &sharedData->colTab;
+void LinearSarsaAgent::endEpisode( double reward )
+{
+  if (hiveMind) loadColTabHeader(colTab, weights);
+  if ( bLearning && lastAction != -1 ) { /* otherwise we never ran on this episode */
+    char buffer[128];
+    sprintf( buffer, "reward: %.2f", reward ); 
+    LogDraw.logText( "reward", VecPosition( 25, 30 ),
+                     buffer,
+                     1, COLOR_NAVY );
 
-    barriers["enter1"] = new Barrier(HierarchicalFSM::num_teammates, h, "enter1");
-    barriers["exit1"] = new Barrier(HierarchicalFSM::num_teammates, h, "exit1");
-    barriers["enter2"] = new Barrier(HierarchicalFSM::num_teammates, h, "enter2");
-    barriers["exit2"] = new Barrier(HierarchicalFSM::num_teammates, h, "exit2");
-    barriers["reset"] = new Barrier(HierarchicalFSM::num_teammates, h, "reset");
+    /* finishing up the last episode */
+    /* assuming gamma = 1  -- if not,error*/
+    if ( gamma != 1.0)
+      cerr << "We're assuming gamma's 1" << endl;
+    double delta = reward - Q[ lastAction ];
+    updateWeights( delta );
+    // TODO Actually, there's still possibly risk for trouble here with multiple
+    // TODO players stomping each other. Is this okay?
+    // TODO The weight updates themselves are in order.
+  }
+  if ( bLearning && bSaveWeights && rand() % 200 == 0 && !hiveMind ) {
+    saveWeights( weightsFile );
+  }
+  if (hiveMind) saveWeights(weightsFile);
+  lastAction = -1;
+}
 
-    sharedData->reset();
-    if (loadWeightsFile.empty() || !loadWeights(loadWeightsFile.c_str())) {
-      fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
-      colTab->reset();
-    }
+void LinearSarsaAgent::shutDown()
+{
+  // We usually only save weights at random intervals.
+  // Always save at shutdown (if we are in saving mode).
+  if ( bLearning && bSaveWeights ) {
+    cout << "Saving weights at shutdown." << endl;
+    saveWeights( weightsFile );
+  }
+  // Also shut down the hive mind if needed.
+  if (hiveMind) {
+    size_t mapLength =
+      RL_MEMORY_SIZE * sizeof(double) +
+      sizeof(CollisionTableHeader) +
+      colTab->m * sizeof(long);
+    munmap(weights, mapLength);
+    close(hiveFile);
+    hiveFile = -1;
+    // Go back to the own arrays, since our map is no longer valid.
+    weights = weightsRaw;
+    colTab->data = new long[colTab->m];
   }
 }
 
-void LinearSarsaLearner::shutDown() {
-  if (Memory::ins().agentIdx == 0) {
-    if (bLearning && bSaveWeights) {
-      cerr << "Saving weights at shutdown." << endl;
-      saveWeights(saveWeightsFile.c_str());
-    }
+int LinearSarsaAgent::selectAction()
+{
+  int action;
+
+  // Epsilon-greedy
+  if ( bLearning && drand48() < epsilon ) {     /* explore */
+    action = rand() % getNumActions();
+  }
+  else{
+    action = argmaxQ();
   }
 
-  if (sharedData)
-    shm_unlink(sharedMemory.c_str());
-  for (auto pa : barriers)
-    delete pa.second;
+  return action;
 }
 
-bool LinearSarsaLearner::loadSharedData() {
-  numTilings = sharedData->numTilings;
-  minimumTrace = sharedData->minimumTrace;
-  numNonzeroTraces = sharedData->numNonzeroTraces;
-  lastJointChoiceIdx = sharedData->lastJointChoiceIdx;
-  lastJointChoiceTime = sharedData->lastJointChoiceTime;
-  lastJointChoice = sharedData->getLastJointChoice();
-  machineState = sharedData->getMachineState();
-  lastMachineState = sharedData->getLastMachineState();
-  numChoices = sharedData->getNumChoices();
-
-  Assert(!numChoicesMap.count(machineState) ||
-         numChoicesMap[machineState] == numChoices);
-  numChoicesMap[machineState] = numChoices;
-
-  bool action_state = true; // action state (when all are in action)
-  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
-    if (numChoices[i] > 1) {
-      action_state = false;
-    }
-  }
-
-  if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, Memory::ins().to_string());
-    PRINT_VALUE_STREAM(ss, numTilings);
-    PRINT_VALUE_STREAM(ss, minimumTrace);
-    PRINT_VALUE_STREAM(ss, numNonzeroTraces);
-    PRINT_VALUE_STREAM(ss, machineState);
-    PRINT_VALUE_STREAM(ss, lastMachineState);
-    PRINT_VALUE_STREAM(ss, numChoices);
-    PRINT_VALUE_STREAM(ss, action_state);
-    PRINT_VALUE_STREAM(ss, lastJointChoiceIdx);
-    PRINT_VALUE_STREAM(ss, lastJointChoiceTime);
-    PRINT_VALUE_STREAM(ss, lastJointChoice);
-
-    Log.log(101, "LinearSarsaLearner::loadSharedData\n%s", ss.str().c_str());
-  }
-
-  return action_state;
-}
-
-void LinearSarsaLearner::saveSharedData() {
-  Assert(numChoices.size());
-  Assert(machineState.size());
-  Assert(lastJointChoice.size());
-
-  sharedData->numTilings = numTilings;
-  sharedData->minimumTrace = minimumTrace;
-  sharedData->numNonzeroTraces = numNonzeroTraces;
-  sharedData->lastJointChoiceIdx = lastJointChoiceIdx;
-  sharedData->lastJointChoiceTime = lastJointChoiceTime;
-
-  for (int i = 0; i < HierarchicalFSM::num_teammates; ++i) {
-    sharedData->numChoices[Memory::ins().teammates[i]] = numChoices[i];
-    strcpy(sharedData->machineState[Memory::ins().teammates[i]],
-           machineState[i].c_str());
-    strcpy(sharedData->lastMachineState[i], lastMachineState[i].c_str());
-    sharedData->lastJointChoice[i] = lastJointChoice[i];
-  }
-}
-
-const vector<int> &
-LinearSarsaLearner::validChoices(const num_choice_t &num_choices) {
-  Assert(num_choices.size() == HierarchicalFSM::num_teammates);
-  if (!validChoicesMap.count(num_choices) ||
-      !jointChoicesMap.count(num_choices)) {
-    jointChoicesMap[num_choices] = validChoicesRaw(num_choices);
-    for (uint i = 0; i < jointChoicesMap[num_choices].size(); ++i) {
-      Assert(jointChoicesMap[num_choices][i].size() ==
-             HierarchicalFSM::num_teammates);
-      validChoicesMap[num_choices].push_back(i);
-    }
-  }
-  return validChoicesMap[num_choices];
-}
-
-vector<choice_t>
-LinearSarsaLearner::validChoicesRaw(const num_choice_t &num_choices) {
-  if (num_choices.empty())
-    return {{}};
-
-  vector<choice_t> ret;
-  auto c = validChoicesRaw({num_choices.begin() + 1, num_choices.end()});
-  Assert(num_choices[0] > 0);
-  for (int i = 0; i < num_choices[0]; ++i) {
-    for (auto &v : c) {
-      vector<int> r{i};
-      r.insert(r.end(), v.begin(), v.end());
-      ret.push_back(r);
-    }
-  }
-
-  return ret;
-}
-
-double LinearSarsaLearner::reward(double tau) {
-  Log.log(101, "LinearSarsaLearner::reward tau=%f", tau);
-  double ret = tau;
-
-  if (gamma < 1.0) {
-    ret = (1.0 - pow(gamma, tau)) / (1.0 - gamma);
-  }
-
-  return teamName == "keepers" ? ret : -ret;
-}
-
-int LinearSarsaLearner::step(int current_time) {
-  int choice = -1;
-  auto *state = Memory::ins().state;
-
-  if (lastJointChoiceIdx >= 0) {
-    Assert(lastJointChoiceTime != UnknownTime);
-    double tau = current_time - lastJointChoiceTime;
-    double delta = reward(tau) - Q[lastJointChoiceIdx];
-    numTilings = loadTiles(state, machineState, numChoices, tiles_);
-    for (auto c : validChoices(numChoices)) {
-      Q[c] = QValue(state, machineState, c, tiles_, numTilings);
-    }
-
-    choice = selectChoice(numChoices);
-    if (!bLearning)
-      return choice;
-    Assert(!std::isnan(Q[choice]) && !std::isinf(Q[choice]));
-
-    if (qLearning) {
-      delta += pow(gamma, tau) * Q[argmaxQ(numChoices)];
-    } else {
-      delta += pow(gamma, tau) * Q[choice];
-    }
-
-    updateWeights(delta, numTilings);
-    Q[choice] = QValue(state, machineState, choice, tiles_, numTilings);
-
-    decayTraces(gamma * lambda);
-    for (auto a : validChoices(numChoices)) {
-      if (a != choice) {
-        for (int j = 0; j < numTilings; j++)
-          clearTrace(tiles_[a][j]);
+bool LinearSarsaAgent::loadWeights(const char *filename )
+{
+  cout << "Loading weights from " << filename << endl;
+  if (hiveMind) {
+    if (hiveFile < 0) {
+      // First, check the lock file, so we have only one initializer.
+      // Later interaction should be approximately synchronized by having only
+      // one active player at a time per team, but we can't assume that here.
+      stringstream lockNameBuffer;
+      lockNameBuffer << filename << ".lock";
+      const char* lockName = lockNameBuffer.str().c_str();
+      int lock;
+      // 10ms delay (times a million to convert from nanos).
+      timespec sleepTime = {0, 10 * 1000 * 1000};
+      while (true) {
+        lock = open(lockName, O_CREAT | O_EXCL, 0664);
+        if (lock >= 0) break;
+        nanosleep(&sleepTime, NULL);
       }
+      // First, see if the file is already there.
+      bool fileFound = !access(filename, F_OK);
+      // TODO Extract constant for permissions (0664)?
+      hiveFile = open(filename, O_RDWR | O_CREAT, 0664);
+      size_t mapLength =
+        RL_MEMORY_SIZE * sizeof(double) +
+        sizeof(CollisionTableHeader) +
+        colTab->m * sizeof(long);
+      if (!fileFound) {
+        // Make the file the right size.
+        cout << "Initializing new hive file." << endl;
+        if (lseek(hiveFile, mapLength - 1, SEEK_SET) < 0) {
+          throw "failed to seek initial file size";
+        }
+        if (write(hiveFile, "", 1) < 0) {
+          throw "failed to expand initial file";
+        }
+      }
+      if (hiveFile < 0) throw "failed to open hive file";
+      void* hiveMap =
+        mmap(NULL, mapLength, PROT_READ | PROT_WRITE, MAP_SHARED, hiveFile, 0);
+      if (hiveMap == MAP_FAILED) throw "failed to map hive file";
+      // First the weights.
+      weights = reinterpret_cast<double*>(hiveMap);
+      // Now the collision table header.
+      CollisionTableHeader* colTabHeader =
+        reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
+      if (fileFound) {
+        loadColTabHeader(colTab, weights);
+      }
+      // Now the collision table data.
+      delete[] colTab->data;
+      colTab->data = reinterpret_cast<long*>(colTabHeader + 1);
+      if (!fileFound) {
+        // Clear out initial contents.
+        // The whole team might be doing this at the same time. Is that okay?
+        for ( int i = 0; i < RL_MEMORY_SIZE; i++ ) {
+          weights[ i ] = 0;
+        }
+        colTab->reset();
+        // Make sure the header goes out to the file.
+        saveWeights(weightsFile);
+      }
+      // TODO Separate file lock type with destructor?
+      unlink(lockName);
     }
-  } else { // new episode
-    decayTraces(0.0);
-    Assert(numNonzeroTraces == 0);
-    numTilings = loadTiles(state, machineState, numChoices, tiles_);
-    for (auto c : validChoices(numChoices)) {
-      Q[c] = QValue(state, machineState, c, tiles_, numTilings);
-    }
-    choice = selectChoice(numChoices);
-  }
-
-  for (int j = 0; j < numTilings; j++)
-    setTrace(tiles_[choice][j], 1.0);
-
-  return choice;
-}
-
-/**
- * num_choices for agentIdx
- * note: take care of sync among processes
- * @param num_choices
- * @return
- */
-int LinearSarsaLearner::step(int current_time, int num_choices) {
-  SCOPED_LOG
-  auto stackStr = HierarchicalFSM::getStackStr();
-  sharedData->numChoices[Memory::ins().teammates[Memory::ins().agentIdx]] = num_choices;
-  strcpy(sharedData->machineState[Memory::ins().teammates[Memory::ins().agentIdx]],
-         stackStr.c_str());
-
-  Log.log(101, "LinearSarsaLearner::step agent %d write numChoices %d",
-          Memory::ins().agentIdx, num_choices);
-  Log.log(101, "LinearSarsaLearner::step agent %d write machineState %s",
-          Memory::ins().agentIdx, stackStr.c_str());
-
-  barriers["enter1"]->wait();
-  bool action_state = loadSharedData();
-  barriers["exit1"]->wait();
-
-  if (action_state) {
-    return 0; // action state
   } else {
-    if (Memory::ins().agentIdx == 0) {
-      lastJointChoiceIdx = step(current_time);
-      lastJointChoiceTime = current_time;
-      lastJointChoice = jointChoicesMap[numChoices][lastJointChoiceIdx];
-      lastMachineState = machineState;
-      saveSharedData();
-    }
-
-    barriers["enter2"]->wait();
-    bool action_state2 = loadSharedData();
-    barriers["exit2"]->wait();
-
-    if (action_state2 == action_state) {
-      if (numChoices[Memory::ins().agentIdx] <= 1) { // dummy choice
-        return step(current_time, num_choices);
-      } else {
-        Assert(lastJointChoice.size() == HierarchicalFSM::num_teammates);
-        return lastJointChoice[Memory::ins().agentIdx];
-      }
-    } else { // race condition?
-      return 0;
-    }
+    int file = open( filename, O_RDONLY );
+    read( file, (char *) weights, RL_MEMORY_SIZE * sizeof(double) );
+    colTab->restore( file );
+    close( file );
   }
+  cout << "...done" << endl;
+  return true;
 }
 
-void LinearSarsaLearner::endEpisode(int current_time) {
-  SCOPED_LOG
-
-  barriers["reset"]->wait(); // recover from non synchronization (if any)
-  if (Memory::ins().agentIdx == 0) { // only one agent can update
-    loadSharedData();
-
-    if (bLearning && lastJointChoiceIdx >= 0) {
-      Assert(numTilings > 0);
-      Assert(lastJointChoiceTime != UnknownTime);
-      Assert(lastJointChoiceTime <= current_time);
-      double tau = current_time - lastJointChoiceTime;
-      double delta = reward(tau) - Q[lastJointChoiceIdx];
-      updateWeights(delta, numTilings);
+bool LinearSarsaAgent::saveWeights(const char *filename )
+{
+  if (hiveMind) {
+    // The big arrays should be saved out automatically, but we still need to
+    // handle the collision table header.
+    CollisionTableHeader* colTabHeader =
+      reinterpret_cast<CollisionTableHeader*>(weights + RL_MEMORY_SIZE);
+    // Do each field individually, since they don't all line up exactly for an
+    // easy copy.
+    colTabHeader->calls = colTab->calls;
+    colTabHeader->clearhits = colTab->clearhits;
+    colTabHeader->collisions = colTab->collisions;
+    colTabHeader->m = colTab->m;
+    colTabHeader->safe = colTab->safe;
+    if (VERBOSE_HIVE_MIND) {
+      cout << "Saved colTabHeader:" << endl
+        << " calls: " << colTab->calls << endl
+        << " clearhits: " << colTab->clearhits << endl
+        << " collisions: " << colTab->collisions << endl
+        << " m: " << colTab->m << endl
+        << " safe: " << colTab->safe << endl;
     }
-
-    lastJointChoiceIdx = -1;
-    lastJointChoiceTime = UnknownTime;
-    fill(lastMachineState.begin(), lastMachineState.end(), "");
-    fill(machineState.begin(), machineState.end(), "");
-    fill(numChoices.begin(), numChoices.end(), 1);
-    fill(lastJointChoice.begin(), lastJointChoice.end(), 0);
-    saveSharedData();
+  } else {
+    int file = open( filename, O_CREAT | O_WRONLY, 0664 );
+    write( file, (char *) weights, RL_MEMORY_SIZE * sizeof(double) );
+    colTab->save( file );
+    close( file );
   }
-
-  barriers["enter2"]->wait();
-  loadSharedData();
-  barriers["exit2"]->wait();
+  return true;
 }
 
-int LinearSarsaLearner::loadTiles(double state[],
-                                  const machine_state_t &machine_state,
-                                  const num_choice_t &num_choices,
-                                  int (*tiles)[RL_MAX_NUM_TILINGS]) {
-  const int tilingsPerGroup = 32;
-
-  int h = (int) (hash<string>()(to_prettystring(machine_state)) %
-                 INT_MAX); // joint machine state
-  Log.log(101, "LinearSarsaLearner::loadTiles machine state: [%s], "
-              "num_choices=%d, (hash=%d)",
-          to_prettystring(machine_state).c_str(),
-          validChoices(num_choices).size(), h);
-
-  int numTilings = 0;
-  for (int v = 0; v < HierarchicalFSM::num_features; v++) {
-    for (auto a : validChoices(num_choices)) {
-      GetTiles1(&(tiles[a][numTilings]), tilingsPerGroup, colTab,
-                (float) (state[v] / tileWidths[v]), a, v, h);
-    }
-    numTilings += tilingsPerGroup;
-  }
-
-  Assert(numTilings > 0);
-  Assert(numTilings < RL_MAX_NUM_TILINGS);
-  return numTilings;
-}
-
-/**
- * compute Q vlaue assumming tiles loaded
- * @param state
- * @param machine_state
- * @param choice
- * @param tiles
- * @param num_tilings
- * @return
- */
-double LinearSarsaLearner::QValue(double *state,
-                                  const machine_state_t &machine_state,
-                                  int choice, int (*tiles)[RL_MAX_NUM_TILINGS],
-                                  int num_tilings) {
-  auto q = computeQ(choice, tiles, num_tilings);
-  Log.log(101, "LinearSarsaLearner::QValue: Q(s, m=%s, c=%d) = %f",
-          to_prettystring(machine_state).c_str(), choice, q);
-  return q;
-}
-
-double LinearSarsaLearner::computeQ(int choice,
-                                    int (*tiles)[RL_MAX_NUM_TILINGS],
-                                    int numTilings) {
-  double q = 0.0;
-  for (int j = 0; j < numTilings; j++) {
-    q += weights[tiles[choice][j]];
+// Compute an action value from current F and theta    
+double LinearSarsaAgent::computeQ( int a )
+{
+  double q = 0;
+  for ( int j = 0; j < numTilings; j++ ) {
+    q += weights[ tiles[ a ][ j ] ];
   }
 
   return q;
 }
 
-double LinearSarsaLearner::Value(double *state,
-                                 const machine_state_t &machine_state) {
-  auto tiles = new int[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
-  double v = numeric_limits<double>::min();
-
-  Assert(numChoicesMap.count(machine_state));
-  auto num_choices = numChoicesMap[machine_state];
-  int num_tilings = loadTiles(state, machine_state, num_choices, tiles);
-
-  for (auto c : validChoices(num_choices)) {
-    double tmp = QValue(state, machine_state, c, tiles, num_tilings);
-    if (tmp > v) {
-      v = tmp;
-    }
-  }
-
-  Log.log(101, "LinearSarsaLearner::Value: V(s, m=%s) = %f",
-          to_prettystring(machine_state).c_str(), v);
-  delete[] tiles;
-  return v;
-}
-
-int LinearSarsaLearner::selectChoice(const num_choice_t &num_choices) {
-  int choice = -1;
-
-  if (Log.isInLogLevel(101)) {
-    stringstream ss;
-    PRINT_VALUE_STREAM(ss, validChoices(num_choices));
-    PRINT_VALUE_STREAM(ss, validChoices(num_choices).size());
-    PRINT_VALUE_STREAM(ss, jointChoicesMap[num_choices]);
-    PRINT_VALUE_STREAM(ss,
-                       vector<double>(Q, Q + validChoices(num_choices).size()));
-    Log.log(101, "LinearSarsaLearner::selectChoice %s", ss.str().c_str());
-    Log.log(101, "LinearSarsaLearner::selectChoice numTilings: %d", numTilings);
-  }
-
-  if (bLearning && drand48() < epsilon) { /* explore */
-    auto &choices = validChoices(num_choices);
-    choice = choices[rand() % choices.size()];
-    Log.log(101, "LinearSarsaLearner::selectChoice explore choice %d", choice);
-  } else {
-    choice = argmaxQ(num_choices);
-    Log.log(101, "LinearSarsaLearner::selectChoice argmaxQ choice %d", choice);
-  }
-
-  return choice;
-}
-
-int LinearSarsaLearner::argmaxQ(const num_choice_t &num_choices) {
-  int bestAction = -1;
-  double bestValue = (double) INT_MIN;
+// Returns index (action) of largest entry in Q array, breaking ties randomly 
+int LinearSarsaAgent::argmaxQ()
+{
+  int bestAction = 0;
+  double bestValue = Q[ bestAction ];
   int numTies = 0;
-
-  for (auto a : validChoices(num_choices)) {
-    double value = Q[a];
-    if (value > bestValue) {
+  for ( int a = bestAction + 1; a < getNumActions(); a++ ) {
+    double value = Q[ a ];
+    if ( value > bestValue ) {
       bestValue = value;
       bestAction = a;
-    } else if (value == bestValue) {
+    }
+    else if ( value == bestValue ) {
       numTies++;
-      if (rand() % (numTies + 1) == 0) {
+      if ( rand() % ( numTies + 1 ) == 0 ) {
         bestValue = value;
         bestAction = a;
       }
     }
   }
 
-  Assert(bestAction != -1);
   return bestAction;
 }
 
-void LinearSarsaLearner::updateWeights(double delta, int num_tilings) {
-  Log.log(101, "LinearSarsaLearner::updateWeights delta %f", delta);
-
-  Assert(num_tilings > 0);
-  double tmp = delta * alpha / num_tilings;
-
-  for (int i = 0; i < numNonzeroTraces; i++) {
-    Assert(i < RL_MAX_NONZERO_TRACES);
-
-    int f = nonzeroTraces[i];
-    Assert(f >= 0);
-    Assert(f < RL_MEMORY_SIZE);
-
-    if (f >= RL_MEMORY_SIZE || f < 0) {
-      continue;
-    }
-
-    weights[f] += tmp * traces[f];
-    Assert(!std::isnan(weights[f]));
-    Assert(!std::isinf(weights[f]));
+void LinearSarsaAgent::updateWeights( double delta )
+{
+  double tmp = delta * alpha / numTilings;
+  for ( int i = 0; i < numNonzeroTraces; i++ ) {
+    int f = nonzeroTraces[ i ];
+    if ( f > RL_MEMORY_SIZE || f < 0 )
+      cerr << "f is too big or too small!!" << f << endl;
+    weights[ f ] += tmp * traces[ f ];
+    //cout << "weights[" << f << "] = " << weights[f] << endl;
   }
 }
 
-void LinearSarsaLearner::decayTraces(double decayRate) {
-  for (int loc = numNonzeroTraces - 1; loc >= 0; loc--) {
-    int f = nonzeroTraces[loc];
-    if (f >= RL_MEMORY_SIZE || f < 0) {
-      Assert(0);
-      cerr << "DecayTraces: f out of range " << f << endl;
-      continue;
-    }
+void LinearSarsaAgent::loadTiles( double state[] )
+{
+  int tilingsPerGroup = 32;  /* num tilings per tiling group */
+  numTilings = 0;
 
-    traces[f] *= decayRate;
-    if (traces[f] < minimumTrace)
-      clearExistentTrace(f, loc);
+  /* These are the 'tiling groups'  --  play here with representations */
+  /* One tiling for each state variable */
+  for ( int v = 0; v < getNumFeatures(); v++ ) {
+    for ( int a = 0; a < getNumActions(); a++ ) {
+      GetTiles1( &(tiles[ a ][ numTilings ]), tilingsPerGroup, colTab,
+                 state[ v ] / tileWidths[ v ], a , v );
+    }  
+    numTilings += tilingsPerGroup;
   }
+  if ( numTilings > RL_MAX_NUM_TILINGS )
+    cerr << "TOO MANY TILINGS! " << numTilings << endl;
 }
 
-void LinearSarsaLearner::clearTrace(int f) {
-  if (f >= RL_MEMORY_SIZE || f < 0) {
-    Assert(0);
+
+// Clear any trace for feature f      
+void LinearSarsaAgent::clearTrace( int f)
+{
+  if ( f > RL_MEMORY_SIZE || f < 0 )
     cerr << "ClearTrace: f out of range " << f << endl;
-    return;
-  }
-
-  if (traces[f] != 0)
-    clearExistentTrace(f, nonzeroTracesInverse[f]);
+  if ( traces[ f ] != 0 )
+    clearExistentTrace( f, nonzeroTracesInverse[ f ] );
 }
 
-void LinearSarsaLearner::clearExistentTrace(int f, int loc) {
-  if (f >= RL_MEMORY_SIZE || f < 0) {
-    Assert(0);
+// Clear the trace for feature f at location loc in the list of nonzero traces 
+void LinearSarsaAgent::clearExistentTrace( int f, int loc )
+{
+  if ( f > RL_MEMORY_SIZE || f < 0 )
     cerr << "ClearExistentTrace: f out of range " << f << endl;
-    return;
-  }
+  traces[ f ] = 0.0;
+  numNonzeroTraces--;
+  nonzeroTraces[ loc ] = nonzeroTraces[ numNonzeroTraces ];
+  nonzeroTracesInverse[ nonzeroTraces[ loc ] ] = loc;
+}
 
-  traces[f] = 0.0;
-
-  if (numNonzeroTraces > 0) {
-    numNonzeroTraces--;
-    nonzeroTraces[loc] = nonzeroTraces[numNonzeroTraces];
-    nonzeroTracesInverse[nonzeroTraces[loc]] = loc;
-  } else {
-    fill(traces, traces + RL_MEMORY_SIZE, 0.0);
-    Assert(numNonzeroTraces == 0);
+// Decays all the (nonzero) traces by decay_rate, removing those below minimum_trace 
+void LinearSarsaAgent::decayTraces( double decayRate )
+{
+  int f;
+  for ( int loc = numNonzeroTraces - 1; loc >= 0; loc-- ) {
+    f = nonzeroTraces[ loc ];
+    if ( f > RL_MEMORY_SIZE || f < 0 )
+      cerr << "DecayTraces: f out of range " << f << endl;
+    traces[ f ] *= decayRate;
+    if ( traces[ f ] < minimumTrace )
+      clearExistentTrace( f, loc );
   }
 }
 
-void LinearSarsaLearner::setTrace(int f, float newTraceValue) {
-  if (f >= RL_MEMORY_SIZE || f < 0) {
-    Assert(0);
+// Set the trace for feature f to the given value, which must be positive   
+void LinearSarsaAgent::setTrace( int f, float newTraceValue )
+{
+  if ( f > RL_MEMORY_SIZE || f < 0 )
     cerr << "SetTraces: f out of range " << f << endl;
-    return;
-  }
-
-  if (traces[f] >= minimumTrace) {
-    traces[f] = newTraceValue; // trace already exists
-  } else {
-    while (numNonzeroTraces >= RL_MAX_NONZERO_TRACES) {
-      increaseMinTrace(); // ensure room for new trace
-    }
-
-    traces[f] = newTraceValue;
-    Assert(numNonzeroTraces >= 0);
-    Assert(numNonzeroTraces < RL_MAX_NONZERO_TRACES);
-    nonzeroTraces[numNonzeroTraces] = f;
-    nonzeroTracesInverse[f] = numNonzeroTraces;
+  if ( traces[ f ] >= minimumTrace )
+    traces[ f ] = newTraceValue;         // trace already exists              
+  else {
+    while ( numNonzeroTraces >= RL_MAX_NONZERO_TRACES )
+      increaseMinTrace(); // ensure room for new trace              
+    traces[ f ] = newTraceValue;
+    nonzeroTraces[ numNonzeroTraces ] = f;
+    nonzeroTracesInverse[ f ] = numNonzeroTraces;
     numNonzeroTraces++;
   }
 }
 
-void LinearSarsaLearner::increaseMinTrace() {
+// Try to make room for more traces by incrementing minimum_trace by 10%,
+// culling any traces that fall below the new minimum                      
+void LinearSarsaAgent::increaseMinTrace()
+{
   minimumTrace *= 1.1;
   cerr << "Changing minimum_trace to " << minimumTrace << endl;
-  for (int loc = numNonzeroTraces - 1; loc >= 0;
-       loc--) { // necessary to loop downwards
-    int f = nonzeroTraces[loc];
-    if (traces[f] < minimumTrace)
-      clearExistentTrace(f, loc);
+  for ( int loc = numNonzeroTraces - 1; loc >= 0; loc-- ) { // necessary to loop downwards    
+    int f = nonzeroTraces[ loc ];
+    if ( traces[ f ] < minimumTrace )
+      clearExistentTrace( f, loc );
   }
 }
 
-bool LinearSarsaLearner::loadWeights(const char *filename) {
-  FileLock lock("loadWeights");
-  cerr << "Loading weights from " << filename << endl;
-
-#ifdef _Compress
-  igzstream is;
-#else
-  ifstream is;
-#endif
-
-  is.open(filename);
-  if (!is.good()) {
-    cerr << "failed to open weight file: " << filename << endl;
-    return false;
-  }
-
-  is.read((char *) weights, RL_MEMORY_SIZE * sizeof(double));
-  colTab->restore(is);
-  is.close();
-  cerr << "...done" << endl;
-  return true;
-}
-
-bool LinearSarsaLearner::saveWeights(const char *filename) {
-  FileLock lock("saveWeights");
-
-#ifdef _Compress
-  ogzstream os;
-#else
-  ofstream os;
-#endif
-
-  os.open(filename);
-  if (!os.good()) {
-    cerr << "failed to open weight file: " << filename << endl;
-    return false;
-  }
-
-  os.write((char *) weights, RL_MEMORY_SIZE * sizeof(double));
-  colTab->save(os);
-  os.close();
-  return true;
-}
+void LinearSarsaAgent::setParams(int iCutoffEpisodes, int iStopLearningEpisodes)
+{
+  /* set learning parameters */
 }
