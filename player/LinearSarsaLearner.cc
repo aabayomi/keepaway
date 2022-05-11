@@ -108,6 +108,7 @@ LinearSarsaAgent::LinearSarsaAgent( int numFeatures, int numActions, bool bLearn
 
   if ( strlen( loadWeightsFile.c_str() ) > 0 )
     loadWeights(loadWeightsFile.c_str());
+
 }
 
 double LinearSarsaAgent::getQ(int action) {
@@ -132,6 +133,7 @@ int LinearSarsaAgent::startEpisode( double state[] )
   }
 
   lastAction = selectAction();
+  // Log.log("Right before making the weightToString call", lastAction.c_str());
 
   char buffer[128];
   sprintf( buffer, "Q[%d] = %.2f", lastAction, Q[lastAction] );
@@ -143,6 +145,7 @@ int LinearSarsaAgent::startEpisode( double state[] )
     setTrace( tiles[ lastAction ][ j ], 1.0 );
   if (hiveMind) saveWeights(weightsFile);
   return lastAction;
+
 }
 
 int LinearSarsaAgent::step( double reward, double state[] )
