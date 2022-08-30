@@ -51,9 +51,16 @@ public:
 									char   *strPolicy,
 									WorldModel *ws );
 
-	int  startEpisode( int current_time, double state[] );
-	int  step( int current_time, double reward, double state[] );
-	void endEpisode( int current_time, double reward );
+	
+
+	int  startEpisode(double state[] ); // new
+	int  step(double reward, double state[]); // new
+	void endEpisode(double reward ); // new
+
+	// int  startEpisode( int current_time, double state[] ); // old 
+	// int  step( int current_time, double reward, double state[] );
+	// void endEpisode( int current_time, double reward );
+
 	void setParams(int iCutoffEpisodes, int iStopLearningEpisodes){exit(1);} //*met 8/16/05
 };
 

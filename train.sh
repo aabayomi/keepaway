@@ -1,4 +1,4 @@
 #!/bin/bash
 
-./run.sh -sfmzE $*
+./run.sh -slfmzE $*
 

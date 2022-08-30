@@ -115,6 +115,7 @@ double LinearSarsaAgent::getQ(int action) {
   if (action < 0 || action > getNumActions()) {
     throw "invalid action";
   }
+  cout << "getQ " << Q[action];
   return Q[action];
 }
 
@@ -254,12 +255,15 @@ int LinearSarsaAgent::selectAction()
     action = argmaxQ();
   }
 
+  cout << "This action " << endl;
+  cout << action << endl;
+
   return action;
 }
 
 bool LinearSarsaAgent::loadWeights(const char *filename )
 {
-  cout << "Loading weights from " << filename << endl;
+  cout << "Linear SARSA Loading weights from " << filename << endl;
   if (hiveMind) {
     if (hiveFile < 0) {
       // First, check the lock file, so we have only one initializer.
