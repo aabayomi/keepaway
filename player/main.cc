@@ -362,22 +362,22 @@ int main(int argc, char *argv[])
     {
       Log.log("Keepers here");
       
-      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
-      sa = variable;
-
-      // HandCodedAgent *variable = new HandCodedAgent( numFeatures, numActions,
-      //                        strPolicy, &wm );
+      // LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
       // sa = variable;
+
+      HandCodedAgent *variable = new HandCodedAgent( numFeatures, numActions,
+                             strPolicy, &wm );
+      sa = variable;
     }
     else
     {
      
-      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
-      sa = variable;
-       
-      // HandCodedAgent *variable = new HandCodedAgent( numFeatures, numActions,
-      //                        strPolicy, &wm );
+      // LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
       // sa = variable;
+       
+      HandCodedAgent *variable = new HandCodedAgent( numFeatures, numActions,
+                             strPolicy, &wm );
+      sa = variable;
     };
   }
   
