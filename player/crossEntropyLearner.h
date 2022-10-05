@@ -52,14 +52,16 @@ class CrossEntropyAgent:public SMDPAgent
   bool bLearning;
   bool bSaveWeights;
 
-  /// Hive mind indicator and file descriptor.
-  //bool hiveMind;
-  //int hiveFile;
+  // Hive mind indicator and file descriptor.
+  bool hiveMind;
+  int hiveFile;
   
   int epochNum;
   int lastAction;
   double epsilon;
 
+  int lastActionsTime;
+  WorldModel *WM;  /*!< WorldModel that contains information of world   */
   
   // normal distribution variables
   double mean;
@@ -69,6 +71,12 @@ class CrossEntropyAgent:public SMDPAgent
   int k;
   double tempReward;
   double maxReward;
+
+  int popSize;
+  int eliteFrac;
+
+  double lastActionTime;
+
   std::map< array<double, RL_MEMORY_SIZE>, double> samples;
   unordered_map<double, array<double, RL_MEMORY_SIZE>> setOfWeights;
 
@@ -164,7 +172,9 @@ class CrossEntropyAgent:public SMDPAgent
                                       bool   bLearn,
                                       double widths[],
                                       string   loadWeightsFile,
-                                      string   saveWeightsFile);
+                                      string   saveWeightsFile,
+                                      bool   hiveMind,
+                                      WorldModel *ws);
 
   // Support for extra modes and/or analysis.
   double getQ(int action);

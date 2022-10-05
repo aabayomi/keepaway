@@ -62,11 +62,11 @@ set(SOURCE_FILES
         player/WorldModelUpdate.cc
         # player/HierarchicalFSM.cc
         # player/HierarchicalFSM.h
-        # player/crossEntropyLearner.h
-        # player/crossEntropyLearner.cc
+        player/crossEntropyLearner.h
+        player/crossEntropyLearner.cc
         player/ChoicePoint.h
-        player/LinearSarsaLearner.cc
-        player/LinearSarsaLearner.h
+        # player/LinearSarsaLearner.cc
+        # player/LinearSarsaLearner.h
         player/gzstream.cc
         player/gzstream.h)
 

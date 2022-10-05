@@ -28,8 +28,8 @@ using namespace Eigen;
 #pragma pack(push, 1)
 struct CollisionTableHeader
 {
-  // long m;
-  // int safe;
+  long m;
+  int safe;
   long calls;
   long clearhits;
   long collisions;
@@ -52,16 +52,16 @@ long *loadColTabHeader(collision_table *colTab, double *weights)
   colTab->calls = colTabHeader->calls;
   colTab->clearhits = colTabHeader->clearhits;
   colTab->collisions = colTabHeader->collisions;
-  // colTab->m = colTabHeader->m;
-  // colTab->safe = colTabHeader->safe;
+  colTab->m = colTabHeader->m;
+  colTab->safe = colTabHeader->safe;
   if (VERBOSE_HIVE_MIND)
   {
     cout << "Loaded colTabHeader:" << endl
          << " calls: " << colTab->calls << endl
          << " clearhits: " << colTab->clearhits << endl
-         << " collisions: " << colTab->collisions << endl;
-    // << " m: " << colTab->m << endl
-    // << " safe: " << colTab->safe << endl;
+         << " collisions: " << colTab->collisions << endl
+         << " m: " << colTab->m << endl
+         << " safe: " << colTab->safe << endl;
   }
   return reinterpret_cast<long *>(colTabHeader + 1);
 }
@@ -70,11 +70,12 @@ extern LoggerDraw LogDraw;
 
 CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLearn,
                                      double widths[],
-                                     string loadWeightsFile, string saveWeightsFile) :
+                                     string loadWeightsFile, string saveWeightsFile , bool hiveMind, WorldModel *wm):
 
-                                                                                       SMDPAgent(numFeatures, numActions)
+SMDPAgent(numFeatures, numActions),hiveFile(-1)
 
 {
+  WM = wm;
   bLearning = bLearn;
   bSaveWeights = bLearning && saveWeightsFile.length() > 0;
   saveWeightsFile = saveWeightsFile;
@@ -92,7 +93,7 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
   k = 1; // k best weights
   maxReward = 0;
 
-  // initialWeights = weightsRaw;
+  initialWeights = weightsRaw;
 
   tempReward = 0;
 
@@ -110,10 +111,10 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
   int tmp[2];
   float tmpf[2];
 
-  // colTab = new collision_table( RL_MEMORY_SIZE, 1 );
+  colTab = new collision_table( RL_MEMORY_SIZE, 1 );
 
   // colTab =
-  colTab = new collision_table;
+  // colTab = new collision_table;
   // colTab;
 
   GetTiles(tmp, 1, 1, tmpf, 0); // A dummy call to set the hashing table
@@ -121,9 +122,10 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
   srand48((unsigned int)time(NULL));
   Log.log("Currently I am in the constructor");
 
+  Log.log("Time " + std::to_string(WM->getCurrentTime().getTime()));
+
   if (bLearning || !bLearning)
   {
-
     string exepath = getexepath();
     // exepath += "LinearSarsaLearner::initialize";
     exepath += loadWeightsFile;
@@ -139,7 +141,7 @@ CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLear
         double w = distribution(generator);
         // Log.log(std::to_string(w));
         weights[i] = w;
-        weightsRaw[i] = w;
+        initialWeights[i] = w;
       }
       Log.log("Right before making the weightToString call");
       weightsToString(saveWeightsFile.c_str());
@@ -188,6 +190,13 @@ int CrossEntropyAgent::startEpisode(double state[])
 {
 
   Log.log("start of Episode");
+
+  std::cout << "start of Episode" << std::endl;
+
+  lastActionTime = WM->getCurrentTime().getTime();
+
+  std::cout << "start of Episode " << WM->getCurrentTime().getTime() << std::endl;
+
   epochNum++;
   loadTiles(state);
   for (int a = 0; a < getNumActions(); a++)
@@ -290,12 +299,9 @@ void CrossEntropyAgent::updateWeights()
 /// weight Update a maximum reward
 void CrossEntropyAgent::oneUpdate()
 {
-
   // loadWeights(saveWeightsFile.c_str());
   tempWeights = setOfWeights[maxReward];
-
   // std::cout << "Here is the matrix m:\n" <<  b  << std::endl;
-
   // Log.log("First number of highest reward: " + std::to_string(tempWeights[0]));
   // Log.log("First number of current weights: " + std::to_string(weights[0]));
   float sumWeights = 0;
@@ -303,35 +309,35 @@ void CrossEntropyAgent::oneUpdate()
   {
     sumWeights += tempWeights[j];
   }
-
   mean = sumWeights / RL_MEMORY_SIZE;
-  Log.log("New Mean: " + std::to_string(mean));
-  
-
+  // Log.log("New Mean: " + std::to_string(mean));
   Eigen::RowVectorXd  b = Eigen::Map<Eigen::RowVectorXd, Eigen::Unaligned>(tempWeights.data(), tempWeights.size());
   RowVectorXd  mu = RowVectorXd :: Constant(1,RL_MEMORY_SIZE,mean) ;
   float sum;
   float Q;
-
   VectorXd P;
   P = b - mu;
   // std::cout << "Here is the matrix m:\n" <<  P  << std::endl;
   Q = P.transpose().dot(P);
   std = Q /RL_MEMORY_SIZE;
-  Log.log("New std: " + std::to_string(std));
+  // Log.log("New std: " + std::to_string(std));
 }
 
 int CrossEntropyAgent::step(double reward, double state[])
 {
 
-  double totalRewards = reward + Q[lastAction];
+  // std::cout << "Steps Rewards  " << reward << std::endl;
 
+
+
+
+  // cerr << "steps" << endl;
+  double totalRewards = reward + Q[lastAction];
   loadTiles(state);
   for (int a = 0; a < getNumActions(); a++)
   {
     Q[a] = computeQ(a);
   }
-
   // take actions with the maximal weights
   lastAction = selectAction(); 
   
@@ -354,6 +360,11 @@ int CrossEntropyAgent::step(double reward, double state[])
 void CrossEntropyAgent::endEpisode(double reward)
 
 {
+
+  // std::cout << "End Reward" << reward << std::endl;
+  Log.log("End of Episode Reward: " + std::to_string(reward));
+  // Log.log("CrossEntropyAgent::step reward %.2f", lastAction);
+  
   if(rand()%200 == 0){
     saveWeights(saveWeightsFile.c_str());
   }
@@ -407,54 +418,166 @@ int CrossEntropyAgent::selectAction()
   return action;
 }
 
+// bool CrossEntropyAgent::loadWeights(const char *filename)
+// {
+//   FileLock lock("loadWeights");
+//   cerr << "Loading weights from " << filename << endl;
+
+// #ifdef _Compress
+//   igzstream is;
+// #else
+//   ifstream is;
+// #endif
+
+//   is.open(filename);
+//   // myFile.open(filename)
+//   if (!is.good())
+//   {
+//     cerr << "failed to open weight file: " << filename << endl;
+//     return false;
+//   }
+//   // myFile.read((char *) &weights, RL_MEMORY_SIZE * sizeof(double)))
+//   is.read(reinterpret_cast<char *>(&weights), std::streamsize(RL_MEMORY_SIZE * sizeof(double)));
+//   colTab->restore(is);
+//   is.close();
+//   cerr << "...done" << endl;
+//   return true;
+// }
+
+// bool CrossEntropyAgent::saveWeights(const char *filename)
+// {
+//   FileLock lock("saveWeights");
+
+// #ifdef _Compress
+//   ogzstream os;
+// #else
+//   ofstream os;
+// #endif
+
+//   if (!os.good())
+//   {
+
+//     cerr << "failed to open weight file: " << filename << endl;
+//     return false;
+//   }
+//   cerr << "saved the weights" << endl;
+//   os.write((const char *)&weights, RL_MEMORY_SIZE * sizeof(double));
+//   colTab->save(os);
+//   os.close();
+//   return true;
+// }
+
+
+
 bool CrossEntropyAgent::loadWeights(const char *filename)
 {
-  FileLock lock("loadWeights");
-  cerr << "Loading weights from " << filename << endl;
-
-#ifdef _Compress
-  igzstream is;
-#else
-  ifstream is;
-#endif
-
-  is.open(filename);
-  // myFile.open(filename)
-  if (!is.good())
-  {
-    cerr << "failed to open weight file: " << filename << endl;
-    return false;
+  cout << "Loading weights from " << filename << endl;
+  if (hiveMind) {
+    if (hiveFile < 0) {
+      // First, check the lock file, so we have only one initializer.
+      // Later interaction should be approximately synchronized by having only
+      // one active player at a time per team, but we can't assume that here.
+      stringstream lockNameBuffer;
+      lockNameBuffer << filename << ".lock";
+      const char* lockName = lockNameBuffer.str().c_str();
+      int lock;
+      // 10ms delay (times a million to convert from nanos).
+      timespec sleepTime = {0, 10 * 1000 * 1000};
+      while (true) {
+        lock = open(lockName, O_CREAT | O_EXCL, 0664);
+        if (lock >= 0) break;
+        nanosleep(&sleepTime, NULL);
+      }
+      // First, see if the file is already there.
+      bool fileFound = !access(filename, F_OK);
+      // TODO Extract constant for permissions (0664)?
+      hiveFile = open(filename, O_RDWR | O_CREAT, 0664);
+      size_t mapLength =
+        RL_MEMORY_SIZE * sizeof(double) +
+        sizeof(CollisionTableHeader) +
+        colTab->m * sizeof(long);
+      if (!fileFound) {
+        // Make the file the right size.
+        cout << "Initializing new hive file." << endl;
+        if (lseek(hiveFile, mapLength - 1, SEEK_SET) < 0) {
+          throw "failed to seek initial file size";
+        }
+        if (write(hiveFile, "", 1) < 0) {
+          throw "failed to expand initial file";
+        }
+      }
+      if (hiveFile < 0) throw "failed to open hive file";
+      void* hiveMap =
+        mmap(NULL, mapLength, PROT_READ | PROT_WRITE, MAP_SHARED, hiveFile, 0);
+      if (hiveMap == MAP_FAILED) throw "failed to map hive file";
+      // First the weights.
+      initialWeights = reinterpret_cast<double*>(hiveMap);
+      // Now the collision table header.
+      CollisionTableHeader* colTabHeader =
+        reinterpret_cast<CollisionTableHeader*>(initialWeights + RL_MEMORY_SIZE);
+      if (fileFound) {
+        loadColTabHeader(colTab, initialWeights);
+      }
+      // Now the collision table data.
+      delete[] colTab->data;
+      colTab->data = reinterpret_cast<long*>(colTabHeader + 1);
+      if (!fileFound) {
+        // Clear out initial contents.
+        // The whole team might be doing this at the same time. Is that okay?
+        for ( int i = 0; i < RL_MEMORY_SIZE; i++ ) {
+          initialWeights[ i ] = 0;
+        }
+        colTab->reset();
+        // Make sure the header goes out to the file.
+        saveWeights(weightsFile);
+      }
+      // TODO Separate file lock type with destructor?
+      unlink(lockName);
+    }
+  } else {
+    int file = open( filename, O_RDONLY );
+    read( file, (char *) initialWeights, RL_MEMORY_SIZE * sizeof(double) );
+    colTab->restore( file );
+    close( file );
   }
-  // myFile.read((char *) &weights, RL_MEMORY_SIZE * sizeof(double)))
-  is.read(reinterpret_cast<char *>(&weights), std::streamsize(RL_MEMORY_SIZE * sizeof(double)));
-  colTab->restore(is);
-  is.close();
-  cerr << "...done" << endl;
+  cout << "...done" << endl;
   return true;
 }
 
-bool CrossEntropyAgent::saveWeights(const char *filename)
+
+bool  CrossEntropyAgent::saveWeights(const char *filename)
 {
-  FileLock lock("saveWeights");
-
-#ifdef _Compress
-  ogzstream os;
-#else
-  ofstream os;
-#endif
-
-  if (!os.good())
-  {
-
-    cerr << "failed to open weight file: " << filename << endl;
-    return false;
+  if (hiveMind) {
+    // The big arrays should be saved out automatically, but we still need to
+    // handle the collision table header.
+    CollisionTableHeader* colTabHeader =
+      reinterpret_cast<CollisionTableHeader*>(initialWeights + RL_MEMORY_SIZE);
+    // Do each field individually, since they don't all line up exactly for an
+    // easy copy.
+    colTabHeader->calls = colTab->calls;
+    colTabHeader->clearhits = colTab->clearhits;
+    colTabHeader->collisions = colTab->collisions;
+    colTabHeader->m = colTab->m;
+    colTabHeader->safe = colTab->safe;
+    if (VERBOSE_HIVE_MIND) {
+      cout << "Saved colTabHeader:" << endl
+        << " calls: " << colTab->calls << endl
+        << " clearhits: " << colTab->clearhits << endl
+        << " collisions: " << colTab->collisions << endl
+        << " m: " << colTab->m << endl
+        << " safe: " << colTab->safe << endl;
+    }
+  } else {
+    int file = open( filename, O_CREAT | O_WRONLY, 0664 );
+    write( file, (char *) initialWeights, RL_MEMORY_SIZE * sizeof(double) );
+    colTab->save( file );
+    close( file );
   }
-  cerr << "saved the weights" << endl;
-  os.write((const char *)&weights, RL_MEMORY_SIZE * sizeof(double));
-  colTab->save(os);
-  os.close();
   return true;
 }
+
+
+
 
 // Compute an action value from current F and theta
 double CrossEntropyAgent::computeQ(int a)

@@ -217,7 +217,6 @@ int main(int argc, char *argv[])
                 // os.open((string(argv[i + 1]) + ".gz").c_str());
         os.open((string(argv[i + 1])).c_str());
         loggingFile = string(argv[i + 1]);
-
 #else
         os.open(argv[i + 1]);
 #endif
@@ -324,40 +323,40 @@ int main(int argc, char *argv[])
 
   int numActions = iNumKeepers;
 
-  //  if (!crossEntropy) {
-  //     cerr << "No agent!" << endl;
-  //     return EXIT_FAILURE;
-  //   } else {
-  //     if (string(strTeamName) == "keepers") {
-  //       Log.log("Keepers here");
-  //       CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
-  //       sa = variable;
-  //     }
-  //     else {
-  //         CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
-  //         sa = variable;
-  //     };
-  //   }
-
-  if (!crossEntropy)
-  {
-    cerr << "No agent!" << endl;
-    return EXIT_FAILURE;
-  }
-  else
-  {
-    if (string(strTeamName) == "keepers")
-    {
-      Log.log("Keepers here");
-      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
-      sa = variable;
+   if (!crossEntropy) {
+      cerr << "No agent!" << endl;
+      return EXIT_FAILURE;
+    } else {
+      if (string(strTeamName) == "keepers") {
+        Log.log("Keepers here");
+        CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind , &wm);
+        sa = variable;
+      }
+      else {
+          CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind,&wm);
+          sa = variable;
+      };
     }
-    else
-    {
-      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
-      sa = variable;
-    };
-  }
+
+  // if (!crossEntropy)
+  // {
+  //   cerr << "No agent!" << endl;
+  //   return EXIT_FAILURE;
+  // }
+  // else
+  // {
+  //   if (string(strTeamName) == "keepers")
+  //   {
+  //     Log.log("Keepers here");
+  //     LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
+  //     sa = variable;
+  //   }
+  //   else
+  //   {
+  //     LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
+  //     sa = variable;
+  //   };
+  // }
 
 
 
