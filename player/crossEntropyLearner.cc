@@ -18,13 +18,13 @@
 #include "LoggerDraw.h"
 
 using namespace Eigen;
-// If all is well, there should be no mention of anything keepaway- or soccer-
-// related in this file.
+// If all is well, there should be no mention of anything keepaway- or soccer- related in this file.
 
 /**
  * Designed specifically to match the serialization format for collision_table.
  * See collision_table::save and collision_table::restore.
  */
+
 #pragma pack(push, 1)
 struct CollisionTableHeader
 {
@@ -43,10 +43,12 @@ struct CollisionTableHeader
  * Returns the memory location after the header because that's useful for colTab
  * data array.
  */
+
 long *loadColTabHeader(collision_table *colTab, double *weights)
 {
   CollisionTableHeader *colTabHeader =
       reinterpret_cast<CollisionTableHeader *>(weights + RL_MEMORY_SIZE);
+
   // Do each field individually, since they don't all line up exactly for an
   // easy copy.
   colTab->calls = colTabHeader->calls;
@@ -56,12 +58,12 @@ long *loadColTabHeader(collision_table *colTab, double *weights)
   colTab->safe = colTabHeader->safe;
   if (VERBOSE_HIVE_MIND)
   {
-    cout << "Loaded colTabHeader:" << endl
-         << " calls: " << colTab->calls << endl
-         << " clearhits: " << colTab->clearhits << endl
-         << " collisions: " << colTab->collisions << endl
-         << " m: " << colTab->m << endl
-         << " safe: " << colTab->safe << endl;
+    std::cout << "Loaded colTabHeader:" << endl
+              << " calls: " << colTab->calls << endl
+              << " clearhits: " << colTab->clearhits << endl
+              << " collisions: " << colTab->collisions << endl
+              << " m: " << colTab->m << endl
+              << " safe: " << colTab->safe << endl;
   }
   return reinterpret_cast<long *>(colTabHeader + 1);
 }
@@ -70,134 +72,123 @@ extern LoggerDraw LogDraw;
 
 CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLearn,
                                      double widths[],
-                                     string loadWeightsFile, string saveWeightsFile , bool hiveMind, WorldModel *wm):
+                                     string loadWeightsFile, string saveWeightsFile, bool hiveMind, WorldModel *wm) :
 
-SMDPAgent(numFeatures, numActions),hiveFile(-1)
+                                                                                                                      SMDPAgent(numFeatures, numActions)
 
 {
-  WM = wm;
   bLearning = bLearn;
-  bSaveWeights = bLearning && saveWeightsFile.length() > 0;
-  saveWeightsFile = saveWeightsFile;
-  // teamName = teamName_;
 
   for (int i = 0; i < getNumFeatures(); i++)
   {
     tileWidths[i] = widths[i];
   }
 
-  // number of iterations for updating weights
-  mean = 0.0;
-  std = 1.0;
-  N = 25;
-  k = 1; // k best weights
+  // Saving weights (including for hive mind) requires learning and a file name.
+  this->hiveMind = false;
+  if (bLearning && strlen(saveWeightsFile.c_str()) > 0)
+  {
+    strcpy(weightsFile, saveWeightsFile.c_str());
+    bSaveWeights = true;
+    // Hive mind further requires loading and saving from the same file.
+    if (!strcmp(loadWeightsFile.c_str(), saveWeightsFile.c_str()))
+    {
+      this->hiveMind = hiveMind;
+    }
+  }
+  else
+  {
+    bSaveWeights = false;
+  }
+
+  alpha = 0.125;
+  gamma = 1.0;
+  lambda = 0;
+  epsilon = 0.01;
+  minimumTrace = 0.01;
+  epochNum = 0;
+  lastAction = -1;
+  numNonzeroTraces = 0;
+
+  counter = 0;
+  mean = 0.01;
+  std = 0.1;
+  popSize = 25;  // population size .
+  eliteFrac = 3; // elite fraction to select from
+
   maxReward = 0;
-
   initialWeights = weightsRaw;
-
   tempReward = 0;
 
+  lastActionsTime = UnknownTime; // definnes an unknown time.
+  WM = WM;
   std::default_random_engine generator;
   std::normal_distribution<double> distribution(mean, std);
 
-  counter = 0;
-  epsilon = 0.01;
-
-  epochNum = 0;
-  lastAction = -1;
+  for (int j = 0; j < 25; j++)
+  {
+    for (int i = 0; i < RL_MEMORY_SIZE; i++)
+    {
+      double w = distribution(generator);
+      // Log.log(std::to_string(w));
+      weights[i] = w;
+      // initialWeights[i] = w;
+    }
+    // samples.insert(std::make_pair<std::array<double, 10>,double>(j,weights));
+    setOfWeights[j] = weights;
+    // setOfW.insert(std::make_pair<double,double*[10]>(j,weights));
+    // std::cout << "mymap.size() is " << setOfWeights.size() << '\n';
+    Log.log(std::to_string(setOfWeights.size()));
+  }
+  // std::cout << "mymap.size() is " << setOfWeights.size() << '\n';
+  // }
 
   srand((unsigned int)0);
-  srand48((unsigned int)0);
   int tmp[2];
   float tmpf[2];
-
-  colTab = new collision_table( RL_MEMORY_SIZE, 1 );
-
-  // colTab =
-  // colTab = new collision_table;
-  // colTab;
+  colTab = new collision_table(RL_MEMORY_SIZE, 1);
 
   GetTiles(tmp, 1, 1, tmpf, 0); // A dummy call to set the hashing table
   srand(time(NULL));
-  srand48((unsigned int)time(NULL));
-  Log.log("Currently I am in the constructor");
 
-  Log.log("Time " + std::to_string(WM->getCurrentTime().getTime()));
-
-  if (bLearning || !bLearning)
-  {
-    string exepath = getexepath();
-    // exepath += "LinearSarsaLearner::initialize";
-    exepath += loadWeightsFile;
-    exepath += saveWeightsFile;
-    // auto h = hash<string>()(exepath); // hashing
-
-    if (loadWeightsFile.empty() || !loadWeights(loadWeightsFile.c_str()))
-    {
-      createFile(saveWeightsFile.c_str());
-      // fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
-      for (int i = 0; i < RL_MEMORY_SIZE; i++)
-      {
-        double w = distribution(generator);
-        // Log.log(std::to_string(w));
-        weights[i] = w;
-        initialWeights[i] = w;
-      }
-      Log.log("Right before making the weightToString call");
-      weightsToString(saveWeightsFile.c_str());
-      Log.log("Right after");
-      colTab->reset();
-    }
-  }
-  // weightsLog();
-  // Log.log("Right before weight to String");
-  // weightsToString();
+  if (strlen(loadWeightsFile.c_str()) > 0)
+    loadWeights(loadWeightsFile.c_str());
 }
 
-void CrossEntropyAgent::weightsLog()
+// void CrossEntropyAgent::generateNewWeighs(double state[])
+// {
+//   for (int j = 0; j < 25; j++)
+//   {
+//     for (int i = 0; i < RL_MEMORY_SIZE; i++)
+//     {
+//       double w = distribution(generator);
+//       // Log.log(std::to_string(w));
+//       weights[i] = w;
+//       // initialWeights[i] = w;
+//     }
+//     // samples.insert(std::make_pair<std::array<double, 10>,double>(j,weights));
+//     setOfWeights[j] = weights;
+//     // setOfW.insert(std::make_pair<double,double*[10]>(j,weights));
+//     // std::cout << "mymap.size() is " << setOfWeights.size() << '\n';
+//     Log.log(std::to_string(setOfWeights.size()));
+//   }
+// }
+
+int CrossEntropyAgent::startEpisode(double state[])
 {
+  // copy the from the array map to array type
+
+  tempWeights = setOfWeights[counter];
   for (int i = 0; i < RL_MEMORY_SIZE; i++)
   {
-    Log.log(std::to_string(weights[i]));
+    initialWeights[i] = tempWeights[i];
   }
-}
 
-void CrossEntropyAgent::createFile(const char *filename)
-{
-  myFile.open(filename);
-}
+  // Check if array has the right values
 
-void CrossEntropyAgent::weightsToString(const char *filename)
-{
-  // have to open it again so that it overwrites whatever is inside, will be useful if writing more than once into the file per training round
-  // myFile.open(filename);
-  myFile.write(reinterpret_cast<const char *>(&weights), std::streamsize(RL_MEMORY_SIZE * sizeof(double)));
-}
+  if (hiveMind)
+    loadColTabHeader(colTab, initialWeights); // added the array type.
 
-// Q state-action value estimate.
-double CrossEntropyAgent::getQ(int action)
-{
-  if (action < 0 || action > getNumActions())
-  {
-    throw "invalid action";
-  }
-  return Q[action];
-}
-
-// At the start of update Q and choose and action
-int CrossEntropyAgent::startEpisode(double state[])
-
-{
-
-  Log.log("start of Episode");
-
-  std::cout << "start of Episode" << std::endl;
-
-  lastActionTime = WM->getCurrentTime().getTime();
-
-  std::cout << "start of Episode " << WM->getCurrentTime().getTime() << std::endl;
-
-  epochNum++;
   loadTiles(state);
   for (int a = 0; a < getNumActions(); a++)
   {
@@ -205,200 +196,149 @@ int CrossEntropyAgent::startEpisode(double state[])
   }
 
   lastAction = selectAction();
-
+  lastActionsTime = WM->getCurrentTime().getTime();
+  // Log.log("Right before making the weightToString call", lastAction.c_str());
   char buffer[128];
   sprintf(buffer, "Q[%d] = %.2f", lastAction, Q[lastAction]);
-
-  // LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
-  //                  buffer,
-  //                  1, COLOR_BROWN );
-
-  // saveWeights(weightsFile);
-
+  LogDraw.logText("Qmax", VecPosition(25, -30),
+                  buffer,
+                  1, COLOR_BROWN);
+  if (hiveMind)
+    saveWeights(weightsFile);
   return lastAction;
 }
 
-
-void CrossEntropyAgent::updateWeights()
-
+// Compute an action value from current F and theta
+double CrossEntropyAgent::computeQ(int a)
 {
-
-  /* select the best set of weights
-
-  */
-
-  // create a empty vector of pairs
-
-  std::vector<pair<array<double, RL_MEMORY_SIZE>, double>> vec;
-  // copy key-value pairs from the map to the vector
-  std::map<array<double, RL_MEMORY_SIZE>, double>::iterator it;
-  ;
-
-  for (it = samples.begin(); it != samples.end(); it++)
+  double q = 0;
+  for (int j = 0; j < numTilings; j++)
   {
-    vec.push_back(make_pair(it->first, it->second));
-  }
-  // Sorts the weights by the reward
-
-
-  float sumWeights = 0;
-
-  for (std::size_t i = 0; i < vec.size(); i++)
-  {
-    if (i <= k - 1)
-    {
-      for (std::size_t j = 0; j < vec[i].first.size(); j++)
-      {
-        sumWeights += vec[i].first[j];
-      }
-    }
-    else
-    {
-      break;
-    }
+    q += initialWeights[tiles[a][j]]; // array type
   }
 
-  // update the pointer of mean
-  // should we divide by index instead of total selected samples??
-  mean = sumWeights / k;
-
-  // Log.log("CrossEntropyAgent::updateWeights mean %.2f", mean);
-
-  // find the std of the weights and update std pointer.
-
-  MatrixXd mu = MatrixXd::Constant(1, RL_MEMORY_SIZE, mean);
-  // this can be combined with one above.
-  float sum;
-  float Q;
-
-  for (std::size_t i = 0; i < vec.size(); i++)
-  {
-    if (i <= k - 1)
-    {
-      RowVectorXd W(RL_MEMORY_SIZE);
-      VectorXd P;
-
-      for (std::size_t j = 0; j < vec[i].first.size(); j++)
-      {
-        W(0, j) = vec[0].first[j];
-      }
-      P = W - mu;
-      Q = P.transpose().dot(P);
-      sum += Q;
-    }
-    else
-    {
-      break;
-    }
-  }
-  std = sum / N;
-
-  // Log.log("CrossEntropyAgent::updateWeights std %.2f", std);
+  return q;
 }
 
-/// weight Update a maximum reward
-void CrossEntropyAgent::oneUpdate()
+double CrossEntropyAgent::reward(double tau)
 {
-  // loadWeights(saveWeightsFile.c_str());
-  tempWeights = setOfWeights[maxReward];
-  // std::cout << "Here is the matrix m:\n" <<  b  << std::endl;
-  // Log.log("First number of highest reward: " + std::to_string(tempWeights[0]));
-  // Log.log("First number of current weights: " + std::to_string(weights[0]));
-  float sumWeights = 0;
-  for (std::size_t j = 0; j < RL_MEMORY_SIZE; j++)
+  Log.log(101, "CrossEntropyAgent::reward tau=%f", tau);
+  double ret = tau;
+
+  if (gamma < 1.0)
   {
-    sumWeights += tempWeights[j];
+    ret = (1.0 - pow(gamma, tau)) / (1.0 - gamma);
   }
-  mean = sumWeights / RL_MEMORY_SIZE;
-  // Log.log("New Mean: " + std::to_string(mean));
-  Eigen::RowVectorXd  b = Eigen::Map<Eigen::RowVectorXd, Eigen::Unaligned>(tempWeights.data(), tempWeights.size());
-  RowVectorXd  mu = RowVectorXd :: Constant(1,RL_MEMORY_SIZE,mean) ;
-  float sum;
-  float Q;
-  VectorXd P;
-  P = b - mu;
-  // std::cout << "Here is the matrix m:\n" <<  P  << std::endl;
-  Q = P.transpose().dot(P);
-  std = Q /RL_MEMORY_SIZE;
-  // Log.log("New std: " + std::to_string(std));
+  // return teamName == "keepers" ? ret : -ret;
+  return ret;
 }
-
-int CrossEntropyAgent::step(double reward, double state[])
+int CrossEntropyAgent::step(double current_time, double state[])
 {
 
-  // std::cout << "Steps Rewards  " << reward << std::endl;
+  // copy into array type
+  tempWeights = setOfWeights[counter];
+  for (int i = 0; i < RL_MEMORY_SIZE; i++)
+  {
+    initialWeights[i] = tempWeights[i];
+  }
+  if (hiveMind)
+    loadColTabHeader(colTab, initialWeights);
 
+  // Add the difference in time here.
+  double reward = current_time - lastActionsTime;
+  double delta = reward - Q[lastAction];
+  // rewards[counter] += reward;
+  rewardList[counter] += reward;
 
-
-
-  // cerr << "steps" << endl;
-  double totalRewards = reward + Q[lastAction];
+  // double discountReturn = discountReturn + (tau * pow())
   loadTiles(state);
   for (int a = 0; a < getNumActions(); a++)
   {
     Q[a] = computeQ(a);
   }
-  // take actions with the maximal weights
-  lastAction = selectAction(); 
-  
+
+  lastAction = selectAction();
+  lastActionsTime = WM->getCurrentTime().getTime();
+
   char buffer[128];
   sprintf(buffer, "Q[%d] = %.2f", lastAction, Q[lastAction]);
-
-  // Log.log("CrossEntropyAgent::step reward %.2f", lastAction, Q[lastAction]);
-
-  // LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
-  //                  buffer,
-  //                  1, COLOR_BROWN );
-  //
+  LogDraw.logText("Qmax", VecPosition(25, -30),
+                  buffer,
+                  1, COLOR_BROWN);
 
   if (!bLearning)
     return lastAction;
 
+  // char buffer[128];
+  sprintf(buffer, "reward: %.2f", reward);
+  LogDraw.logText("reward", VecPosition(25, 30),
+                  buffer,
+                  1, COLOR_NAVY);
+
+  delta += Q[lastAction];
+  // updateWeights( delta );
+
+  Q[lastAction] = computeQ(lastAction); // need to redo because weights changed
+  decayTraces(gamma * lambda);
+
+  for (int a = 0; a < getNumActions(); a++)
+  { // clear other than F[a]
+    if (a != lastAction)
+    {
+      for (int j = 0; j < numTilings; j++)
+        clearTrace(tiles[a][j]);
+    }
+  }
+  for (int j = 0; j < numTilings; j++) // replace/set traces F[a]
+    setTrace(tiles[lastAction][j], 1.0);
+
+  if (hiveMind)
+    saveWeights(weightsFile);
+  return lastAction;
 }
 
-// Add the reward and update Mean and Standard deviation
 void CrossEntropyAgent::endEpisode(double reward)
 
 {
-
-  // std::cout << "End Reward" << reward << std::endl;
-  Log.log("End of Episode Reward: " + std::to_string(reward));
-  // Log.log("CrossEntropyAgent::step reward %.2f", lastAction);
-  
-  if(rand()%200 == 0){
-    saveWeights(saveWeightsFile.c_str());
-  }
-  if (counter < N)
+  if (counter < popSize)
   {
-    // setOfWeights[reward] = initialWeights;
-    setOfWeights[reward] = weights;
-    // S[reward] = weightsRaw;
-    // setOfW.insert(std::pair<double,double*[RL_MEMORY_SIZE]>(reward,weights));
-    maxReward = std::max(maxReward, reward);
-    //Log.log(std::to_string(reward));
     counter++;
-    // Log.log(std::to_string(counter));
-    updateweightsEndEpisode();
   }
   else
   {
-    oneUpdate();
+
+    // argsort the  rewards
+    for (unsigned i = 25; i > 24; i--)
+    {
+      tempWeights = setOfWeights[argsort(rewardList).at(i)];
+
+      float sumWeights = 0;
+      for (std::size_t j = 0; j < RL_MEMORY_SIZE; j++)
+      {
+        sumWeights += tempWeights[j];
+      }
+      mean += sumWeights / RL_MEMORY_SIZE;
+      // Log.log("New Mean: " + std::to_string(mean));
+      Eigen::RowVectorXd b = Eigen::Map<Eigen::RowVectorXd, Eigen::Unaligned>(tempWeights.data(), tempWeights.size());
+      RowVectorXd mu = RowVectorXd ::Constant(1, RL_MEMORY_SIZE, mean);
+      float sum;
+      float Q;
+      VectorXd P;
+      P = b - mu;
+      // std::cout << "Here is the matrix m:\n" <<  P  << std::endl;
+      Q = P.transpose().dot(P);
+      std += Q / RL_MEMORY_SIZE;
+    }
+    // find mean
+    // generate new samples.
+
+    // oneUpdate();
+    // setOfWeights[1];
     counter = 0;
     setOfWeights.clear();
-    // samples.clear();
   }
 }
 
-void CrossEntropyAgent::shutDown()
-{
-  // We usually only save weights at random intervals.
-  // Always save at shutdown (if we are in saving mode).
-  if (bLearning && bSaveWeights)
-  {
-    cout << "Saving weights at shutdown." << endl;
-    saveWeights(saveWeightsFile.c_str());
-  }
-}
 
 // This is a gready approach and do we want to use greedy
 // or Choose the argmax
@@ -418,55 +358,111 @@ int CrossEntropyAgent::selectAction()
   return action;
 }
 
-// bool CrossEntropyAgent::loadWeights(const char *filename)
-// {
-//   FileLock lock("loadWeights");
-//   cerr << "Loading weights from " << filename << endl;
 
-// #ifdef _Compress
-//   igzstream is;
-// #else
-//   ifstream is;
-// #endif
+void CrossEntropyAgent::oneUpdate()
+{
+  // loadWeights(saveWeightsFile.c_str());
+  tempWeights = setOfWeights[maxReward];
+  // std::cout << "Here is the matrix m:\n" <<  b  << std::endl;
+  // Log.log("First number of highest reward: " + std::to_string(tempWeights[0]));
+  // Log.log("First number of current weights: " + std::to_string(weights[0]));
+  float sumWeights = 0;
+  for (std::size_t j = 0; j < RL_MEMORY_SIZE; j++)
+  {
+    sumWeights += tempWeights[j];
+  }
+  mean += sumWeights / RL_MEMORY_SIZE;
+  // Log.log("New Mean: " + std::to_string(mean));
+  Eigen::RowVectorXd b = Eigen::Map<Eigen::RowVectorXd, Eigen::Unaligned>(tempWeights.data(), tempWeights.size());
+  RowVectorXd mu = RowVectorXd ::Constant(1, RL_MEMORY_SIZE, mean);
+  float sum;
+  float Q;
+  VectorXd P;
+  P = b - mu;
+  // std::cout << "Here is the matrix m:\n" <<  P  << std::endl;
+  Q = P.transpose().dot(P);
+  std += Q / RL_MEMORY_SIZE;
+  // Log.log("New std: " + std::to_string(std));
+}
 
-//   is.open(filename);
-//   // myFile.open(filename)
-//   if (!is.good())
-//   {
-//     cerr << "failed to open weight file: " << filename << endl;
-//     return false;
-//   }
-//   // myFile.read((char *) &weights, RL_MEMORY_SIZE * sizeof(double)))
-//   is.read(reinterpret_cast<char *>(&weights), std::streamsize(RL_MEMORY_SIZE * sizeof(double)));
-//   colTab->restore(is);
-//   is.close();
-//   cerr << "...done" << endl;
-//   return true;
-// }
+// Clear any trace for feature f
+void CrossEntropyAgent::clearTrace(int f)
+{
+  if (f > RL_MEMORY_SIZE || f < 0)
+    cerr << "ClearTrace: f out of range " << f << endl;
+  if (traces[f] != 0)
+    clearExistentTrace(f, nonzeroTracesInverse[f]);
+}
 
-// bool CrossEntropyAgent::saveWeights(const char *filename)
-// {
-//   FileLock lock("saveWeights");
+// Clear the trace for feature f at location loc in the list of nonzero traces
+void CrossEntropyAgent::clearExistentTrace(int f, int loc)
+{
+  if (f > RL_MEMORY_SIZE || f < 0)
+    cerr << "ClearExistentTrace: f out of range " << f << endl;
+  traces[f] = 0.0;
+  numNonzeroTraces--;
+  nonzeroTraces[loc] = nonzeroTraces[numNonzeroTraces];
+  nonzeroTracesInverse[nonzeroTraces[loc]] = loc;
+}
 
-// #ifdef _Compress
-//   ogzstream os;
-// #else
-//   ofstream os;
-// #endif
+// Decays all the (nonzero) traces by decay_rate, removing those below minimum_trace
+void CrossEntropyAgent::decayTraces(double decayRate)
+{
+  int f;
+  for (int loc = numNonzeroTraces - 1; loc >= 0; loc--)
+  {
+    f = nonzeroTraces[loc];
+    if (f > RL_MEMORY_SIZE || f < 0)
+      cerr << "DecayTraces: f out of range " << f << endl;
+    traces[f] *= decayRate;
+    if (traces[f] < minimumTrace)
+      clearExistentTrace(f, loc);
+  }
+}
 
-//   if (!os.good())
-//   {
+// Set the trace for feature f to the given value, which must be positive
+void CrossEntropyAgent::setTrace(int f, float newTraceValue)
+{
+  if (f > RL_MEMORY_SIZE || f < 0)
+    cerr << "SetTraces: f out of range " << f << endl;
+  if (traces[f] >= minimumTrace)
+    traces[f] = newTraceValue; // trace already exists
+  else
+  {
+    while (numNonzeroTraces >= RL_MAX_NONZERO_TRACES)
+      increaseMinTrace(); // ensure room for new trace
+    traces[f] = newTraceValue;
+    nonzeroTraces[numNonzeroTraces] = f;
+    nonzeroTracesInverse[f] = numNonzeroTraces;
+    numNonzeroTraces++;
+  }
+}
 
-//     cerr << "failed to open weight file: " << filename << endl;
-//     return false;
-//   }
-//   cerr << "saved the weights" << endl;
-//   os.write((const char *)&weights, RL_MEMORY_SIZE * sizeof(double));
-//   colTab->save(os);
-//   os.close();
-//   return true;
-// }
+// Try to make room for more traces by incrementing minimum_trace by 10%,
+// culling any traces that fall below the new minimum
+void CrossEntropyAgent::increaseMinTrace()
+{
+  minimumTrace *= 1.1;
+  cerr << "Changing minimum_trace to " << minimumTrace << endl;
+  for (int loc = numNonzeroTraces - 1; loc >= 0; loc--)
+  { // necessary to loop downwards
+    int f = nonzeroTraces[loc];
+    if (traces[f] < minimumTrace)
+      clearExistentTrace(f, loc);
+  }
+}
 
+
+void CrossEntropyAgent::shutDown()
+{
+  // We usually only save weights at random intervals.
+  // Always save at shutdown (if we are in saving mode).
+  if (bLearning && bSaveWeights)
+  {
+    cout << "Saving weights at shutdown." << endl;
+    saveWeights(saveWeightsFile.c_str());
+  }
+}
 
 
 bool CrossEntropyAgent::loadWeights(const char *filename)
@@ -579,19 +575,6 @@ bool  CrossEntropyAgent::saveWeights(const char *filename)
 
 
 
-// Compute an action value from current F and theta
-double CrossEntropyAgent::computeQ(int a)
-{
-  double q = 0;
-
-  for (int j = 0; j < numTilings; j++)
-  {
-    q += weights[tiles[a][j]];
-  }
-
-  return q;
-}
-
 // Returns index (action) of largest entry in Q array, breaking ties randomly
 int CrossEntropyAgent::argmaxQ()
 {
@@ -657,3 +640,6 @@ void CrossEntropyAgent::updateweightsEndEpisode()
     weights[i] = w;
   }
 }
+
+
+

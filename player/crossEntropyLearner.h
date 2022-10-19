@@ -19,11 +19,12 @@
 #include <functional>
 #include <eigen3/Eigen/Dense>
 #include <unordered_map>
+#include <vector>
 
 
-// #define RL_MEMORY_SIZE 1048576
-// #define RL_MAX_NONZERO_TRACES 100000
-// #define RL_MAX_NUM_TILINGS 6000
+#define RL_MEMORY_SIZE 1048576
+#define RL_MAX_NONZERO_TRACES 100000
+#define RL_MAX_NUM_TILINGS 6000
 
 
 // namespace std {
@@ -40,6 +41,19 @@
 // };
 
 // }
+
+template<typename T>
+std::vector<size_t> argsort(const std::vector<T> &array) {
+    std::vector<size_t> indices(array.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    std::sort(indices.begin(), indices.end(),
+              [&array](int left, int right) -> bool {
+                // sort indices according to corresponding array element
+                  return array[left] < array[right];
+              });
+
+    return indices;
+}
 
 
 using namespace Eigen;
@@ -81,34 +95,34 @@ class CrossEntropyAgent:public SMDPAgent
   unordered_map<double, array<double, RL_MEMORY_SIZE>> setOfWeights;
 
   unordered_map<double, double(*)[RL_MEMORY_SIZE]> S;
-
   std::map<double, double(*)[RL_MEMORY_SIZE]> setOfW;
-
-  // std::map<double,Triple>R;
-
   std::vector<double> temp;
+
+  std::vector<int> rewardList;
+
 
   ofstream myFile;
   
-
-
-  // double alpha;
-  // double gamma;
-  // double lambda;
+  double alpha;
+  double gamma;
+  double lambda;
   // double epsilon;
-
-  //int batchSize;
+  int batchSize;
 
   double tileWidths[ MAX_RL_STATE_VARS ];
   double Q[MAX_RL_ACTIONS ];
 
   double* initialWeights;
-  double* t;
   double weightsRaw[ RL_MEMORY_SIZE ];
 
-  array<double,RL_MEMORY_SIZE> weights;
-  
+  // stores all rewards accrude to each weights 25
+  // double rewards[25] = { 0 };
+  // std::vector<int> v;
 
+  double discountReturn;
+  double reward(double tau);
+
+  array<double,RL_MEMORY_SIZE> weights;
   array<double,RL_MEMORY_SIZE> tempWeights;
   
 
@@ -116,22 +130,23 @@ class CrossEntropyAgent:public SMDPAgent
   // typedef Matrix<double, 1,RL_MEMORY_SIZE > tempWeights;
   // RowVectorXd tempWeights;
   // RowVectorXd initialWeights;
- 
-  // RowVectorXd newWeights(1048576);
 
+  
+  double traces[ RL_MEMORY_SIZE ];
+  double minimumTrace;
+  int nonzeroTraces[ RL_MAX_NONZERO_TRACES ];
+  int numNonzeroTraces;
+  int nonzeroTracesInverse[ RL_MEMORY_SIZE ];
 
-  // array<double,RL_MEMORY_SIZE> tempWeights;
-
-
- // double traces[ RL_MEMORY_SIZE ];
+  void decayTraces(double decayRate);
+  void clearTrace(int f);
+  void clearExistentTrace(int f, int loc);
+  void setTrace(int f, float newTraceValue);
+  void increaseMinTrace();
 
   int tiles[MAX_RL_ACTIONS ][ RL_MAX_NUM_TILINGS ];
   int numTilings;
 
-  //double minimumTrace;
-  //int nonzeroTraces[ RL_MAX_NONZERO_TRACES ];
-  //int numNonzeroTraces;
-  //int nonzeroTracesInverse[ RL_MEMORY_SIZE ];
 
   collision_table *colTab;
   
@@ -159,15 +174,8 @@ class CrossEntropyAgent:public SMDPAgent
   void weightsToString(const char* filename);
   void updateweightsEndEpisode();
 
-  // Eligibility trace methods
-  //void clearTrace( int f );
-  //void clearExistentTrace( int f, int loc );
-  //void decayTraces( double decayRate );
-  //void setTrace( int f, float newTraceValue );
-  //void increaseMinTrace();
-
  public:
-  CrossEntropyAgent                  ( int    numFeatures,
+  CrossEntropyAgent                  (int    numFeatures,
                                       int    numActions,
                                       bool   bLearn,
                                       double widths[],
