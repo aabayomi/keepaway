@@ -61,6 +61,7 @@ class CrossEntropyAgent:public SMDPAgent
   double epsilon;
 
   int lastActionsTime;
+  
   WorldModel *WM;  /*!< WorldModel that contains information of world   */
   
   // normal distribution variables
@@ -92,9 +93,9 @@ class CrossEntropyAgent:public SMDPAgent
   
 
 
-  // double alpha;
-  // double gamma;
-  // double lambda;
+  double alpha;
+  double gamma;
+  double lambda;
   // double epsilon;
 
   //int batchSize;
@@ -128,10 +129,10 @@ class CrossEntropyAgent:public SMDPAgent
   int tiles[MAX_RL_ACTIONS ][ RL_MAX_NUM_TILINGS ];
   int numTilings;
 
-  //double minimumTrace;
-  //int nonzeroTraces[ RL_MAX_NONZERO_TRACES ];
-  //int numNonzeroTraces;
-  //int nonzeroTracesInverse[ RL_MEMORY_SIZE ];
+  double minimumTrace;
+  int nonzeroTraces[ RL_MAX_NONZERO_TRACES ];
+  int numNonzeroTraces;
+  int nonzeroTracesInverse[ RL_MEMORY_SIZE ];
 
   collision_table *colTab;
   
@@ -160,11 +161,12 @@ class CrossEntropyAgent:public SMDPAgent
   void updateweightsEndEpisode();
 
   // Eligibility trace methods
-  //void clearTrace( int f );
-  //void clearExistentTrace( int f, int loc );
-  //void decayTraces( double decayRate );
-  //void setTrace( int f, float newTraceValue );
-  //void increaseMinTrace();
+  double traces[ RL_MEMORY_SIZE ];
+  void clearTrace( int f );
+  void clearExistentTrace( int f, int loc );
+  void decayTraces( double decayRate );
+  void setTrace( int f, float newTraceValue );
+  void increaseMinTrace();
 
  public:
   CrossEntropyAgent                  ( int    numFeatures,

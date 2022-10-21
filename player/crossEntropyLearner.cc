@@ -100,6 +100,8 @@ SMDPAgent(numFeatures, numActions),hiveFile(-1)
   std::default_random_engine generator;
   std::normal_distribution<double> distribution(mean, std);
 
+  lastActionsTime = WM->getCurrentTime().getTime();
+
   counter = 0;
   epsilon = 0.01;
 
@@ -327,12 +329,19 @@ int CrossEntropyAgent::step(double reward, double state[])
 {
 
   // std::cout << "Steps Rewards  " << reward << std::endl;
-
-
-
-
   // cerr << "steps" << endl;
-  double totalRewards = reward + Q[lastAction];
+  // double totalRewards = reward + Q[lastAction];
+
+   if (hiveMind)
+    loadColTabHeader(colTab, initialWeights);
+
+
+
+
+  double r = reward - lastActionsTime;
+  double delta = r - Q[lastAction];
+
+
   loadTiles(state);
   for (int a = 0; a < getNumActions(); a++)
   {
@@ -340,21 +349,118 @@ int CrossEntropyAgent::step(double reward, double state[])
   }
   // take actions with the maximal weights
   lastAction = selectAction(); 
-  
+  lastActionsTime = WM->getCurrentTime().getTime();
+
   char buffer[128];
   sprintf(buffer, "Q[%d] = %.2f", lastAction, Q[lastAction]);
 
   // Log.log("CrossEntropyAgent::step reward %.2f", lastAction, Q[lastAction]);
 
-  // LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
-  //                  buffer,
-  //                  1, COLOR_BROWN );
-  //
+  LogDraw.logText( "Qmax", VecPosition( 25, -30 ),
+                   buffer,
+                   1, COLOR_BROWN );
 
   if (!bLearning)
     return lastAction;
+  // char buffer[128];
+
+  sprintf(buffer, "reward: %.2f", reward);
+  LogDraw.logText("reward", VecPosition(25, 30),
+                  buffer,
+                  1, COLOR_NAVY);
+
+  delta += Q[lastAction];
+  // updateWeights( delta );
+
+  Q[lastAction] = computeQ(lastAction); // need to redo because weights changed
+  decayTraces(gamma * lambda);
+
+  for (int a = 0; a < getNumActions(); a++)
+  { // clear other than F[a]
+    if (a != lastAction)
+    {
+      for (int j = 0; j < numTilings; j++)
+        clearTrace(tiles[a][j]);
+    }
+  }
+  for (int j = 0; j < numTilings; j++) // replace/set traces F[a]
+    setTrace(tiles[lastAction][j], 1.0);
+
+  if (hiveMind)
+    saveWeights(weightsFile);
+  return lastAction;
 
 }
+
+
+// Clear any trace for feature f
+void CrossEntropyAgent::clearTrace(int f)
+{
+  if (f > RL_MEMORY_SIZE || f < 0)
+    cerr << "ClearTrace: f out of range " << f << endl;
+  if (traces[f] != 0)
+    clearExistentTrace(f, nonzeroTracesInverse[f]);
+}
+
+// Clear the trace for feature f at location loc in the list of nonzero traces
+void CrossEntropyAgent::clearExistentTrace(int f, int loc)
+{
+  if (f > RL_MEMORY_SIZE || f < 0)
+    cerr << "ClearExistentTrace: f out of range " << f << endl;
+  traces[f] = 0.0;
+  numNonzeroTraces--;
+  nonzeroTraces[loc] = nonzeroTraces[numNonzeroTraces];
+  nonzeroTracesInverse[nonzeroTraces[loc]] = loc;
+}
+
+// Decays all the (nonzero) traces by decay_rate, removing those below minimum_trace
+void CrossEntropyAgent::decayTraces(double decayRate)
+{
+  int f;
+  for (int loc = numNonzeroTraces - 1; loc >= 0; loc--)
+  {
+    f = nonzeroTraces[loc];
+    if (f > RL_MEMORY_SIZE || f < 0)
+      cerr << "DecayTraces: f out of range " << f << endl;
+    traces[f] *= decayRate;
+    if (traces[f] < minimumTrace)
+      clearExistentTrace(f, loc);
+  }
+}
+
+// Set the trace for feature f to the given value, which must be positive
+void CrossEntropyAgent::setTrace(int f, float newTraceValue)
+{
+  if (f > RL_MEMORY_SIZE || f < 0)
+    cerr << "SetTraces: f out of range " << f << endl;
+  if (traces[f] >= minimumTrace)
+    traces[f] = newTraceValue; // trace already exists
+  else
+  {
+    while (numNonzeroTraces >= RL_MAX_NONZERO_TRACES)
+      increaseMinTrace(); // ensure room for new trace
+    traces[f] = newTraceValue;
+    nonzeroTraces[numNonzeroTraces] = f;
+    nonzeroTracesInverse[f] = numNonzeroTraces;
+    numNonzeroTraces++;
+  }
+}
+
+// Try to make room for more traces by incrementing minimum_trace by 10%,
+// culling any traces that fall below the new minimum
+void CrossEntropyAgent::increaseMinTrace()
+{
+  minimumTrace *= 1.1;
+  cerr << "Changing minimum_trace to " << minimumTrace << endl;
+  for (int loc = numNonzeroTraces - 1; loc >= 0; loc--)
+  { // necessary to loop downwards
+    int f = nonzeroTraces[loc];
+    if (traces[f] < minimumTrace)
+      clearExistentTrace(f, loc);
+  }
+}
+
+
 
 // Add the reward and update Mean and Standard deviation
 void CrossEntropyAgent::endEpisode(double reward)
