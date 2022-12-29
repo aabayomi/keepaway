@@ -16,8 +16,10 @@
 #include <boost/algorithm/string/replace.hpp>
 #include "crossEntropyLearner.h"
 #include "LoggerDraw.h"
+#include "neuralnetwork.h"
 
 using namespace Eigen;
+
 // If all is well, there should be no mention of anything keepaway- or soccer-
 // related in this file.
 
@@ -79,6 +81,7 @@ SMDPAgent(numFeatures, numActions),hiveFile(-1)
   bLearning = bLearn;
   bSaveWeights = bLearning && saveWeightsFile.length() > 0;
   saveWeightsFile = saveWeightsFile;
+  
   // teamName = teamName_;
 
   for (int i = 0; i < getNumFeatures(); i++)
@@ -113,47 +116,17 @@ SMDPAgent(numFeatures, numActions),hiveFile(-1)
   int tmp[2];
   float tmpf[2];
 
-  colTab = new collision_table( RL_MEMORY_SIZE, 1 );
-
-  // colTab =
-  // colTab = new collision_table;
-  // colTab;
-
-  GetTiles(tmp, 1, 1, tmpf, 0); // A dummy call to set the hashing table
   srand(time(NULL));
   srand48((unsigned int)time(NULL));
   Log.log("Currently I am in the constructor");
 
   Log.log("Time " + std::to_string(WM->getCurrentTime().getTime()));
 
-  if (bLearning || !bLearning)
-  {
-    string exepath = getexepath();
-    // exepath += "LinearSarsaLearner::initialize";
-    exepath += loadWeightsFile;
-    exepath += saveWeightsFile;
-    // auto h = hash<string>()(exepath); // hashing
+  TwoLayerNet model;
+  model.apply(initialize_weights);
 
-    if (loadWeightsFile.empty() || !loadWeights(loadWeightsFile.c_str()))
-    {
-      createFile(saveWeightsFile.c_str());
-      // fill(weights, weights + RL_MEMORY_SIZE, initialWeight);
-      for (int i = 0; i < RL_MEMORY_SIZE; i++)
-      {
-        double w = distribution(generator);
-        // Log.log(std::to_string(w));
-        weights[i] = w;
-        initialWeights[i] = w;
-      }
-      Log.log("Right before making the weightToString call");
-      weightsToString(saveWeightsFile.c_str());
-      Log.log("Right after");
-      colTab->reset();
-    }
-  }
-  // weightsLog();
-  // Log.log("Right before weight to String");
-  // weightsToString();
+  model.to(device);
+
 }
 
 void CrossEntropyAgent::weightsLog()
@@ -199,8 +172,10 @@ int CrossEntropyAgent::startEpisode(double state[])
 
   std::cout << "start of Episode " << WM->getCurrentTime().getTime() << std::endl;
 
+  
   epochNum++;
   loadTiles(state);
+
   for (int a = 0; a < getNumActions(); a++)
   {
     Q[a] = computeQ(a);
