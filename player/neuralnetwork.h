@@ -1,3 +1,6 @@
+#ifndef NEURALNETWORK_H
+#define NEURALNETWORK_H
+
 #include <torch/torch.h>
 #include <iostream>
 
@@ -20,15 +23,26 @@ struct TwoLayerNet : torch::nn::Module {
     x = linear2->forward(x);
     return x;
   }
+
+
+  void initialize_weights(torch::nn::Module& module) {
+      torch::NoGradGuard no_grad;
+
+      if (auto* linear = module.as<torch::nn::Linear>()) {
+        linear->weight.normal_(mean, dev);
+      }
+    }
   torch::nn::Linear linear1;
   torch::nn::Linear linear2;
 };
 
 
-void initialize_weights(torch::nn::Module& module) {
-    torch::NoGradGuard no_grad;
+// void initialize_weights(torch::nn::Module& module) {
+//     torch::NoGradGuard no_grad;
 
-    if (auto* linear = module.as<torch::nn::Linear>()) {
-      linear->weight.normal_(mean, dev);
-    }
-  }
+//     if (auto* linear = module.as<torch::nn::Linear>()) {
+//       linear->weight.normal_(mean, dev);
+//     }
+//   }
+
+#endif

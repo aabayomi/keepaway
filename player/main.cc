@@ -59,6 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "HierarchicalFSM.h"
 #include "crossEntropyLearner.h"
 #include "LinearSarsaLearner.h"
+#include "neuralnetwork.h"
 
 #include "Parse.h"
 #include "gzstream.h"
@@ -304,6 +305,7 @@ int main(int argc, char *argv[])
   Log.log("It is working");
 
   SMDPAgent *sa = NULL;
+  TwoLayerNet m;
 
   double ranges[MAX_RL_STATE_VARS];
   double minValues[MAX_RL_STATE_VARS];
@@ -329,11 +331,11 @@ int main(int argc, char *argv[])
     } else {
       if (string(strTeamName) == "keepers") {
         Log.log("Keepers here");
-        CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind , &wm);
+        CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind , &wm , &m);
         sa = variable;
       }
       else {
-          CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind,&wm);
+          CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind,&wm, &m);
           sa = variable;
       };
     }

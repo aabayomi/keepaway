@@ -68,11 +68,20 @@ long *loadColTabHeader(collision_table *colTab, double *weights)
   return reinterpret_cast<long *>(colTabHeader + 1);
 }
 
+
+void initialize_weights(torch::nn::Module& module) {
+    torch::NoGradGuard no_grad;
+
+    if (auto* linear = module.as<torch::nn::Linear>()) {
+      linear->weight.normal_(mean, dev);
+    }
+  }
+
 extern LoggerDraw LogDraw;
 
 CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLearn,
                                      double widths[],
-                                     string loadWeightsFile, string saveWeightsFile , bool hiveMind, WorldModel *wm):
+                                     string loadWeightsFile, string saveWeightsFile , bool hiveMind, WorldModel *wm, TwoLayerNet *m):
 
 SMDPAgent(numFeatures, numActions),hiveFile(-1)
 
@@ -91,7 +100,7 @@ SMDPAgent(numFeatures, numActions),hiveFile(-1)
 
   // number of iterations for updating weights
   mean = 0.0;
-  std = 1.0;
+  std = 0.02;
   N = 25;
   k = 1; // k best weights
   maxReward = 0;
@@ -122,10 +131,13 @@ SMDPAgent(numFeatures, numActions),hiveFile(-1)
 
   Log.log("Time " + std::to_string(WM->getCurrentTime().getTime()));
 
-  TwoLayerNet model;
-  model.apply(initialize_weights);
+  // TwoLayerNet model;
+  M = m;
+  // M->apply(initialize_weights);
 
-  model.to(device);
+  torch::Device device(torch::kCPU);
+
+  // Model->to(device);
 
 }
 

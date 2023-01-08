@@ -19,6 +19,7 @@
 #include <functional>
 #include <eigen3/Eigen/Dense>
 #include <unordered_map>
+#include "neuralnetwork.h"
 
 
 // #define RL_MEMORY_SIZE 1048576
@@ -63,6 +64,7 @@ class CrossEntropyAgent:public SMDPAgent
   int lastActionsTime;
   
   WorldModel *WM;  /*!< WorldModel that contains information of world   */
+  TwoLayerNet *M;
   
   // normal distribution variables
   double mean;
@@ -176,7 +178,8 @@ class CrossEntropyAgent:public SMDPAgent
                                       string   loadWeightsFile,
                                       string   saveWeightsFile,
                                       bool   hiveMind,
-                                      WorldModel *ws);
+                                      WorldModel *ws,
+                                      TwoLayerNet *m);
 
   // Support for extra modes and/or analysis.
   double getQ(int action);

@@ -95,7 +95,7 @@ def launch_player(player_type, index, options):
     else:
         command = [relative('./player/keepaway_player')] + player_options
     logging.debug(command)
-    print " ".join(command)
+    print (" ".join(command))
     popen = Popen(command)
     return popen.pid
 
@@ -203,7 +203,7 @@ def launch_server(options):
     # Build rcssserver command, and fork it off.
     # TODO Locate rcssserver executable reliably.
     command = ['rcssserver'] + server_options
-    print command
+    print(command)
     # print " ".join(command)
     logging.debug("Built the comand to connect to the server")
     popen = Popen(command)
