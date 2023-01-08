@@ -1,9 +1,15 @@
 cmake_minimum_required(VERSION 2.8)
 project(keepaway_player)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -D_Debug -D_Compress")
+list(APPEND CMAKE_PREFIX_PATH "/home/abayomi/keepaway/libtorch")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -D_Debug -D_Compress")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+
+include_directories(
+        include 
+        "libtorch/include"
+)
 
 set(SOURCE_FILES
         player/ActHandler.cc
@@ -64,11 +70,16 @@ set(SOURCE_FILES
         # player/HierarchicalFSM.h
         player/crossEntropyLearner.h
         player/crossEntropyLearner.cc
+        player/neuralnetwork.h
         player/ChoicePoint.h
         # player/LinearSarsaLearner.cc
         # player/LinearSarsaLearner.h
         player/gzstream.cc
         player/gzstream.h)
 
+find_package(Torch REQUIRED)
 add_executable(keepaway_player ${SOURCE_FILES})
-target_link_libraries(keepaway_player pthread dl rt z)
+target_link_libraries(keepaway_player "${TORCH_LIBRARIES}" pthread dl rt z)
+set_property(TARGET keepaway_player PROPERTY CXX_STANDARD 14)
+
+list(APPEND CMAKE_PREFIX_PATH "libtorch")
