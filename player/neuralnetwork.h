@@ -1,48 +1,220 @@
-#ifndef NEURALNETWORK_H
-#define NEURALNETWORK_H
-
-#include <torch/torch.h>
-#include <iostream>
-
-// N is batch size; D_in is input dimension
-// H is hidden dimension; D_out is output dimension
-const int64_t N = 64;
-const int64_t D_in = 1000;
-const int64_t H = 100;
-const int64_t D_out = 4;
-const double mean = 0.0;
-const float dev  = 0.02;
-
-struct TwoLayerNet : torch::nn::Module {
-  TwoLayerNet() : linear1(D_in, H), linear2(H, D_out) {
-    register_module("linear1", linear1);
-    register_module("linear2", linear2);
-  }
-  torch::Tensor forward(torch::Tensor x) {
-    x = torch::relu(linear1->forward(x));
-    x = linear2->forward(x);
-    return x;
-  }
+#ifndef SIMPLE_NN_NEURAL_NET_HPP
+#define SIMPLE_NN_NEURAL_NET_HPP
 
 
-  void initialize_weights(torch::nn::Module& module) {
-      torch::NoGradGuard no_grad;
+#include <eigen3/Eigen/Core>
+#include <memory>
+#include <vector>
+#include "layer.h"
 
-      if (auto* linear = module.as<torch::nn::Linear>()) {
-        linear->weight.normal_(mean, dev);
-      }
-    }
-  torch::nn::Linear linear1;
-  torch::nn::Linear linear2;
-};
+namespace simple_nn
+{
 
+    struct NeuralNet
+    {
+    public:
+        NeuralNet() {}
+        NeuralNet(const NeuralNet &other)
+        {
+            _layers.resize(other._layers.size());
 
-// void initialize_weights(torch::nn::Module& module) {
-//     torch::NoGradGuard no_grad;
+            for (size_t i = 0; i < _layers.size(); i++)
+            {
+                _layers[i] = other._layers[i]->clone();
+            }
+        }
 
-//     if (auto* linear = module.as<torch::nn::Linear>()) {
-//       linear->weight.normal_(mean, dev);
-//     }
-//   }
+        template <typename LayerType, typename... Args>
+        void add_layer(Args &&...args)
+        {
+            std::shared_ptr<LayerType> layer = std::make_shared<LayerType>(std::forward<Args>(args)...);
+            if (_layers.size() > 0)
+            {
+                size_t index_prev = _layers.size() - 1;
+
+                assert(_layers[index_prev]->output() == layer->input());
+            }
+            _layers.push_back(layer);
+        }
+
+        void add_layer(const std::shared_ptr<Layer> &layer)
+        {
+            if (_layers.size() > 0)
+            {
+                size_t index_prev = _layers.size() - 1;
+                assert(_layers[index_prev]->output() == layer->input());
+            }
+            _layers.push_back(layer);
+        }
+
+        void remove_layer(size_t index)
+        {
+            assert(index < _layers.size());
+            _layers.erase(_layers.begin() + index);
+        }
+
+        void clear_layers()
+        {
+            _layers.clear();
+        }
+
+        size_t num_weights() const
+        {
+            size_t n = 0;
+            for (size_t i = 0; i < _layers.size(); i++)
+            {
+                n += _layers[i]->num_weights();
+            }
+
+            return n;
+        }
+
+        Eigen::VectorXd weights() const
+        {
+            Eigen::VectorXd weights = Eigen::VectorXd::Zero(num_weights());
+
+            size_t offset = 0;
+            for (size_t i = 0; i < _layers.size(); i++)
+            {
+                Eigen::VectorXd w = _layers[i]->weights_vector();
+                weights.segment(offset, w.size()) = w;
+                offset += w.size();
+            }
+
+            return weights;
+        }
+
+        void set_weights(const Eigen::VectorXd &w)
+        {
+            size_t offset = 0;
+            for (size_t i = 0; i < _layers.size(); i++)
+            {
+                size_t w_size = _layers[i]->num_weights();
+                _layers[i]->set_weights_vector(w.segment(offset, w_size));
+                offset += w_size;
+            }
+        }
+
+        std::vector<std::shared_ptr<Layer>> layers() const
+        {
+            return _layers;
+        }
+
+        Eigen::MatrixXd forward(const Eigen::MatrixXd &input) const
+        {
+            Eigen::MatrixXd result = input;
+            for (size_t i = 0; i < _layers.size(); i++)
+            {
+                result = _layers[i]->forward(result);
+            }
+
+            return result;
+        }
+
+        template <typename Loss>
+        double get_loss(const Eigen::MatrixXd &input, const Eigen::MatrixXd &output) const
+        {
+            Eigen::MatrixXd y = forward(input);
+            return Loss::f(y, output);
+        }
+
+        Eigen::VectorXd backward(const Eigen::MatrixXd &input, const Eigen::MatrixXd &delta_output) const
+        {
+            std::vector<Eigen::MatrixXd> results(_layers.size());
+
+            Eigen::MatrixXd result = input;
+            for (size_t i = 0; i < _layers.size(); i++)
+            {
+                // std::cout << i << ": " << result.rows() << "x" << result.cols() << std::endl;
+                results[i] = result;
+                result = _layers[i]->forward(result);
+                // results[i] = result;
+                // std::cout << result.rows() << "x" << result.cols() << std::endl;
+            }
+
+            return _gradients(results, delta_output);
+        }
+
+        template <typename Loss>
+        Eigen::VectorXd backward(const Eigen::MatrixXd &input, const Eigen::MatrixXd &output) const
+        {
+            std::vector<Eigen::MatrixXd> results(_layers.size());
+
+            Eigen::MatrixXd result = input;
+            for (size_t i = 0; i < _layers.size(); i++)
+            {
+                // std::cout << i << ": " << result.rows() << "x" << result.cols() << std::endl;
+                results[i] = result;
+                result = _layers[i]->forward(result);
+                // results[i] = result;
+                // std::cout << result.rows() << "x" << result.cols() << std::endl;
+            }
+
+            return _gradients(results, Loss::df(result, output));
+        }
+
+    protected:
+        std::vector<std::shared_ptr<Layer>> _layers;
+
+        Eigen::VectorXd _gradients(std::vector<Eigen::MatrixXd> &results, const Eigen::MatrixXd &last_delta) const
+        {
+            Eigen::VectorXd gradients = Eigen::VectorXd::Zero(num_weights());
+
+            std::vector<Eigen::MatrixXd> deltas(_layers.size() + 1);
+            std::vector<Eigen::MatrixXd> grads(_layers.size());
+
+            // deltas.back() = (result.array() - output.array());
+            deltas.back() = last_delta;
+
+            // std::cout << deltas.back().rows() << "x" << deltas.back().cols() << std::endl;
+
+            // std::cout << "error: " << deltas.back() << std::endl;
+
+            size_t k = 0;
+
+            for (int i = _layers.size() - 1; i >= 0; i--)
+            {
+                Eigen::MatrixXd delta;
+                Eigen::MatrixXd next_delta;
+                std::tie(next_delta, delta) = _layers[i]->backward(results[i], deltas[i + 1]);
+
+                Eigen::MatrixXd input_bias = results[i];
+                input_bias.conservativeResize(input_bias.rows() + 1, input_bias.cols());
+                input_bias.row(input_bias.rows() - 1) = Eigen::VectorXd::Ones(results[i].cols());
+                // std::cout << i << ": " << results[i] << std::endl;
+
+                // std::cout << "delta: " << delta << std::endl;
+                // std::cout << "input: " << input_bias.transpose() << std::endl;
+
+                grads[k] = delta * input_bias.transpose();
+                // std::cout << "grad: " << grads[k] << std::endl;
+                // std::cout << grads[k].rows() << "x" << grads[k].cols() << std::endl;
+                k++;
+
+                next_delta.conservativeResize(next_delta.rows() - 1, next_delta.cols());
+                deltas[i] = next_delta;
+            }
+
+            int offset = 0;
+            for (int i = grads.size() - 1; i >= 0; i--)
+            {
+                int rows = grads[i].rows();
+                int cols = grads[i].cols();
+                for (int r = 0; r < rows; r++)
+                {
+                    for (int c = 0; c < cols; c++)
+                    {
+                        gradients(offset + r * cols + c) = grads[i](r, c);
+                    }
+                }
+
+                offset += rows * cols;
+            }
+
+            return gradients;
+        }
+    };
+
+} // namespace simple_nn
 
 #endif

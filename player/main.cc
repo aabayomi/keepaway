@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
   Log.log("It is working");
 
   SMDPAgent *sa = NULL;
-  TwoLayerNet m;
+  // TwoLayerNet m;
 
   double ranges[MAX_RL_STATE_VARS];
   double minValues[MAX_RL_STATE_VARS];
@@ -331,11 +331,11 @@ int main(int argc, char *argv[])
     } else {
       if (string(strTeamName) == "keepers") {
         Log.log("Keepers here");
-        CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind , &wm , &m);
+        CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind , &wm );
         sa = variable;
       }
       else {
-          CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind,&wm, &m);
+          CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile,hiveMind,&wm);
           sa = variable;
       };
     }

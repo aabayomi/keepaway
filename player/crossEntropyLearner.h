@@ -64,7 +64,7 @@ class CrossEntropyAgent:public SMDPAgent
   int lastActionsTime;
   
   WorldModel *WM;  /*!< WorldModel that contains information of world   */
-  TwoLayerNet *M;
+  // TwoLayerNet *M;
   
   // normal distribution variables
   double mean;
@@ -178,8 +178,9 @@ class CrossEntropyAgent:public SMDPAgent
                                       string   loadWeightsFile,
                                       string   saveWeightsFile,
                                       bool   hiveMind,
-                                      WorldModel *ws,
-                                      TwoLayerNet *m);
+                                      WorldModel *ws
+                                      // TwoLayerNet *m
+                                      );
 
   // Support for extra modes and/or analysis.
   double getQ(int action);

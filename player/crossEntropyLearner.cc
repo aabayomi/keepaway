@@ -18,6 +18,14 @@
 #include "LoggerDraw.h"
 #include "neuralnetwork.h"
 
+
+#include <ctime>
+#include <iostream>
+
+#include "loss.h"
+#include "neuralnetwork.h"
+#include "opt.h"
+
 using namespace Eigen;
 
 // If all is well, there should be no mention of anything keepaway- or soccer-
@@ -69,19 +77,11 @@ long *loadColTabHeader(collision_table *colTab, double *weights)
 }
 
 
-void initialize_weights(torch::nn::Module& module) {
-    torch::NoGradGuard no_grad;
-
-    if (auto* linear = module.as<torch::nn::Linear>()) {
-      linear->weight.normal_(mean, dev);
-    }
-  }
-
 extern LoggerDraw LogDraw;
 
 CrossEntropyAgent::CrossEntropyAgent(int numFeatures, int numActions, bool bLearn,
                                      double widths[],
-                                     string loadWeightsFile, string saveWeightsFile , bool hiveMind, WorldModel *wm, TwoLayerNet *m):
+                                     string loadWeightsFile, string saveWeightsFile , bool hiveMind, WorldModel *wm):
 
 SMDPAgent(numFeatures, numActions),hiveFile(-1)
 
@@ -132,12 +132,29 @@ SMDPAgent(numFeatures, numActions),hiveFile(-1)
   Log.log("Time " + std::to_string(WM->getCurrentTime().getTime()));
 
   // TwoLayerNet model;
-  M = m;
+  // M = m;
   // M->apply(initialize_weights);
-
-  torch::Device device(torch::kCPU);
-
+  // torch::Device device(torch::kCPU);
   // Model->to(device);
+
+
+    std::srand(std::time(NULL));
+    // simple 1D regression
+    // generate 200 random data in [-5,5]
+    Eigen::MatrixXd input = Eigen::MatrixXd::Random(1, 200).array() * 5.;
+    // function is linear combination
+    Eigen::MatrixXd output = input.array().cos();
+
+    // Let's create our neural network
+    simple_nn::NeuralNet network;
+    // 1 hidden layer with 20 units and tanh activation function
+    network.add_layer<simple_nn::FullyConnectedLayer<simple_nn::Tanh>>(1, 20);
+    // 1 output layer with tanh activation function
+    network.add_layer<simple_nn::FullyConnectedLayer<simple_nn::Tanh>>(20, 3);
+
+    // Random initial weights
+    Eigen::VectorXd theta = Eigen::VectorXd::Random(network.num_weights()).array() * std::sqrt(1 / 20.);
+    network.set_weights(theta);
 
 }
 
@@ -187,6 +204,26 @@ int CrossEntropyAgent::startEpisode(double state[])
   
   epochNum++;
   loadTiles(state);
+
+  // for (std::size_t j = 0; j < RL_MEMORY_SIZE; j++)
+  // {
+  //   sumWeights += tempWeights[j];
+  // }
+
+  // int data[4] = {1, 2, 3, 4};
+  // Matrix2i mat2x2(data); 
+
+  size_t n = sizeof(state);
+  std::cout << "Size of State " << n << std::endl;
+
+  
+  // for (int i = 0; i < state.size; i++)
+  // {
+    
+  // }
+
+  // myVector = Eigen::Map<Eigen::MatrixXd>(myData, 1, 100);
+  // Eigen::MatrixXd input = Eigen::MatrixXd::Random(1, 200).array() * 5.; 
 
   for (int a = 0; a < getNumActions(); a++)
   {
@@ -318,6 +355,10 @@ int CrossEntropyAgent::step(double reward, double state[])
   // std::cout << "Steps Rewards  " << reward << std::endl;
   // cerr << "steps" << endl;
   // double totalRewards = reward + Q[lastAction];
+
+  size_t n = sizeof(state);
+  std::cout << "Size of State " << n << std::endl;
+
 
    if (hiveMind)
     loadColTabHeader(colTab, initialWeights);
