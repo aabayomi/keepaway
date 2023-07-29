@@ -11,223 +11,239 @@
 #include "BasicPlayer.h"
 #include "LinearSarsaLearner.h"
 #include <limits.h>
+#include <eigen3/Eigen/Dense>
 
-namespace fsm {
-class HierarchicalFSM;
+namespace fsm
+{
+  class HierarchicalFSM;
 }
 
-namespace std {
+namespace std
+{
 
-const string &to_string(fsm::HierarchicalFSM *m);
+  const string &to_string(fsm::HierarchicalFSM *m);
 
 }
 
-namespace fsm {
+namespace fsm
+{
 
-template<class T>
-class ChoicePoint;
-
-/**
- * global memory among all machines from the pespective of a single machine
- */
-class Memory {
-private:
-  Memory();
-
-public:
-  static Memory &ins();
-
-  void resetState();
-
-  std::string to_string();
-
-  bool bAlive;
-  int agentIdx;
-  double state[MAX_RL_STATE_VARS]; // current state -- indexed by K0..Kn
-  int ballControlState[11]; // current ball state -- indexed by K0..Kn
-  ObjectT teammates[11]; // current mapping from index to teammates
-  ObjectT opponents[11]; // current mapping from index to opponents
-
-private:
-  std::vector<string> stack;  // self call stack
-
-public:
-  const vector<string> &getStack() const;
-
-  void PushStack(const string &s);
-
-  void PopStack();
-
-  size_t ballControlHash();
-};
-
-/**
- * hierarchical finite state machines
- */
-class HierarchicalFSM {
-  template<class T> friend
+  template <class T>
   class ChoicePoint;
 
-  template<class T> friend
-  class MakeChoice;
-
-  friend class Run;
-
-  friend class Action;
-
-  friend class LinearSarsaLearner;
-
-public:
-  HierarchicalFSM(BasicPlayer *p, const std::string &name);
-
-  virtual ~HierarchicalFSM();
-
-private:
-  virtual void run() = 0;
-
-protected:
   /**
-   * send commands to env, and wait for new info
+   * global memory among all machines from the perspective of a single machine
    */
-  void action(bool sync = true);
+  class Memory
+  {
+  private:
+    Memory();
 
-  bool isFastestToBall();
+  public:
+    static Memory &ins();
+    void resetState();
+    std::string to_string();
+    bool bAlive;
+    int agentIdx;
+    double state[MAX_RL_STATE_VARS]; // current state -- indexed by K0..Kn
+    int ballControlState[11];        // current ball state -- indexed by K0..Kn
+    ObjectT teammates[11];           // current mapping from index to teammates
+    ObjectT opponents[11];           // current mapping from index to opponents
 
-  VecPosition refineTarget(VecPosition target, VecPosition backup);
+  private:
+    std::vector<string> stack; // self call stack
+  public:
+    const vector<string> &getStack() const;
+    void PushStack(const string &s);
+    void PopStack();
+    size_t ballControlHash();
+  };
 
-  std::string getState();
+  /**
+   * hierarchical finite state machines
+   */
+  class HierarchicalFSM
+  {
+    template <class T>
+    friend class ChoicePoint;
 
-  void idle(const std::string error);
+    template <class T>
+    friend class MakeChoice;
 
-  bool running();
+    friend class Run;
+    friend class Action;
+    friend class LinearSarsaLearner;
 
-  static std::string getStackStr();
+  public:
+    HierarchicalFSM(BasicPlayer *p, const std::string &name);
+    virtual ~HierarchicalFSM();
 
-protected:
-  BasicPlayer *player;
-  const std::string name;
+  private:
+    virtual void run() = 0;
 
-public:
-  const std::string &getName() const;
+  protected:
+    /**
+     * send commands to env, and wait for new info
+     */
+    void action(bool sync = true);
+    bool isFastestToBall();
+    VecPosition refineTarget(VecPosition target, VecPosition backup);
+    std::string getState();
+    void idle(const std::string error);
+    bool running();
+    static std::string getStackStr();
 
-  static void initialize(int numFeatures,
-                         int numTeammates,
-                         int numOpponents,
-                         bool bLearn,
-                         double widths[],
-                         double gamma,
-                         double lambda,
-                         double alpha,
-                         double initialWeight,
-                         bool qLearning,
-                         string loadWeightsFile,
-                         string saveWeightsFile,
-                         string teamName);
+  protected:
+    BasicPlayer *player;
+    const std::string name;
 
-protected:
-  ActHandler *ACT; /*!< ActHandler to which commands can be sent        */
-  WorldModel *WM;  /*!< WorldModel that contains information of world   */
-  ServerSettings *SS;  /*!< All parameters used by the server               */
-  PlayerSettings *PS;  /*!< All parameters used for the player              */
-  ChoicePoint<int> *dummyChoice;
+  public:
+    const std::string &getName() const;
 
-public:
-  static int num_features;
-  static int num_teammates;
-  static int num_opponents;
-};
+    static void initialize(int numFeatures,
+                           int numTeammates,
+                           int numOpponents,
+                           bool bLearn,
+                           double widths[],
+                           double gamma,
+                           double lambda,
+                           double alpha,
+                           double initialWeight,
+                           bool qLearning,
+                           string loadWeightsFile,
+                           string saveWeightsFile,
+                           string teamName);
 
-class Keeper : public HierarchicalFSM {
-public:
-  Keeper(BasicPlayer *p);
+  protected:
+    ActHandler *ACT;    /*!< ActHandler to which commands can be sent        */
+    WorldModel *WM;     /*!< WorldModel that contains information of world   */
+    ServerSettings *SS; /*!< All parameters used by the server               */
+    PlayerSettings *PS; /*!< All parameters used for the player              */
+    ChoicePoint<int> *dummyChoice;
 
-  ~Keeper();
+  public:
+    static int num_features;
+    static int num_teammates;
+    static int num_opponents;
+  };
 
-  virtual void run();
+  class Graph ::public HierarchicalFSM
+  {
+    int V; // number of vertices
+    vector<vector<int>> adjacencyList;
 
-private:
-  ChoicePoint<HierarchicalFSM *> *choices[2];
-  HierarchicalFSM *pass;
-  HierarchicalFSM *hold;
-  HierarchicalFSM *move;
-  HierarchicalFSM *stay;
-  HierarchicalFSM *intercept;
-  HierarchicalFSM *getopen;
-};
+  public:
+    Graph(int V) : V(V)
+    {
+      adjacencyList = vector<vector<int>>(V, vector<int>(V, 0));
+    }
 
-class Taker : public HierarchicalFSM {
-public:
-  Taker(BasicPlayer *p);
+    void displayMatrix()
+    {
+      for (int i = 0; i < V; i++)
+      {
+        for (int j = 0; j < V; j++)
+        {
+          cout << adjacencyList[i][j] << " ";
+        }
+        cout << endl;
+      }
+    }
 
-  ~Taker();
+    void add_edge(int u, int v)
+    {
+      adjacencyList[u][v] = 1;
+      adjacencyList[v][u] = 1;
+    }
+  };
 
-  virtual void run();
+  class Keeper : public HierarchicalFSM
+  {
+  public:
+    Keeper(BasicPlayer *p);
+    ~Keeper();
+    virtual void run();
 
-private:
-  ChoicePoint<HierarchicalFSM *> *choice_taker;
+  private:
+    ChoicePoint<HierarchicalFSM *> *choices[2];
+    HierarchicalFSM *pass;
+    HierarchicalFSM *hold;
+    HierarchicalFSM *move;
+    HierarchicalFSM *stay;
+    HierarchicalFSM *intercept;
+    HierarchicalFSM *getopen;
+  };
 
-  HierarchicalFSM *hold;
-  HierarchicalFSM *stay;
-  HierarchicalFSM *move;
-  HierarchicalFSM *intercept;
-};
+  class Taker : public HierarchicalFSM
+  {
+  public:
+    Taker(BasicPlayer *p);
 
-class Move : public HierarchicalFSM {
-public:
-  Move(BasicPlayer *p);
+    ~Taker();
 
-  virtual ~Move();
+    virtual void run();
 
-  virtual void run();
+  private:
+    ChoicePoint<HierarchicalFSM *> *choice_taker;
 
-private:
-  ChoicePoint<int> *moveToChoice;
-};
+    HierarchicalFSM *hold;
+    HierarchicalFSM *stay;
+    HierarchicalFSM *move;
+    HierarchicalFSM *intercept;
+  };
 
-class Stay : public HierarchicalFSM {
-public:
-  Stay(BasicPlayer *p);
+  class Move : public HierarchicalFSM
+  {
+  public:
+    Move(BasicPlayer *p);
+    virtual ~Move();
+    virtual void run();
 
-  virtual void run();
-};
+  private:
+    ChoicePoint<int> *moveToChoice;
+  };
 
-class Intercept : public HierarchicalFSM {
-public:
-  Intercept(BasicPlayer *p);
+  class Stay : public HierarchicalFSM
+  {
+  public:
+    Stay(BasicPlayer *p);
+    virtual void run();
+  };
 
-  virtual void run();
-};
+  class Intercept : public HierarchicalFSM
+  {
+  public:
+    Intercept(BasicPlayer *p);
+    virtual void run();
+  };
 
-class Pass : public HierarchicalFSM {
-public:
-  Pass(BasicPlayer *p);
+  class Pass : public HierarchicalFSM
+  {
+  public:
+    Pass(BasicPlayer *p);
+    virtual ~Pass();
+    virtual void run();
 
-  virtual ~Pass();
+  private:
+    ChoicePoint<int> *passToChoice;
+    ChoicePoint<PassT> *passSpeedChoice;
+  };
 
-  virtual void run();
+  class Hold : public HierarchicalFSM
+  {
+  public:
+    Hold(BasicPlayer *p);
+    ~Hold();
+    virtual void run();
+  };
 
-private:
-  ChoicePoint<int> *passToChoice;
-  ChoicePoint<PassT> *passSpeedChoice;
-};
-
-class Hold : public HierarchicalFSM {
-public:
-  Hold(BasicPlayer *p);
-
-  ~Hold();
-
-  virtual void run();
-};
-
-class GetOpen : public HierarchicalFSM {
-public:
-  GetOpen(BasicPlayer *p);
-
-  virtual void run();
-};
+  class GetOpen : public HierarchicalFSM
+  {
+  public:
+    GetOpen(BasicPlayer *p);
+    virtual void run();
+  };
 
 }
 
-
-#endif //KEEPAWAY_PLAYER_HIERARCHICALFSM_H
+#endif // KEEPAWAY_PLAYER_HIERARCHICALFSM_H

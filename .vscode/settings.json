@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.py": "python",
+        "string": "cpp",
+        "__locale": "cpp",
+        "ios": "cpp",
+        "sstream": "cpp",
+        "iosfwd": "cpp"
+    }
+}
