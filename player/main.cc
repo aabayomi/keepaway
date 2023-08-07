@@ -214,20 +214,19 @@ int main(int argc, char *argv[])
         break;
       case 'o': // output file log info
 
-// #ifdef _Compress
-//                 // os.open((string(argv[i + 1]) + ".gz").c_str());
-//         os.open((string(argv[i + 1])).c_str());
-//         loggingFile = string(argv[i + 1]);
-// #else
-//         os.open(argv[i + 1]);
-// #endif
+        // #ifdef _Compress
+        //                 // os.open((string(argv[i + 1]) + ".gz").c_str());
+        //         os.open((string(argv[i + 1])).c_str());
+        //         loggingFile = string(argv[i + 1]);
+        // #else
+        //         os.open(argv[i + 1]);
+        // #endif
 
-# ifdef _Compress
-          os.open((string(argv[i + 1]) + ".gz").c_str());
+#ifdef _Compress
+        os.open((string(argv[i + 1]) + ".gz").c_str());
 #else
-          os.open(argv[i + 1]);
+        os.open(argv[i + 1]);
 #endif
-
 
         bSuppliedLogFile = true;
         break;
@@ -332,55 +331,28 @@ int main(int argc, char *argv[])
 
   int numActions = iNumKeepers;
 
-  //  if (!crossEntropy) {
-  //     cerr << "No agent!" << endl;
-  //     return EXIT_FAILURE;
-  //   } else {
-  //     if (string(strTeamName) == "keepers") {
-  //       Log.log("Keepers here");
-  //       CrossEntropyAgent* variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
-  //       sa = variable;
-  //     }
-  //     else {
-  //         CrossEntropyAgent *variable = new CrossEntropyAgent(numFeatures, numActions, bLearn, resolutions,loadWeightsFile, saveWeightsFile);
-  //         sa = variable;
-  //     };
-  //   }
-
-
-  // cout << "string policy "<< (strPolicy);
-
   if (!crossEntropy)
   {
     cerr << "No agent!" << endl;
     return EXIT_FAILURE;
   }
-  
+
   else
   {
     if (string(strTeamName) == "keepers")
     {
       Log.log("Keepers here");
-      
-      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
-      sa = variable;
 
-      // HandCodedAgent *variable = new HandCodedAgent( numFeatures, numActions,
-      //                        strPolicy, &wm );
-      // sa = variable;
+      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, iNumKeepers, iNumTakers, numActions, bLearn, resolutions, initialWeight, qLearning, loadWeightsFile, saveWeightsFile, hiveMind, string(strTeamName));
+      sa = variable;
     }
     else
     {
-     
-      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, numActions, bLearn, resolutions, loadWeightsFile, saveWeightsFile, hiveMind);
+
+      LinearSarsaAgent *variable = new LinearSarsaAgent(numFeatures, iNumKeepers, iNumTakers, numActions, bLearn, resolutions, initialWeight, qLearning, loadWeightsFile, saveWeightsFile, hiveMind, string(strTeamName));
       sa = variable;
-       
-      // HandCodedAgent *variable = new HandCodedAgent( numFeatures, numActions,
-      //                        strPolicy, &wm );
-      // sa = variable;
     };
   }
-  
 
   KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,
                     iNumKeepers, iNumTakers, dVersion, iReconnect);
