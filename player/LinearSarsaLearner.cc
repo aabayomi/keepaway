@@ -9,12 +9,14 @@
 #include <time.h>
 #include <sstream>
 #include "LinearSarsaLearner.h"
+#include "KeepawayPlayer.h"
 #include "LoggerDraw.h"
 #include "gzstream.h"
 #include <iostream>
 #include <stack>
 #include <tuple>
 
+#define DETERMINISTIC_GRAPH 0
 // If all is well, there should be no mention of anything keepaway- or soccer-
 // related in this file.
 
@@ -34,71 +36,6 @@ void SharedData::reset()
 
   memset(numChoices, 0, sizeof(numChoices));
 };
-
-// fix this
-num_choice_t SharedData::getNumChoices() const
-{
-  num_choice_t ret((unsigned long)num_teammates);
-  for (int i = 0; i < num_teammates; ++i)
-  {
-    ret[i] = numChoices[Memory::ins().teammates[i]];
-  }
-  return ret;
-}
-
-// memory....
-
-Memory::Memory()
-{
-  bAlive = true;
-  resetState();
-}
-
-Memory &Memory::ins()
-{
-  static Memory memory;
-  return memory;
-}
-
-void Memory::resetState()
-{
-  memset(state, 0, sizeof(state));
-  memset(teammates, 0, sizeof(teammates));
-  memset(opponents, 0, sizeof(opponents));
-}
-
-// string Memory::to_string()
-// {
-//   stringstream ss;
-//   PRINT_VALUE_STREAM(ss, agentIdx);
-//   PRINT_VALUE_STREAM(ss, vector<ObjectT>(teammates, teammates + LinearSarsaAgent::num_teammates));
-//   PRINT_VALUE_STREAM(ss, vector<ObjectT>(opponents, opponents + LinearSarsaAgent::num_opponents));
-//   PRINT_VALUE_STREAM(
-//       ss, vector<double>(state, state + LinearSarsaAgent::num_features));
-//   PRINT_VALUE_STREAM(ss, stack);
-
-//   return ss.str();
-// }
-
-const vector<string> &Memory::getStack() const { return stack; }
-
-void Memory::PushStack(const string &s)
-{
-  stack.push_back(s);
-  if (Log.isInLogLevel(101))
-  {
-    Log.log(101, "Memory::PushStack: %s", to_prettystring(stack).c_str());
-  }
-}
-
-void Memory::PopStack()
-{
-  stack.pop_back();
-  if (Log.isInLogLevel(101))
-  {
-    Log.log(101, "Memory::PopStack: %s", to_prettystring(stack).c_str());
-  }
-}
 
 // size_t Memory::ballControlHash()
 // {
@@ -451,44 +388,49 @@ int LinearSarsaAgent::step(double reward, double state[])
   loadTiles(state);
 
   // // coordination graph..
-  // std::stack<std::tuple<int, int>> g = graph();
+  std::stack<std::tuple<int, int>> g = graph();
   // // Write algorithm for order of elimination. just pop for now
 
   // // std::stack<std::tuple<int, int>> ;
-  // std::stack<std::set<int>> factors;
-  // std::set<int> s = {}; // clean up later
-  // double Q1, Q2, Q3, Q4, e4;
+  std::stack<std::set<int>> factors;
+  std::set<int> s = {}; // clean up later
+  double Q1, Q2, Q3, Q4, e4;
 
   // // Right now, we are starting from the last keeper.
-  // if (Memory::ins().agentIdx == num_teammates) // T3.
-  //   while (!g.empty())
-  //   {
-  //     auto [i, j] = g.top();
-  //     if (i == Memory::ins().agentIdx || j == Memory::ins().agentIdx)
-  //     {
-  //       g.pop();
-  //       Q4 = calculateQ(i, j, reward, state);
-  //       if (i != Memory::ins().agentIdx)
-  //         s.insert(i);
-  //       else if (j != Memory::ins().agentIdx)
-  //         s.insert(j);
-  //       factors.push(s);
-  //     }
-  //   }
-  // else if (Memory::ins().agentIdx == num_teammates - 1) // 2 .
-  // {
-  //   while (!g.empty())
-  //   {
-  //     auto [i, j] = g.top();
-  //     std::set<int> top_set = factors.top();
-  //     if (i == Memory::ins().agentIdx || j == Memory::ins().agentIdx)
-  //     {
-  //       g.pop();
-  //       Q3 = calculateQ(i, j, reward, state);
-  //       // e4 =
-  //     }
-  //   }
-  // }
+  if (Memory::ins().agentIdx == num_teammates) // T3.
+  {
+    cout << " Memory::ins().agentIdx " << endl;
+    cout << Memory::ins().agentIdx << endl;
+    // while (!g.empty())
+    // {
+    //   auto [i, j] = g.top();
+    //   if (i == Memory::ins().agentIdx || j == Memory::ins().agentIdx)
+    //   {
+    //     g.pop();
+    //     Q4 = calculateQ(i, j, reward, state);
+    //     if (i != Memory::ins().agentIdx)
+    //       s.insert(i);
+    //     else if (j != Memory::ins().agentIdx)
+    //       s.insert(j);
+    //     factors.push(s);
+    //   }
+    // }
+  }
+  else if (Memory::ins().agentIdx == num_teammates - 1) // 2 .
+  {
+    cout << " Memory::ins().agentIdx " << Memory::ins().agentIdx << endl;
+    // while (!g.empty())
+    // {
+    //   auto [i, j] = g.top();
+    //   std::set<int> top_set = factors.top();
+    //   if (i == Memory::ins().agentIdx || j == Memory::ins().agentIdx)
+    //   {
+    //     g.pop();
+    //     Q3 = calculateQ(i, j, reward, state);
+    //     // e4 =
+    //   }
+    // }
+  }
 
   // for (int a = 0; a < getNumActions(); a++)
   // {
@@ -618,8 +560,8 @@ int LinearSarsaAgent::selectAction()
     action = argmaxQ();
   }
 
-  cout << "This action " << endl;
-  cout << action << endl;
+  // cout << "This action " << endl;
+  // cout << action << endl;
 
   return action;
 }

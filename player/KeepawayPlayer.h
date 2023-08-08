@@ -75,56 +75,101 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // #endif
 
-
-
-
 /*! This class is a superclass from BasicPlayer and contains a more
     sophisticated decision procedure to determine the next action. */
-class KeepawayPlayer:public BasicPlayer
-{
- protected:
-  bool          bContLoop;               /*!< is server is alive             */
 
-  Time          m_timeLastSay;           /*!< last time communicated         */
-  Time          m_timeStartEpisode;
-  SMDPAgent     *SA;
+class Memory
+{
+private:
+  Memory();
+
+public:
+  static Memory &ins();
+
+  void resetState();
+
+  std::string to_string();
+
+  bool bAlive;
+  int agentIdx;
+  double state[MAX_RL_STATE_VARS]; // current state -- indexed by K0..Kn
+  int ballControlState[11];        // current ball state -- indexed by K0..Kn
+  ObjectT teammates[11];           // current mapping from index to teammates
+  ObjectT opponents[11];           // current mapping from index to opponents
+
+private:
+  std::vector<string> stack; // self call stack
+
+public:
+  const vector<string> &getStack() const;
+
+  void PushStack(const string &s);
+
+  void PopStack();
+
+  size_t ballControlHash();
+};
+
+class KeepawayPlayer : public BasicPlayer
+{
+protected:
+  bool bContLoop; /*!< is server is alive             */
+
+  Time m_timeLastSay; /*!< last time communicated         */
+  Time m_timeStartEpisode;
+  SMDPAgent *SA;
 
   // methods associated with saying (defined in KeepawayPlayer.cc)
-  bool          shallISaySomething        (                                  );
-  void          makeSayMessage            ( SoccerCommand  soc,
-					    char *         str               );
+  bool shallISaySomething();
+  void makeSayMessage(SoccerCommand soc,
+                      char *str);
 
- public:
-  KeepawayPlayer                          ( SMDPAgent      *sa,
-					    ActHandler     *a,
-                                            WorldModel     *wm,
-                                            ServerSettings *ss,
-                                            PlayerSettings *cs,
-                                            char           *strTeamName,
-					    int            iNumKeepers,
-					    int            iNumTakers,
-                                            double         dVersion,
-                                            int            iReconnect = -1   );
+public:
+  KeepawayPlayer(SMDPAgent *sa,
+                 ActHandler *a,
+                 WorldModel *wm,
+                 ServerSettings *ss,
+                 PlayerSettings *cs,
+                 char *strTeamName,
+                 int iNumKeepers,
+                 int iNumTakers,
+                 double dVersion,
+                 int numFeatures,
+                 int iReconnect = -1);
 
-  void          mainLoop                  (                                  );
+  // KeepawayPlayer(ActHandler *a,
+  //                WorldModel *wm,
+  //                ServerSettings *ss,
+  //                PlayerSettings *cs,
+  //                char *strTeamName,
+  //                int iNumKeepers,
+  //                int iNumTakers,
+  //                double dVersion,
+  //                int iReconnect = -1);
+
+  static int num_features;
+  static int num_teammates;
+  static int num_opponents;
+
+  void mainLoop();
 
   // behaviors
   SoccerCommand keeper();
   SoccerCommand keeperWithBall();
-  SoccerCommand keeperSupport( ObjectT fastest );
-  SoccerCommand interpretKeeperAction( int action );
-  
+  SoccerCommand keeperSupport(ObjectT fastest);
+  SoccerCommand interpretKeeperAction(int action);
 
-
-  ObjectT chooseLookObject( double ballThr );
+  ObjectT chooseLookObject(double ballThr);
 
   SoccerCommand taker();
 
-  //SoccerCommand jolKeepers();
-  //SoccerCommand idle(std::string error);
-  //SoccerCommand jolExecute(int action, int agentIdx, ObjectT K[]);
+  bool isFastestToBall();
+  string getState();
+  VecPosition refineTarget(VecPosition target, VecPosition backup);
 
-
+  // SoccerCommand jolKeepers();
+  // SoccerCommand idle(std::string error);
+  // SoccerCommand jolExecute(int action, int agentIdx, ObjectT K[]);
 };
 
 #endif

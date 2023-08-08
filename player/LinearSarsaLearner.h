@@ -34,44 +34,44 @@ struct hash<vector<T>>
   }
 };
 
-typedef vector<string> machine_state_t;
-typedef vector<int> num_choice_t;
-typedef vector<int> choice_t;
-
 /**
  * global memory among all machines from the perspective of a single machine similar to bai
  */
-class Memory
-{
-private:
-  Memory();
+// class Memory
+// {
+// private:
+//   Memory();
 
-public:
-  static Memory &ins();
+// public:
+//   static Memory &ins();
 
-  void resetState();
+//   void resetState();
 
-  std::string to_string();
+//   std::string to_string();
 
-  bool bAlive;
-  int agentIdx;
-  double state[MAX_RL_STATE_VARS]; // current state -- indexed by K0..Kn
-  int ballControlState[11];        // current ball state -- indexed by K0..Kn
-  ObjectT teammates[11];           // current mapping from index to teammates
-  ObjectT opponents[11];           // current mapping from index to opponents
+//   bool bAlive;
+//   int agentIdx;
+//   double state[MAX_RL_STATE_VARS]; // current state -- indexed by K0..Kn
+//   int ballControlState[11];        // current ball state -- indexed by K0..Kn
+//   ObjectT teammates[11];           // current mapping from index to teammates
+//   ObjectT opponents[11];           // current mapping from index to opponents
 
-private:
-  std::vector<string> stack; // self call stack
+// private:
+//   std::vector<string> stack; // self call stack
 
-public:
-  const vector<string> &getStack() const;
+// public:
+//   const vector<string> &getStack() const;
 
-  void PushStack(const string &s);
+//   void PushStack(const string &s);
 
-  void PopStack();
+//   void PopStack();
 
-  size_t ballControlHash();
-};
+//   size_t ballControlHash();
+// };
+
+typedef vector<string> machine_state_t;
+typedef vector<int> num_choice_t;
+typedef vector<int> choice_t;
 
 struct SharedData
 {
@@ -105,6 +105,11 @@ struct SharedData
 
 class LinearSarsaAgent : public SMDPAgent
 {
+  // private:
+  //   LinearSarsaAgent();
+
+  //   ~LinearSarsaAgent();
+
 protected:
   char weightsFile[256];
   bool bLearning;
@@ -170,6 +175,16 @@ protected:
   // string sharedMemory;
 
 public:
+  static LinearSarsaAgent &ins();
+
+  // void initialize(
+  //     bool learning, double width[],
+  //     double gamma, double lambda, double alpha,
+  //     double weight, bool qLearning,
+  //     string loadWeightsFile,
+  //     string saveWeightsFile,
+  //     string teamName);
+
   LinearSarsaAgent(int numFeatures, int numTeammates,
                    int numOpponents,
                    int numActions,

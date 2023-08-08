@@ -57,9 +57,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "KeepawayPlayer.h"
 #include "HandCodedAgent.h"
 #include "HierarchicalFSM.h"
-#include "crossEntropyLearner.h"
+// #include "crossEntropyLearner.h"
 #include "LinearSarsaLearner.h"
-
 #include "Parse.h"
 #include "gzstream.h"
 #include <dlfcn.h> // needed for extension loading.
@@ -355,7 +354,33 @@ int main(int argc, char *argv[])
   }
 
   KeepawayPlayer bp(sa, &a, &wm, &ss, &cs, strTeamName,
-                    iNumKeepers, iNumTakers, dVersion, iReconnect);
+                    iNumKeepers, iNumTakers, dVersion, numFeatures, iReconnect);
+
+  // if (!crossEntropy)
+  // {
+  //   cerr << "No agent!" << endl;
+  //   return EXIT_FAILURE;
+  // }
+  // else
+  // {
+  //   if (string(strTeamName) == "keepers")
+  //   {
+  //     cg::coordGraph::initialize(
+  //         numFeatures, iNumKeepers, iNumTakers, bLearn,
+  //         resolutions, gamma, lambda, alpha, initialWeight, qLearning,
+  //         loadWeightsFile, saveWeightsFile, strTeamName);
+  //   }
+  //   else
+  //   {
+  //     cg::coordGraph::initialize(
+  //         numFeatures, iNumTakers, iNumKeepers, bLearn,
+  //         resolutions, gamma, lambda, alpha, initialWeight, qLearning,
+  //         loadWeightsFile, saveWeightsFile, strTeamName);
+  //   };
+  // }
+
+  // KeepawayPlayer bp(&a, &wm, &ss, &cs, strTeamName,
+  //                   iNumKeepers, iNumTakers, dVersion, iReconnect);
 
   pthread_create(&sense, NULL, sense_callback, &s); // start listening
 

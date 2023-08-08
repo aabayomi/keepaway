@@ -12,6 +12,8 @@ set(SOURCE_FILES
         player/BasicPlayer.h
         player/Connection.cc
         player/Connection.h
+        # player/cg.cc
+        # player/cg.h
         player/DemoExtension.cc
         player/Formations.cc
         player/Formations.h
