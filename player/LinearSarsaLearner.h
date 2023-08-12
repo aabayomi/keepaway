@@ -21,14 +21,14 @@
 #define RL_MAX_NUM_TILINGS 6000
 
 template <class T>
-struct hash<vector<T>>
+struct std::hash<vector<T>>
 {
   size_t operator()(const vector<T> &vec) const
   {
     size_t seed = vec.size();
     for (auto &i : vec)
     {
-      seed ^= hash<T>().operator()(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+      seed ^= std::hash<T>().operator()(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }
     return seed;
   }
@@ -135,22 +135,21 @@ protected:
   // double lambda;
   // double epsilon;
 
-  // double tileWidths[MAX_STATE_VARS];
-  // double Q[MAX_ACTIONS];
+  double tileWidths[MAX_STATE_VARS];
+  double Q[MAX_ACTIONS];
 
-  // double *weights;
-  // double weightsRaw[RL_MEMORY_SIZE];
-  // double traces[RL_MEMORY_SIZE];
+  double *weights;
+  double weightsRaw[RL_MEMORY_SIZE];
+  double traces[RL_MEMORY_SIZE];
 
-  // int tiles[MAX_ACTIONS][RL_MAX_NUM_TILINGS];
-  // int numTilings;
+  int tiles[MAX_ACTIONS][RL_MAX_NUM_TILINGS];
+  int numTilings;
 
-  // double minimumTrace;
-  // int nonzeroTraces[RL_MAX_NONZERO_TRACES];
-  // int numNonzeroTraces;
-  // int nonzeroTracesInverse[RL_MEMORY_SIZE];
-
-  // collision_table *colTab;
+  double minimumTrace;
+  int nonzeroTraces[RL_MAX_NONZERO_TRACES];
+  int numNonzeroTraces;
+  int nonzeroTracesInverse[RL_MEMORY_SIZE];
+  collision_table *colTab;
 
   // Load / Save weights from/to disk
   // bool loadWeights(const char *filename);
@@ -228,19 +227,19 @@ private:
   double lambda;
   double alpha;
   double epsilon;
-  double tileWidths[MAX_RL_STATE_VARS];
+  // double tileWidths[MAX_RL_STATE_VARS];
 
-  double *Q;
-  int (*tiles)[RL_MAX_NUM_TILINGS];
-  double *weights;
-  double *traces;
-  int *nonzeroTraces;
-  int *nonzeroTracesInverse;
-  collision_table *colTab;
+  // double *Q;
+  // int (*tiles)[RL_MAX_NUM_TILINGS];
+  // double *weights;
+  // double *traces;
+  // int *nonzeroTraces;
+  // int *nonzeroTracesInverse;
+  // collision_table *colTab;
 
-  int numTilings;
-  double minimumTrace;
-  int numNonzeroTraces;
+  // int numTilings;
+  // double minimumTrace;
+  // int numNonzeroTraces;
 
   // int selectChoice(const num_choice_t &num_choices);
 
