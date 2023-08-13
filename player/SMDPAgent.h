@@ -43,7 +43,6 @@
 // #include "SoccerTypes.h"
 // #include "Logger.h"
 
-
 // class SMDPAgent
 // {
 //   int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
@@ -74,16 +73,7 @@
 
 // #endif
 
-
 //////////////////////////////////////////////////
-
-
-
-
-
-
-
-
 
 /*
 Copyright (c) 2004 Gregory Kuhlmann, Peter Stone
@@ -119,9 +109,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef SMDP_AGENT
 #define SMDP_AGENT
 
-#define MAX_STATE_VARS         64
-#define MAX_ACTIONS            10
-
+#define MAX_STATE_VARS 64
+#define MAX_ACTIONS 10
 
 #include <utility>
 #include <vector>
@@ -139,27 +128,29 @@ class SMDPAgent
   int m_numFeatures; /* number of state features <= MAX_STATE_VARS */
   int m_numActions;  /* number of possible actions <= MAX_ACTIONS */
 
- protected:
-
+protected:
   int getNumFeatures() { return m_numFeatures; }
-  int getNumActions()  { return m_numActions;  }
+  int getNumActions() { return m_numActions; }
 
- public:
-  
-  SMDPAgent( int numFeatures, int numActions ) 
-    { m_numFeatures = numFeatures; m_numActions = numActions; }
+public:
+  SMDPAgent(int numFeatures, int numActions)
+  {
+    m_numFeatures = numFeatures;
+    m_numActions = numActions;
+  }
   virtual ~SMDPAgent() {}
 
   string saveWeightsFile;
 
   // abstract methods to be supplied by implementing class
-  virtual int  startEpisode( double state[] ) = 0;
-  virtual int  step( double reward, double state[] ) = 0;
-  virtual void endEpisode( double reward ) = 0;
+  virtual int startEpisode(double state[]) = 0;
+  // virtual int step(double reward, double state[]) = 0;
+  virtual int step(double current_time, double state[]) = 0;
+  virtual void endEpisode(double reward) = 0;
   virtual void setParams(int iCutoffEpisodes, int iStopLearningEpisodes) = 0; //*met 8/16/05
 
   // Optional customization point.
   virtual void shutDown() {}
-} ;
+};
 
 #endif

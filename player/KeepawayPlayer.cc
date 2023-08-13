@@ -383,6 +383,9 @@ SoccerCommand KeepawayPlayer::keeper()
     m_timeStartEpisode = WM->getCurrentTime();
     Memory::ins().resetState();
   }
+  // confirm this
+  auto &agentIdx = Memory::ins().agentIdx;
+  agentIdx = WM->getPlayerNumber();
 
   LogDraw.logCircle("ball belief", WM->getBallPos(),
                     1.1, 11, false, COLOR_RED,
@@ -554,6 +557,7 @@ SoccerCommand KeepawayPlayer::keeperWithBall()
     {
       // action = SA->step(WM->keeperReward(), state);
       action = SA->step(WM->keeperReward(), Memory::ins().state);
+      // action = SA->step(WM->keeperReward());
     }
     WM->setLastAction(action);
   }

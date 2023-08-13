@@ -76,6 +76,7 @@ typedef vector<int> choice_t;
 struct SharedData
 {
   double Q[MAX_RL_ACTIONS];
+  double sharedQ[MAX_RL_ACTIONS];
   int tiles[MAX_RL_ACTIONS][RL_MAX_NUM_TILINGS];
   double weights[RL_MEMORY_SIZE];
   double traces[RL_MEMORY_SIZE];
@@ -136,32 +137,40 @@ protected:
   // double epsilon;
 
   double tileWidths[MAX_STATE_VARS];
-  double Q[MAX_ACTIONS];
-
-  double *weights;
+  // double Q[MAX_ACTIONS];
+  // double *weights;
   double weightsRaw[RL_MEMORY_SIZE];
-  double traces[RL_MEMORY_SIZE];
+  // double traces[RL_MEMORY_SIZE];
+  // int tiles[MAX_ACTIONS][RL_MAX_NUM_TILINGS];
+  // int nonzeroTraces[RL_MAX_NONZERO_TRACES];
+  // int nonzeroTracesInverse[RL_MEMORY_SIZE];
 
-  int tiles[MAX_ACTIONS][RL_MAX_NUM_TILINGS];
-  int numTilings;
-
-  double minimumTrace;
-  int nonzeroTraces[RL_MAX_NONZERO_TRACES];
+  double *sharedQ;
+  double *Q;
+  int (*tiles)[RL_MAX_NUM_TILINGS];
+  double *weights;
+  double *traces = new double[RL_MEMORY_SIZE];
+  int *nonzeroTraces;
+  int *nonzeroTracesInverse;
   int numNonzeroTraces;
-  int nonzeroTracesInverse[RL_MEMORY_SIZE];
+
   collision_table *colTab;
+  int numTilings;
+  double minimumTrace;
+  // int numNonzeroTraces;
 
   // Load / Save weights from/to disk
   // bool loadWeights(const char *filename);
   // bool saveWeights(const char *filename);
 
   // Value function methods for CMACs
-  int selectAction();
+  int selectAction(int a);
   void initializeTileWidths(int numK, int numT);
   double computeQ(int a);
   int argmaxQ();
-  void updateWeights(double delta);
-  virtual void loadTiles(double state[]);
+  // void updateWeights(double delta);
+  void updateWeights(double delta, int num_tilings);
+  virtual int loadTiles(double state[], int (*tiles)[RL_MAX_NUM_TILINGS]);
 
   // Eligibility trace methods
   void clearTrace(int f);
@@ -202,13 +211,35 @@ public:
   double getQ(int action);
   void setEpsilon(double epsilon);
 
+  double computeQ(int a, int (*tiles)[RL_MAX_NUM_TILINGS], int numTilings);
+
+  double QValue(double *state,
+                int a,
+                int (*tiles)[RL_MAX_NUM_TILINGS],
+                int num_tilings);
+
+  void jointOptimalQ(int num_tilings);
+
   // SMDP Sarsa implementation
   int startEpisode(double state[]);
-  int step(double reward, double state[]);
+  // int step(double reward, double state[]);
   int step(double state[]);
+  int step(double current_time, double state[]);
   void endEpisode(double reward);
   void setParams(int iCutoffEpisodes, int iStopLearningEpisodes);
   void shutDown();
+  double reward(double tau);
+
+  double Q1(int a1, int a2, int (*tiles)[RL_MAX_NUM_TILINGS],
+            int num_tilings);
+  double Q2(int a1, int a3, int (*tiles)[RL_MAX_NUM_TILINGS],
+            int num_tilings);
+  double Q3(int a2, int a3, int (*tiles)[RL_MAX_NUM_TILINGS],
+            int num_tilings);
+  std::tuple<double, int> e3(int a1, int a2, int num_tilings);
+  std::tuple<double, int> e2(int a1, int num_tilings);
+  double computeE1(int &optimal_a1);
+  int array_hash(int agent, int action);
 
   bool loadSharedData();
   void saveSharedData();
