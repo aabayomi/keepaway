@@ -127,35 +127,35 @@ namespace fsm
     static int num_opponents;
   };
 
-  class Graph ::public HierarchicalFSM
-  {
-    int V; // number of vertices
-    vector<vector<int>> adjacencyList;
+  // class Graph ::public HierarchicalFSM
+  // {
+  //   int V; // number of vertices
+  //   vector<vector<int>> adjacencyList;
 
-  public:
-    Graph(int V) : V(V)
-    {
-      adjacencyList = vector<vector<int>>(V, vector<int>(V, 0));
-    }
+  // public:
+  //   Graph(int V) : V(V)
+  //   {
+  //     adjacencyList = vector<vector<int>>(V, vector<int>(V, 0));
+  //   }
 
-    void displayMatrix()
-    {
-      for (int i = 0; i < V; i++)
-      {
-        for (int j = 0; j < V; j++)
-        {
-          cout << adjacencyList[i][j] << " ";
-        }
-        cout << endl;
-      }
-    }
+  //   void displayMatrix()
+  //   {
+  //     for (int i = 0; i < V; i++)
+  //     {
+  //       for (int j = 0; j < V; j++)
+  //       {
+  //         cout << adjacencyList[i][j] << " ";
+  //       }
+  //       cout << endl;
+  //     }
+  //   }
 
-    void add_edge(int u, int v)
-    {
-      adjacencyList[u][v] = 1;
-      adjacencyList[v][u] = 1;
-    }
-  };
+  //   void add_edge(int u, int v)
+  //   {
+  //     adjacencyList[u][v] = 1;
+  //     adjacencyList[v][u] = 1;
+  //   }
+  // };
 
   class Keeper : public HierarchicalFSM
   {

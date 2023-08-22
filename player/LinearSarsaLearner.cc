@@ -392,6 +392,8 @@ namespace fsm
   int LinearSarsaLearner::step(int current_time, int num_choices)
   {
     SCOPED_LOG
+    cout << "i am agent " << Memory::ins().agentIdx << "at time " << current_time << endl;
+
     auto stackStr = HierarchicalFSM::getStackStr();
     sharedData->numChoices[Memory::ins().teammates[Memory::ins().agentIdx]] = num_choices;
     strcpy(sharedData->machineState[Memory::ins().teammates[Memory::ins().agentIdx]],

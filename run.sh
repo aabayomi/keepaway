@@ -89,7 +89,7 @@ fi
 CONSOLE_LOG="$LOGDIR/`basename $QFILE .gz`.console"
 
 ulimit -c unlimited
-python keepaway.py --keeper-count=3 --taker-count=2 \
+python2 keepaway.py --keeper-count=3 --taker-count=2 \
     $MEMORYCHECK $LEARNING \
     --keeper-output="$KEEPERQFILE" --keeper-input="$KEEPERQFILE" \
     --taker-output="$TAKERQFILE" --taker-input="$TAKERQFILE" \
